@@ -17,6 +17,7 @@ import javax.swing.Timer;
 public class GamePanel extends JPanel {
 
     private Screen pantallaActual;
+    private ModeSelectScreen previousModeScreen;
 
     public GamePanel() {
         setBackground(Color.BLACK);
@@ -45,6 +46,11 @@ public class GamePanel extends JPanel {
         getActionMap().put("backToTitle", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
+                if (pantallaActual instanceof SongSelectScreen) {
+                    pantallaActual = previousModeScreen;
+                    repaint();
+                    return;
+                }
                 // return to the main menu without also returning to the title
                 if (pantallaActual instanceof ModeSelectScreen) {
                     pantallaActual = new MenuScreen();
@@ -102,8 +108,9 @@ public class GamePanel extends JPanel {
             repaint();
             return;
         }
-        // open the song list for either game mode
-        if (pantallaActual instanceof ModeSelectScreen) {
+        if (pantallaActual instanceof ModeSelectScreen modes) {
+            // keep the selected mode when opening the song list
+            previousModeScreen = modes;
             pantallaActual = new SongSelectScreen();
             repaint();
             return;
