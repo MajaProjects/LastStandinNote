@@ -17,6 +17,7 @@ import javax.swing.Timer;
 public class GamePanel extends JPanel {
 
     private Screen pantallaActual;
+    private SongSelectScreen previousSongScreen;
     private ModeSelectScreen previousModeScreen;
 
     public GamePanel() {
@@ -80,6 +81,11 @@ public class GamePanel extends JPanel {
         getActionMap().put(actionName, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
+                if (pantallaActual instanceof CharacterSelectScreen) {
+                    pantallaActual = previousSongScreen;
+                    repaint();
+                    return;
+                }
                 if (pantallaActual instanceof MenuScreen menu) {
                     menu.moveSelection(direction);
                     repaint();
@@ -112,6 +118,13 @@ public class GamePanel extends JPanel {
             // keep the selected mode when opening the song list
             previousModeScreen = modes;
             pantallaActual = new SongSelectScreen();
+            repaint();
+            return;
+        }
+        if (pantallaActual instanceof SongSelectScreen songs) {
+            // remember the song list before opening the character screen
+            previousSongScreen = songs;
+            pantallaActual = new CharacterSelectScreen(songs.getSelectedSong());
             repaint();
             return;
         }
