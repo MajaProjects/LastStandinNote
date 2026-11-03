@@ -1,9 +1,5 @@
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import java.awt.Color;
-import java.awt.Dimension;
-
 public class Main {
 
     public static void main(String[] args) {
@@ -13,9 +9,7 @@ public class Main {
             JFrame ventana = new JFrame("LastStandinNote");
             ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-            JPanel panel = new JPanel();
-            panel.setBackground(Color.BLACK);
-            panel.setPreferredSize(new Dimension(960, 540));
+            GamePanel panel = new GamePanel();
 
             ventana.setContentPane(panel);
             ventana.setResizable(false);
