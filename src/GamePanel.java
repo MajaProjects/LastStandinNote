@@ -37,7 +37,7 @@ public class GamePanel extends JPanel {
         getActionMap().put("backToTitle", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
-                // reuse previous screens to keep their selections
+                // reuse previous screens to preserve their selections
                 if (pantallaActual instanceof CharacterSelectScreen) {
                     pantallaActual = previousSongScreen;
                 } else if (pantallaActual instanceof SongSelectScreen) {
@@ -54,15 +54,15 @@ public class GamePanel extends JPanel {
             }
         });
 
-        // use vertical arrows for menus and the song list
+        // navigate menus and songs with the vertical arrows
         bindMenuNavigation("menuUp", KeyEvent.VK_UP, -1);
         bindMenuNavigation("menuDown", KeyEvent.VK_DOWN, 1);
 
-        // use horizontal arrows for character selection
+        // choose a character with the horizontal arrows
         bindCharacterNavigation("characterLeft", KeyEvent.VK_LEFT, -1);
         bindCharacterNavigation("characterRight", KeyEvent.VK_RIGHT, 1);
 
-        // request regular redraws for the interface animations
+        // redraw regularly so the interface animations remain visible
         Timer animationTimer = new Timer(16, event -> repaint());
         animationTimer.start();
     }
@@ -141,11 +141,18 @@ public class GamePanel extends JPanel {
         }
 
         if (pantallaActual instanceof SongSelectScreen songs) {
-            // remember the song selection before opening the characters
+            // preserve the song selection and identify the selected game mode
             previousSongScreen = songs;
+
+            boolean twoPlayers = previousModeScreen
+                    .getSelectedMode()
+                    .equals("DOS JUGADORES");
+
             pantallaActual = new CharacterSelectScreen(
-                    songs.getSelectedSong()
+                    songs.getSelectedSong(),
+                    twoPlayers
             );
+
             repaint();
             return;
         }
