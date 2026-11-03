@@ -27,6 +27,12 @@ public class TitleScreen implements Screen {
         int titleWidth = font.getTextWidth(title, scale);
         int titleX = (width - titleWidth) / 2;
 
+        // show the key used to open the main menu
+        String prompt = "PULSA ENTER";
+        int promptX = (width - font.getTextWidth(prompt, 1)) / 2;
+
+        font.draw(g, prompt, promptX, height * 3 / 4, 1);
+
         font.draw(g, title, titleX, 100, scale);
     }
 }
