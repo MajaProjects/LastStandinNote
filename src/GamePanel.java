@@ -45,6 +45,12 @@ public class GamePanel extends JPanel {
         getActionMap().put("backToTitle", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
+                // return to the main menu without also returning to the title
+                if (pantallaActual instanceof ModeSelectScreen) {
+                    pantallaActual = new MenuScreen();
+                    repaint();
+                    return;
+                }
                 if (pantallaActual instanceof MenuScreen) {
                     pantallaActual = new TitleScreen();
                     repaint();
@@ -76,16 +82,28 @@ public class GamePanel extends JPanel {
                     menu.moveSelection(direction);
                     repaint();
                 }
+                if (pantallaActual instanceof ModeSelectScreen modes) {
+                    modes.moveSelection(direction);
+                    repaint();
+                }
             }
         });
     }
+
     private void activateSelection() {
         if (pantallaActual instanceof TitleScreen) {
             pantallaActual = new MenuScreen();
             repaint();
             return;
         }
+        // open mode selection when play is confirmed
+        if (pantallaActual instanceof MenuScreen menu
+                && menu.getSelectedOption().equals("JUGAR")) {
 
+            pantallaActual = new ModeSelectScreen();
+            repaint();
+            return;
+        }
         // close the window through its normal closing behavior
         if (pantallaActual instanceof MenuScreen menu
                 && menu.getSelectedOption().equals("SALIR")) {
