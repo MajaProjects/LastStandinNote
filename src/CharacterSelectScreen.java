@@ -1,6 +1,6 @@
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-
+import java.awt.Color;
 public class CharacterSelectScreen implements Screen {
 
     private final String songName;
@@ -34,6 +34,10 @@ public class CharacterSelectScreen implements Screen {
     public void render(Graphics2D g, int width, int height) {
         g.drawImage(background, 0, 0, width, height, null);
 
+        // dim the background so the characters and labels stand out
+        g.setColor(new Color(0, 0, 0, 110));
+        g.fillRect(0, 0, width, height);
+
         long elapsedMs = (System.nanoTime() - animationStart) / 1_000_000;
         double seconds = elapsedMs / 1000.0;
 
@@ -44,9 +48,6 @@ public class CharacterSelectScreen implements Screen {
         int songX = (width - font.getTextWidth(songName, 1)) / 2;
         font.draw(g, songName, songX, 150, 1);
 
-        int characterY = height / 2 - 90;
-
-// mark the selected character beside its name
         String tuxLabel = "TUX";
         String windowsLabel = "WINDOWS";
 
@@ -56,7 +57,9 @@ public class CharacterSelectScreen implements Screen {
             windowsLabel = "* WINDOWS *";
         }
 
-// keep both idle animations running while choosing
+        // leave room below the names for the control bar
+        int characterY = height / 2 - 110;
+
         drawCharacter(
                 g, tuxIdle.getFrame(elapsedMs),
                 tuxLabel, width / 3, characterY
@@ -66,11 +69,49 @@ public class CharacterSelectScreen implements Screen {
                 g, windowsIdle.getFrame(elapsedMs),
                 windowsLabel, width * 2 / 3, characterY
         );
-        // show both players' lane keys along the bottom
-        String controls = "P1 A S D F    P2 J K L Ñ";
-        int controlsX = (width - font.getTextWidth(controls, 1)) / 2;
 
-        font.draw(g, controls, controlsX, height - 42, 1);
+        // keep the controls readable over the circuit background
+        int controlsTop = height - 64;
+
+        g.setColor(new Color(12, 12, 20));
+        g.fillRect(0, controlsTop, width, 64);
+
+        g.setColor(new Color(95, 75, 120));
+        g.drawLine(0, controlsTop, width - 1, controlsTop);
+
+        // align each key group with the character above it
+        drawControls(g, "ASDF", width / 3, controlsTop + 12);
+        drawControls(g, "JKLÑ", width * 2 / 3, controlsTop + 12);
+    }
+    private void drawControls(
+            Graphics2D g,
+            String keys,
+            int centerX,
+            int top
+    ) {
+        int keyWidth = 36;
+        int keyHeight = 40;
+        int gap = 8;
+
+        // center the four keys as one group
+        int groupWidth = keys.length() * keyWidth + (keys.length() - 1) * gap;
+        int left = centerX - groupWidth / 2;
+
+        for (int i = 0; i < keys.length(); i++) {
+            int x = left + i * (keyWidth + gap);
+
+            // draw the key background and border
+            g.setColor(new Color(30, 30, 45));
+            g.fillRect(x, top, keyWidth, keyHeight);
+
+            g.setColor(new Color(120, 95, 155));
+            g.drawRect(x, top, keyWidth - 1, keyHeight - 1);
+
+            String key = String.valueOf(keys.charAt(i));
+            int textX = x + (keyWidth - font.getTextWidth(key, 1)) / 2;
+
+            font.draw(g, key, textX, top + 4, 1);
+        }
     }
 
     private void drawCharacter(
