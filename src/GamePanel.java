@@ -64,26 +64,24 @@ public class GamePanel extends JPanel {
         Timer animationTimer = new Timer(16, event -> repaint());
         animationTimer.start();
     }
-    private void bindMenuNavigation(
-            String actionName,
-            int keyCode,
-            int direction
-    ) {
+    private void bindMenuNavigation(String actionName, int keyCode, int direction) {
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
                 KeyStroke.getKeyStroke(keyCode, 0),
                 actionName
         );
 
-        // update the menu selection and request a redraw
+        // move the selection on the current screen when the key is pressed
         getActionMap().put(actionName, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
                 if (pantallaActual instanceof MenuScreen menu) {
                     menu.moveSelection(direction);
                     repaint();
-                }
-                if (pantallaActual instanceof ModeSelectScreen modes) {
+                } else if (pantallaActual instanceof ModeSelectScreen modes) {
                     modes.moveSelection(direction);
+                    repaint();
+                } else if (pantallaActual instanceof SongSelectScreen songs) {
+                    songs.moveSelection(direction);
                     repaint();
                 }
             }
