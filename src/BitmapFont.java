@@ -201,4 +201,32 @@ public class BitmapFont {
             cursorX += glyph.advance() * scale;
         }
     }
+    public void drawPulsingCentered(
+            Graphics2D g,
+            String text,
+            int centerX,
+            int y,
+            int scale,
+            double sizeMultiplier,
+            double seconds
+    ) {
+        // repeat a smooth size pulse every second
+        double pulse = 1.0 + 0.025
+                * (1.0 - Math.cos(seconds * Math.PI * 2.0));
+
+        double zoom = sizeMultiplier * pulse;
+        int textWidth = getTextWidth(text, scale);
+
+        Graphics2D animated = (Graphics2D) g.create();
+
+        try {
+            // keep the horizontal center fixed during the animation
+            animated.translate(centerX, y);
+            animated.scale(zoom, zoom);
+
+            draw(animated, text, -textWidth / 2, 0, scale);
+        } finally {
+            animated.dispose();
+        }
+    }
 }

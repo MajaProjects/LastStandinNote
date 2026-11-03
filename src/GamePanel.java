@@ -12,6 +12,7 @@ import java.awt.event.KeyEvent;
 import java.awt.Window;
 import java.awt.event.WindowEvent;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 
 public class GamePanel extends JPanel {
 
@@ -53,6 +54,9 @@ public class GamePanel extends JPanel {
         // register vertical menu navigation
         bindMenuNavigation("menuUp", KeyEvent.VK_UP, -1);
         bindMenuNavigation("menuDown", KeyEvent.VK_DOWN, 1);
+        // refresh the screen so interface animations remain visible
+        Timer animationTimer = new Timer(16, event -> repaint());
+        animationTimer.start();
     }
     private void bindMenuNavigation(
             String actionName,
