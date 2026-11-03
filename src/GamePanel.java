@@ -9,6 +9,9 @@ import javax.swing.JComponent;
 import javax.swing.KeyStroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.Window;
+import java.awt.event.WindowEvent;
+import javax.swing.SwingUtilities;
 
 public class GamePanel extends JPanel {
 
@@ -29,14 +32,69 @@ public class GamePanel extends JPanel {
         getActionMap().put("openMenu", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
-                if (pantallaActual instanceof TitleScreen) {
-                    pantallaActual = new MenuScreen();
+                activateSelection();
+            }
+        });
+        // return from the main menu to the title screen
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+                "backToTitle"
+        );
+
+        getActionMap().put("backToTitle", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                if (pantallaActual instanceof MenuScreen) {
+                    pantallaActual = new TitleScreen();
+                    repaint();
+                }
+            }
+        });
+        // register vertical menu navigation
+        bindMenuNavigation("menuUp", KeyEvent.VK_UP, -1);
+        bindMenuNavigation("menuDown", KeyEvent.VK_DOWN, 1);
+    }
+    private void bindMenuNavigation(
+            String actionName,
+            int keyCode,
+            int direction
+    ) {
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+                KeyStroke.getKeyStroke(keyCode, 0),
+                actionName
+        );
+
+        // update the menu selection and request a redraw
+        getActionMap().put(actionName, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                if (pantallaActual instanceof MenuScreen menu) {
+                    menu.moveSelection(direction);
                     repaint();
                 }
             }
         });
     }
+    private void activateSelection() {
+        if (pantallaActual instanceof TitleScreen) {
+            pantallaActual = new MenuScreen();
+            repaint();
+            return;
+        }
 
+        // close the window through its normal closing behavior
+        if (pantallaActual instanceof MenuScreen menu
+                && menu.getSelectedOption().equals("SALIR")) {
+
+            Window window = SwingUtilities.getWindowAncestor(this);
+
+            if (window != null) {
+                window.dispatchEvent(
+                        new WindowEvent(window, WindowEvent.WINDOW_CLOSING)
+                );
+            }
+        }
+    }
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
