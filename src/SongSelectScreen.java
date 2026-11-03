@@ -30,6 +30,9 @@ public class SongSelectScreen implements Screen {
             selectedSong = Math.floorMod(selectedSong + direction, songs.size());
         }
     }
+    public String getSelectedSong() {
+        return songs.get(selectedSong);
+    }
 
     private void drawSongButton(Graphics2D g, String title, int centerX,
                                 int centerY, boolean selected, double seconds) {

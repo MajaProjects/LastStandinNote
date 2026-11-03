@@ -1,0 +1,156 @@
+# sprite atlas version 1
+# coordinates and sizes are in pixels; x and y start at zero
+# regions include their original transparent margins
+# animation;actor;name;loop
+# frame;actor;animation;index;x;y;width;height;duration_ms
+# frame indices start at zero and follow playback order
+# crop from (x,y) inclusive to (x+width,y+height) exclusive
+# timing values are editable defaults, not original authoring data
+# duration 0 means a static state; a non-looping animation holds its last frame
+image;sprites.png
+
+animation;tux;idle;true
+# source tux_idle_0.png
+frame;tux;idle;0;4;4;128;128;120
+# source tux_idle_1.png
+frame;tux;idle;1;136;4;128;128;120
+# source tux_idle_2.png
+frame;tux;idle;2;268;4;128;128;120
+# source tux_idle_3.png
+frame;tux;idle;3;400;4;128;128;120
+
+animation;tux;left;false
+# source tux_left.png
+frame;tux;left;0;532;4;128;128;150
+
+animation;tux;down;false
+# source tux_down.png
+frame;tux;down;0;664;4;128;128;150
+
+animation;tux;up;false
+# source tux_up.png
+frame;tux;up;0;796;4;128;128;150
+
+animation;tux;right;false
+# source tux_right.png
+frame;tux;right;0;928;4;128;128;150
+
+animation;tux;left_miss;false
+# source tux_left_miss.png
+frame;tux;left_miss;0;4;136;128;128;150
+
+animation;tux;down_miss;false
+# source tux_down_miss.png
+frame;tux;down_miss;0;136;136;128;128;150
+
+animation;tux;up_miss;false
+# source tux_up_miss.png
+frame;tux;up_miss;0;268;136;128;128;150
+
+animation;tux;right_miss;false
+# source tux_right_miss.png
+frame;tux;right_miss;0;400;136;128;128;150
+
+animation;tux;death;false
+# source tux_death_0.png
+frame;tux;death;0;532;136;128;128;180
+# source tux_death_1.png
+frame;tux;death;1;664;136;128;128;180
+
+animation;windows;idle;true
+# source windows_idle_0.png
+frame;windows;idle;0;796;136;128;128;120
+# source windows_idle_1.png
+frame;windows;idle;1;928;136;128;128;120
+# source windows_idle_2.png
+frame;windows;idle;2;4;268;128;128;120
+# source windows_idle_3.png
+frame;windows;idle;3;136;268;128;128;120
+
+animation;windows;left;false
+# source windows_left.png
+frame;windows;left;0;268;268;128;128;150
+
+animation;windows;down;false
+# source windows_down.png
+frame;windows;down;0;400;268;128;128;150
+
+animation;windows;up;false
+# source windows_up.png
+frame;windows;up;0;532;268;128;128;150
+
+animation;windows;right;false
+# source windows_right.png
+frame;windows;right;0;664;268;128;128;150
+
+animation;windows;left_miss;false
+# source windows_left_miss.png
+frame;windows;left_miss;0;796;268;128;128;150
+
+animation;windows;down_miss;false
+# source windows_down_miss.png
+frame;windows;down_miss;0;928;268;128;128;150
+
+animation;windows;up_miss;false
+# source windows_up_miss.png
+frame;windows;up_miss;0;4;400;128;128;150
+
+animation;windows;right_miss;false
+# source windows_right_miss.png
+frame;windows;right_miss;0;136;400;128;128;150
+
+animation;windows;death;false
+# source windows_death_0.png
+frame;windows;death;0;268;400;128;128;180
+# source windows_death_1.png
+frame;windows;death;1;400;400;128;128;180
+
+animation;kernel;idle;true
+# source kernel_idle_0.png
+frame;kernel;idle;0;532;400;128;128;120
+# source kernel_idle_1.png
+frame;kernel;idle;1;664;400;128;128;120
+# source kernel_idle_2.png
+frame;kernel;idle;2;796;400;128;128;120
+# source kernel_idle_3.png
+frame;kernel;idle;3;928;400;128;128;120
+
+animation;kernel;happy;true
+# source kernel_happy_0.png
+frame;kernel;happy;0;4;532;128;128;150
+# source kernel_happy_1.png
+frame;kernel;happy;1;136;532;128;128;150
+
+animation;kernel;sad;true
+# source kernel_sad_0.png
+frame;kernel;sad;0;268;532;128;128;150
+# source kernel_sad_1.png
+frame;kernel;sad;1;400;532;128;128;150
+
+animation;kernel;idle_blink;false
+# source kernel_idle_blink.png
+frame;kernel;idle_blink;0;532;532;128;128;120
+
+animation;monitor;normal;false
+# source monitor_normal.png
+frame;monitor;normal;0;664;532;128;128;0
+
+animation;monitor;go;false
+# source monitor_go.png
+frame;monitor;go;0;796;532;128;128;0
+
+animation;monitor;linux;false
+# source monitor_linux.png
+frame;monitor;linux;0;928;532;128;128;0
+
+animation;monitor;windows;false
+# source monitor_windows.png
+frame;monitor;windows;0;4;664;128;128;0
+
+animation;monitor;versus;false
+# source monitor_versus.png
+frame;monitor;versus;0;136;664;128;128;0
+
+animation;monitor;error;false
+# source monitor_error.png
+frame;monitor;error;0;268;664;128;128;0
