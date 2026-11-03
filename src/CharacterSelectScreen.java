@@ -10,6 +10,9 @@ public class CharacterSelectScreen implements Screen {
     private final SpriteAnimation windowsIdle;
     private final long animationStart = System.nanoTime();
 
+    // start with tux selected
+    private int selectedCharacter = 0;
+
     public CharacterSelectScreen(String songName) {
         this.songName = songName;
 
@@ -23,7 +26,10 @@ public class CharacterSelectScreen implements Screen {
         tuxIdle = atlas.getAnimation("tux", "idle");
         windowsIdle = atlas.getAnimation("windows", "idle");
     }
-
+    public void moveSelection(int direction) {
+        // wrap between tux at index 0 and windows at index 1
+        selectedCharacter = Math.floorMod(selectedCharacter + direction, 2);
+    }
     @Override
     public void render(Graphics2D g, int width, int height) {
         g.drawImage(background, 0, 0, width, height, null);
@@ -38,17 +44,33 @@ public class CharacterSelectScreen implements Screen {
         int songX = (width - font.getTextWidth(songName, 1)) / 2;
         font.draw(g, songName, songX, 150, 1);
 
-        int characterY = height / 2 - 60;
+        int characterY = height / 2 - 90;
 
+// mark the selected character beside its name
+        String tuxLabel = "TUX";
+        String windowsLabel = "WINDOWS";
+
+        if (selectedCharacter == 0) {
+            tuxLabel = "* TUX *";
+        } else {
+            windowsLabel = "* WINDOWS *";
+        }
+
+// keep both idle animations running while choosing
         drawCharacter(
                 g, tuxIdle.getFrame(elapsedMs),
-                "TUX", width / 3, characterY
+                tuxLabel, width / 3, characterY
         );
 
         drawCharacter(
                 g, windowsIdle.getFrame(elapsedMs),
-                "WINDOWS", width * 2 / 3, characterY
+                windowsLabel, width * 2 / 3, characterY
         );
+        // show both players' lane keys along the bottom
+        String controls = "P1 A S D F    P2 J K L Ñ";
+        int controlsX = (width - font.getTextWidth(controls, 1)) / 2;
+
+        font.draw(g, controls, controlsX, height - 42, 1);
     }
 
     private void drawCharacter(

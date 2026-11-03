@@ -1,18 +1,6 @@
-import javax.swing.JPanel;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import javax.swing.AbstractAction;
-import javax.swing.JComponent;
-import javax.swing.KeyStroke;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.awt.Window;
-import java.awt.event.WindowEvent;
-import javax.swing.SwingUtilities;
-import javax.swing.Timer;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
 
 public class GamePanel extends JPanel {
 
@@ -24,9 +12,10 @@ public class GamePanel extends JPanel {
         setBackground(Color.BLACK);
         setPreferredSize(new Dimension(960, 540));
 
-        // start the game on the title screen
+        // open the title screen when the game starts
         pantallaActual = new TitleScreen();
-        // associate enter with the action that opens the main menu
+
+        // confirm the current selection with enter
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
                 KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
                 "openMenu"
@@ -38,7 +27,8 @@ public class GamePanel extends JPanel {
                 activateSelection();
             }
         });
-        // return from the main menu to the title screen
+
+        // return to the previous screen with escape
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
                 KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
                 "backToTitle"
@@ -47,53 +37,81 @@ public class GamePanel extends JPanel {
         getActionMap().put("backToTitle", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
-                if (pantallaActual instanceof SongSelectScreen) {
+                // reuse previous screens to keep their selections
+                if (pantallaActual instanceof CharacterSelectScreen) {
+                    pantallaActual = previousSongScreen;
+                } else if (pantallaActual instanceof SongSelectScreen) {
                     pantallaActual = previousModeScreen;
-                    repaint();
-                    return;
-                }
-                // return to the main menu without also returning to the title
-                if (pantallaActual instanceof ModeSelectScreen) {
+                } else if (pantallaActual instanceof ModeSelectScreen) {
                     pantallaActual = new MenuScreen();
-                    repaint();
+                } else if (pantallaActual instanceof MenuScreen) {
+                    pantallaActual = new TitleScreen();
+                } else {
                     return;
                 }
-                if (pantallaActual instanceof MenuScreen) {
-                    pantallaActual = new TitleScreen();
-                    repaint();
-                }
+
+                repaint();
             }
         });
-        // register vertical menu navigation
+
+        // use vertical arrows for menus and the song list
         bindMenuNavigation("menuUp", KeyEvent.VK_UP, -1);
         bindMenuNavigation("menuDown", KeyEvent.VK_DOWN, 1);
-        // refresh the screen so interface animations remain visible
+
+        // use horizontal arrows for character selection
+        bindCharacterNavigation("characterLeft", KeyEvent.VK_LEFT, -1);
+        bindCharacterNavigation("characterRight", KeyEvent.VK_RIGHT, 1);
+
+        // request regular redraws for the interface animations
         Timer animationTimer = new Timer(16, event -> repaint());
         animationTimer.start();
     }
-    private void bindMenuNavigation(String actionName, int keyCode, int direction) {
+
+    private void bindMenuNavigation(
+            String actionName,
+            int keyCode,
+            int direction
+    ) {
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
                 KeyStroke.getKeyStroke(keyCode, 0),
                 actionName
         );
 
-        // move the selection on the current screen when the key is pressed
         getActionMap().put(actionName, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
-                if (pantallaActual instanceof CharacterSelectScreen) {
-                    pantallaActual = previousSongScreen;
-                    repaint();
-                    return;
-                }
+                // send the movement to the active menu
                 if (pantallaActual instanceof MenuScreen menu) {
                     menu.moveSelection(direction);
-                    repaint();
                 } else if (pantallaActual instanceof ModeSelectScreen modes) {
                     modes.moveSelection(direction);
-                    repaint();
                 } else if (pantallaActual instanceof SongSelectScreen songs) {
                     songs.moveSelection(direction);
+                } else {
+                    return;
+                }
+
+                repaint();
+            }
+        });
+    }
+
+    private void bindCharacterNavigation(
+            String actionName,
+            int keyCode,
+            int direction
+    ) {
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+                KeyStroke.getKeyStroke(keyCode, 0),
+                actionName
+        );
+
+        getActionMap().put(actionName, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                // change the character while its selection screen is open
+                if (pantallaActual instanceof CharacterSelectScreen characters) {
+                    characters.moveSelection(direction);
                     repaint();
                 }
             }
@@ -106,32 +124,35 @@ public class GamePanel extends JPanel {
             repaint();
             return;
         }
-        // open mode selection when play is confirmed
+
         if (pantallaActual instanceof MenuScreen menu
                 && menu.getSelectedOption().equals("JUGAR")) {
-
             pantallaActual = new ModeSelectScreen();
             repaint();
             return;
         }
+
         if (pantallaActual instanceof ModeSelectScreen modes) {
-            // keep the selected mode when opening the song list
+            // remember the mode selection before opening the songs
             previousModeScreen = modes;
             pantallaActual = new SongSelectScreen();
             repaint();
             return;
         }
+
         if (pantallaActual instanceof SongSelectScreen songs) {
-            // remember the song list before opening the character screen
+            // remember the song selection before opening the characters
             previousSongScreen = songs;
-            pantallaActual = new CharacterSelectScreen(songs.getSelectedSong());
+            pantallaActual = new CharacterSelectScreen(
+                    songs.getSelectedSong()
+            );
             repaint();
             return;
         }
-        // close the window through its normal closing behavior
+
         if (pantallaActual instanceof MenuScreen menu
                 && menu.getSelectedOption().equals("SALIR")) {
-
+            // close the window using its configured closing behavior
             Window window = SwingUtilities.getWindowAncestor(this);
 
             if (window != null) {
@@ -141,14 +162,15 @@ public class GamePanel extends JPanel {
             }
         }
     }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
+        // use a graphics copy to keep drawing settings local
         Graphics2D g2 = (Graphics2D) g.create();
 
         try {
-            // preserve pixel edges when scaling screen images
             g2.setRenderingHint(
                     RenderingHints.KEY_INTERPOLATION,
                     RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR
