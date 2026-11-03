@@ -104,6 +104,12 @@ public class GamePanel extends JPanel {
             repaint();
             return;
         }
+        // open the song list for either game mode
+        if (pantallaActual instanceof ModeSelectScreen) {
+            pantallaActual = new SongSelectScreen();
+            repaint();
+            return;
+        }
         // close the window through its normal closing behavior
         if (pantallaActual instanceof MenuScreen menu
                 && menu.getSelectedOption().equals("SALIR")) {
