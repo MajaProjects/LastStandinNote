@@ -1,0 +1,6 @@
+# local IntelliJ IDEA config
+.idea/
+*.iml
+# files generated at compiling
+out/
+*.class
