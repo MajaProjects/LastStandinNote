@@ -1,63 +1,37 @@
-import javax.imageio.ImageIO;
-import javax.swing.*;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.net.URL;
+import javax.swing.JPanel;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+
 public class GamePanel extends JPanel {
-    private final BufferedImage fondoInicio;
+
+    private Screen pantallaActual;
 
     public GamePanel() {
         setBackground(Color.BLACK);
-        URL ruta = GamePanel.class.getResource(
-                "/images/backgrounds/circuito_480x270.png"
-        );
-
-        if (ruta == null) {
-            throw new IllegalStateException(
-                    "No se encontró el fondo de inicio"
-            );
-        }
-
-        try {
-            fondoInicio = ImageIO.read(ruta);
-        } catch (IOException error) {
-            throw new IllegalStateException(
-                    "No se pudo leer el fondo de inicio", error
-            );
-        }
-
-        if (fondoInicio == null) {
-            throw new IllegalStateException(
-                    "El archivo del fondo no contiene una imagen compatible"
-            );
-        }
         setPreferredSize(new Dimension(960, 540));
+
+        // start the game on the title screen
+        pantallaActual = new TitleScreen();
     }
+
     @Override
     protected void paintComponent(Graphics g) {
-        // paint the panel background before drawing the image
         super.paintComponent(g);
-        // copy the drawing context so our settings do not affect the original
 
         Graphics2D g2 = (Graphics2D) g.create();
 
         try {
+            // preserve pixel edges when scaling screen images
             g2.setRenderingHint(
-                    // keep pixel edges sharp when scaling the image
                     RenderingHints.KEY_INTERPOLATION,
                     RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR
             );
-            // draw the background from the top-left corner
-            // scale it to fill the current panel size
-            g2.drawImage(
-                    fondoInicio,
-                    0, 0,
-                    getWidth(), getHeight(),
-                    this
-            );
+
+            pantallaActual.render(g2, getWidth(), getHeight());
         } finally {
-            // release the copied drawing context
             g2.dispose();
         }
     }
