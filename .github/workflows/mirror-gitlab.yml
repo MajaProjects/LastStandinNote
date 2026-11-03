@@ -1,0 +1,31 @@
+
+name: Sincronizar GitLab
+
+on:
+  push:
+  delete:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configurar SSH
+        env:
+          SSH_KEY: ${{ secrets.GITLAB_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo 'gitlab.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAfuCHKVTjquxvt6CM6tdG4SLp1Btn/nOeHHE5UOzRdf' > ~/.ssh/known_hosts
+
+      - name: Copiar GitHub a GitLab
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git clone --bare "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" mirror.git
+          git -C mirror.git push --mirror "git@gitlab.com:GLUD/gnubies/proyectos-2023-iii/2026-iii/gnubies-martes-8-10am/last-standin-note.git"
