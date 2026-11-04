@@ -1,3 +1,4 @@
-Puzzle
-Buy something
-Melancholy
+# folder;display name
+puzzle;Puzzle
+buy_something;Buy something
+melancholy;Melancholy

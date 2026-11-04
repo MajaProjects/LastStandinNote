@@ -7,6 +7,7 @@ public class GamePanel extends JPanel {
     private Screen pantallaActual;
     private SongSelectScreen previousSongScreen;
     private ModeSelectScreen previousModeScreen;
+    private CharacterSelectScreen previousCharacterScreen;
 
     // load the menu effects once
     private final AudioPlayer menuMove = new AudioPlayer(
@@ -57,8 +58,12 @@ public class GamePanel extends JPanel {
         getActionMap().put("backToTitle", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
-                // return one screen and preserve previous selections
-                if (pantallaActual instanceof CharacterSelectScreen) {
+                if (pantallaActual instanceof GameScreen game) {
+                    // release the song before returning to character selection
+                    game.close();
+                    pantallaActual = previousCharacterScreen;
+                    menuMusic.playLoop();
+                } else if (pantallaActual instanceof CharacterSelectScreen) {
                     pantallaActual = previousSongScreen;
                 } else if (pantallaActual instanceof SongSelectScreen) {
                     pantallaActual = previousModeScreen;
@@ -67,7 +72,6 @@ public class GamePanel extends JPanel {
                 } else if (pantallaActual instanceof MenuScreen) {
                     pantallaActual = new TitleScreen();
 
-                    // restore the title track when returning to the start
                     menuMusic.stop();
                     titleMusic.playLoop();
                 } else {
@@ -78,7 +82,6 @@ public class GamePanel extends JPanel {
                 repaint();
             }
         });
-
         // open the title screen and start its music
         pantallaActual = new TitleScreen();
         titleMusic.playLoop();
@@ -194,6 +197,39 @@ public class GamePanel extends JPanel {
             );
 
             menuConfirm.play();
+            repaint();
+            return;
+        }
+        if (pantallaActual instanceof CharacterSelectScreen characters) {
+            String folder = previousSongScreen.getSelectedSongFolder();
+
+            // check that this song has its required gameplay files
+            if (GamePanel.class.getResource(folder + "chart.txt") == null
+                    || GamePanel.class.getResource(folder + "instrumental.wav") == null) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Missing chart.txt or instrumental.wav in " + folder
+                );
+                return;
+            }
+
+            boolean twoPlayers = previousModeScreen
+                    .getSelectedMode()
+                    .equals("DOS JUGADORES");
+
+            // prepare the stage before stopping the menu music
+            GameScreen game = new GameScreen(
+                    folder,
+                    characters.getSelectedCharacter(),
+                    characters.getOtherCharacter(),
+                    twoPlayers
+            );
+
+            previousCharacterScreen = characters;
+            menuMusic.stop();
+            pantallaActual = game;
+            game.start();
+
             repaint();
             return;
         }

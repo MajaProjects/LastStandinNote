@@ -42,6 +42,17 @@ public final class MusicPlayer implements AutoCloseable {
         clip.setFramePosition(0);
         clip.loop(Clip.LOOP_CONTINUOUSLY);
     }
+    public void play() {
+        // start the song from the beginning and play it once
+        clip.stop();
+        clip.setFramePosition(0);
+        clip.start();
+    }
+
+    public long getPositionMs() {
+        // use the audio position as the clock for gameplay
+        return clip.getMicrosecondPosition() / 1000;
+    }
 
     public void stop() {
         // stop playback when another track takes over

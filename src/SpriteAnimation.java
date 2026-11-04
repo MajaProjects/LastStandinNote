@@ -38,7 +38,10 @@ public final class SpriteAnimation {
 
         totalDurationMs = duration;
     }
-
+    public long getDurationMs() {
+        // return the full animation duration loaded from the sprite configuration
+        return totalDurationMs;
+    }
     public BufferedImage getFrame(long elapsedMs) {
         // a single frame also represents a static pose
         if (frames.size() == 1) {
