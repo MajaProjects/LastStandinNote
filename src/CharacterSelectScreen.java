@@ -21,17 +21,24 @@ public class CharacterSelectScreen implements Screen {
         background = ImageLoader.load(
                 "/images/backgrounds/circuito_480x270.png"
         );
+
         font = new BitmapFont("/images/font/font.txt");
 
         // load both idle animations from the shared sprite sheet
-        SpriteAtlas atlas = new SpriteAtlas("/images/sprites/sprites.txt");
+        SpriteAtlas atlas = new SpriteAtlas(
+                "/images/sprites/sprites.txt"
+        );
+
         tuxIdle = atlas.getAnimation("tux", "idle");
         windowsIdle = atlas.getAnimation("windows", "idle");
     }
 
     public void moveSelection(int direction) {
-        // wrap between tux at index 0 and windows at index 1
-        selectedCharacter = Math.floorMod(selectedCharacter + direction, 2);
+        // wrap between the two available characters
+        selectedCharacter = Math.floorMod(
+                selectedCharacter + direction,
+                2
+        );
     }
 
     public String getSelectedCharacter() {
@@ -61,11 +68,19 @@ public class CharacterSelectScreen implements Screen {
         g.fillRect(0, 0, width, height);
 
         // choose animation frames using the elapsed menu time
-        long elapsedMs = (System.nanoTime() - animationStart) / 1_000_000;
+        long elapsedMs =
+                (System.nanoTime() - animationStart) / 1_000_000;
+
         double seconds = elapsedMs / 1000.0;
 
         font.drawPulsingCentered(
-                g, "PICK A CHARACTER", width / 2, 60, 2, 1.0, seconds
+                g,
+                "PICK A CHARACTER",
+                width / 2,
+                60,
+                2,
+                1.0,
+                seconds
         );
 
         int songX = (width - font.getTextWidth(songName, 1)) / 2;
@@ -81,16 +96,25 @@ public class CharacterSelectScreen implements Screen {
             windowsLabel = "* WINDOWS *";
         }
 
+        // keep the enemy on the left and tux on the right
+        int enemyX = width / 3;
+        int tuxX = width * 2 / 3;
         int characterY = height / 2 - 110;
 
         drawCharacter(
-                g, tuxIdle.getFrame(elapsedMs),
-                tuxLabel, width / 3, characterY
+                g,
+                windowsIdle.getFrame(elapsedMs),
+                windowsLabel,
+                enemyX,
+                characterY
         );
 
         drawCharacter(
-                g, windowsIdle.getFrame(elapsedMs),
-                windowsLabel, width * 2 / 3, characterY
+                g,
+                tuxIdle.getFrame(elapsedMs),
+                tuxLabel,
+                tuxX,
+                characterY
         );
 
         // separate the controls from the background
@@ -102,20 +126,15 @@ public class CharacterSelectScreen implements Screen {
         g.setColor(new Color(95, 75, 120));
         g.drawLine(0, controlsTop, width - 1, controlsTop);
 
-        int firstPlayerX = width / 3;
-        int secondPlayerX = width * 2 / 3;
-
-        // move the controls with the character assignment
-        if (selectedCharacter == 1) {
-            firstPlayerX = width * 2 / 3;
-            secondPlayerX = width / 3;
-        }
-
-        drawControls(g, "ASDF", firstPlayerX, controlsTop + 12);
-
-        // the second participant uses the keyboard in local multiplayer
         if (twoPlayers) {
-            drawControls(g, "JKLÑ", secondPlayerX, controlsTop + 12);
+            // shared keyboard controls stay attached to each character
+            drawControls(g, "ASDF", enemyX, controlsTop + 12);
+            drawControls(g, "JKLÑ", tuxX, controlsTop + 12);
+        } else {
+            // solo controls appear below the selected character
+            int selectedX = selectedCharacter == 0 ? tuxX : enemyX;
+
+            drawControls(g, "DFJK", selectedX, controlsTop + 12);
         }
     }
 
@@ -130,7 +149,9 @@ public class CharacterSelectScreen implements Screen {
         int gap = 8;
 
         // center the complete group below its character
-        int groupWidth = keys.length() * keyWidth + (keys.length() - 1) * gap;
+        int groupWidth =
+                keys.length() * keyWidth + (keys.length() - 1) * gap;
+
         int left = centerX - groupWidth / 2;
 
         for (int i = 0; i < keys.length(); i++) {
@@ -144,7 +165,9 @@ public class CharacterSelectScreen implements Screen {
 
             // center the letter inside its key box
             String key = String.valueOf(keys.charAt(i));
-            int textX = x + (keyWidth - font.getTextWidth(key, 1)) / 2;
+
+            int textX =
+                    x + (keyWidth - font.getTextWidth(key, 1)) / 2;
 
             font.draw(g, key, textX, top + 4, 1);
         }

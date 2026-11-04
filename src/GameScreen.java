@@ -1,5 +1,6 @@
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.awt.event.KeyEvent;
 
 public class GameScreen implements Screen, AutoCloseable {
 
@@ -16,10 +17,14 @@ public class GameScreen implements Screen, AutoCloseable {
     private final boolean twoPlayers;
     private final String opponentLabel;
 
-    // store the four held lanes for each player
+    // voice one belongs to the left side and voice two to the right
+    private final int playerVoice;
+
+    // store the four held lanes for each side of the stage
     private final boolean[][] heldKeys = new boolean[2][4];
 
-    private final NoteRenderer noteRenderer = new NoteRenderer(48, 12, 300);
+    private final NoteRenderer noteRenderer =
+            new NoteRenderer(48, 12, 300);
 
     public GameScreen(
             String songFolder,
@@ -29,17 +34,23 @@ public class GameScreen implements Screen, AutoCloseable {
     ) {
         this.twoPlayers = twoPlayers;
 
+        // tux stays on the right even when another character is selected
+        playerVoice = playerCharacter.equals("tux") ? 2 : 1;
+
         // load the selected song's settings and notes
         chart = SongChart.load(songFolder + "chart.txt");
 
         background = ImageLoader.load(
                 "/images/backgrounds/fondo1_480x270.png"
         );
+
         font = new BitmapFont("/images/font/font.txt");
 
-        SpriteAtlas atlas = new SpriteAtlas("/images/sprites/sprites.txt");
+        SpriteAtlas atlas = new SpriteAtlas(
+                "/images/sprites/sprites.txt"
+        );
 
-        // load the characters assigned on the selection screen
+        // keep the selected character assigned to player one
         playerIdle = atlas.getAnimation(playerCharacter, "idle");
         opponentIdle = atlas.getAnimation(opponentCharacter, "idle");
         kernelIdle = atlas.getAnimation("kernel", "idle");
@@ -50,7 +61,8 @@ public class GameScreen implements Screen, AutoCloseable {
         music = new MusicPlayer(songFolder + "instrumental.wav");
 
         System.out.println(
-                "Loaded " + chart.name() + " with " + chart.notes().size() + " notes"
+                "Loaded " + chart.name()
+                        + " with " + chart.notes().size() + " notes"
         );
     }
 
@@ -59,9 +71,41 @@ public class GameScreen implements Screen, AutoCloseable {
         music.play();
     }
 
+    public void setKeyPressed(int keyCode, boolean pressed) {
+        // shared play uses the left layout first; solo play uses dfjk
+        String primaryKeys = twoPlayers ? "ASDF" : "DFJK";
+        String rightKeys = "JKLÑ";
+
+        for (int lane = 0; lane < 4; lane++) {
+            int primaryCode = KeyEvent.getExtendedKeyCodeForChar(
+                    primaryKeys.charAt(lane)
+            );
+
+            if (keyCode == primaryCode) {
+                // solo input follows the selected character's side
+                int voice = twoPlayers ? 1 : playerVoice;
+
+                setLanePressed(voice, lane, pressed);
+                return;
+            }
+
+            // jklñ always controls tux when both players share a keyboard
+            if (twoPlayers) {
+                int rightCode = KeyEvent.getExtendedKeyCodeForChar(
+                        rightKeys.charAt(lane)
+                );
+
+                if (keyCode == rightCode) {
+                    setLanePressed(2, lane, pressed);
+                    return;
+                }
+            }
+        }
+    }
+
     public void setLanePressed(int voice, int lane, boolean pressed) {
-        // ignore the second player's keyboard in single-player mode
-        if (voice == 2 && !twoPlayers) {
+        // solo keyboard input only controls the selected character
+        if (!twoPlayers && voice != playerVoice) {
             return;
         }
 
@@ -70,9 +114,9 @@ public class GameScreen implements Screen, AutoCloseable {
 
     public void releaseKeys() {
         // clear all held lanes when the game loses window focus
-        for (boolean[] playerKeys : heldKeys) {
-            for (int lane = 0; lane < playerKeys.length; lane++) {
-                playerKeys[lane] = false;
+        for (boolean[] sideKeys : heldKeys) {
+            for (int lane = 0; lane < sideKeys.length; lane++) {
+                sideKeys[lane] = false;
             }
         }
     }
@@ -86,15 +130,22 @@ public class GameScreen implements Screen, AutoCloseable {
 
         double beat = Math.max(
                 0.0,
-                (songTimeMs - chart.beatOffsetMs()) * chart.bpm() / 60_000.0
+                (songTimeMs - chart.beatOffsetMs())
+                        * chart.bpm() / 60_000.0
         );
 
         drawLabel(g, chart.name(), width / 2, 20);
 
         int groundY = height - 52;
+        int leftX = width / 4;
+        int rightX = width * 3 / 4;
 
-        drawIdle(g, playerIdle, beat, width / 4, groundY, 2);
-        drawIdle(g, opponentIdle, beat, width * 3 / 4, groundY, 2);
+        // selection changes the controller, while character positions stay fixed
+        int playerX = playerVoice == 2 ? rightX : leftX;
+        int opponentX = playerVoice == 2 ? leftX : rightX;
+
+        drawIdle(g, playerIdle, beat, playerX, groundY, 2);
+        drawIdle(g, opponentIdle, beat, opponentX, groundY, 2);
 
         // enlarge the monitor while preserving its center
         int monitorSize = 192;
@@ -115,12 +166,18 @@ public class GameScreen implements Screen, AutoCloseable {
         int kernelBottom = monitorY + 56;
         drawIdle(g, kernelIdle, beat, width / 2, kernelBottom, 1);
 
-        drawLabel(g, "PLAYER ONE", width / 4, height - 42);
-        drawLabel(g, opponentLabel, width * 3 / 4, height - 42);
+        // place each controller label below the character it belongs to
+        drawLabel(g, "PLAYER ONE", playerX, height - 42);
+        drawLabel(g, opponentLabel, opponentX, height - 42);
 
         // share the audio clock and held inputs with the note renderer
         noteRenderer.render(
-                g, chart.notes(), songTimeMs, width, height, heldKeys
+                g,
+                chart.notes(),
+                songTimeMs,
+                width,
+                height,
+                heldKeys
         );
     }
 
@@ -133,7 +190,9 @@ public class GameScreen implements Screen, AutoCloseable {
             int scale
     ) {
         // fit a complete idle animation into each musical beat
-        long animationTimeMs = (long) (beat * animation.getDurationMs());
+        long animationTimeMs =
+                (long) (beat * animation.getDurationMs());
+
         BufferedImage frame = animation.getFrame(animationTimeMs);
 
         int width = frame.getWidth() * scale;

@@ -92,16 +92,15 @@ public class GamePanel extends JPanel {
         bindCharacterNavigation("characterLeft", KeyEvent.VK_LEFT, -1);
         bindCharacterNavigation("characterRight", KeyEvent.VK_RIGHT, 1);
 
-        // register gameplay keys in left, down, up and right order
-        bindGameplayKey(KeyEvent.VK_A, 1, 0);
-        bindGameplayKey(KeyEvent.VK_S, 1, 1);
-        bindGameplayKey(KeyEvent.VK_D, 1, 2);
-        bindGameplayKey(KeyEvent.VK_F, 1, 3);
-
-        bindGameplayKey(KeyEvent.VK_J, 2, 0);
-        bindGameplayKey(KeyEvent.VK_K, 2, 1);
-        bindGameplayKey(KeyEvent.VK_L, 2, 2);
-        bindGameplayKey(KeyEvent.getExtendedKeyCodeForChar('Ñ'), 2, 3);
+        // register each physical key once and resolve its lane during gameplay
+        bindGameplayKey(KeyEvent.VK_A);
+        bindGameplayKey(KeyEvent.VK_S);
+        bindGameplayKey(KeyEvent.VK_D);
+        bindGameplayKey(KeyEvent.VK_F);
+        bindGameplayKey(KeyEvent.VK_J);
+        bindGameplayKey(KeyEvent.VK_K);
+        bindGameplayKey(KeyEvent.VK_L);
+        bindGameplayKey(KeyEvent.getExtendedKeyCodeForChar('Ñ'));
 
         // clear held inputs when switching away from this window
         KeyboardFocusManager.getCurrentKeyboardFocusManager()
@@ -170,10 +169,10 @@ public class GamePanel extends JPanel {
         });
     }
 
-    private void bindGameplayKey(int keyCode, int voice, int lane) {
-        // create separate actions for pressing and releasing the key
+    private void bindGameplayKey(int keyCode) {
+        // handle both pressing and releasing the physical key
         for (boolean pressed : new boolean[]{true, false}) {
-            String actionName = "game_" + voice + "_" + lane + "_" + pressed;
+            String actionName = "game_" + keyCode + "_" + pressed;
 
             getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
                     KeyStroke.getKeyStroke(keyCode, 0, !pressed),
@@ -183,9 +182,9 @@ public class GamePanel extends JPanel {
             getActionMap().put(actionName, new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent event) {
-                    // send gameplay inputs to the current game screen
+                    // let the game screen choose the player and lane
                     if (pantallaActual instanceof GameScreen game) {
-                        game.setLanePressed(voice, lane, pressed);
+                        game.setKeyPressed(keyCode, pressed);
                         repaint();
                     }
                 }
