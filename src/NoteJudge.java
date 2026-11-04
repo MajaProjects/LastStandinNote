@@ -1,5 +1,5 @@
 import java.util.List;
-
+import java.util.Random;
 public final class NoteJudge {
 
     private final List<Note> notes;
@@ -12,6 +12,9 @@ public final class NoteJudge {
     private final int[] combos = new int[2];
     private final String[] lastJudgements = {"", ""};
     private final long[] judgementTimesMs = {-1, -1};
+    // store one timing choice for each note
+    private final int[] botTimingOffsets;
+    private final boolean[] botMisses;
 
     public NoteJudge(List<Note> notes, long hitWindowMs) {
         if (hitWindowMs < 0) {
@@ -25,6 +28,41 @@ public final class NoteJudge {
         this.hitNotes = new boolean[notes.size()];
         this.missedNotes = new boolean[notes.size()];
         this.hitWindowMs = hitWindowMs;
+        // choose the bot's result once for each note
+        botTimingOffsets = new int[notes.size()];
+        botMisses = new boolean[notes.size()];
+
+        Random random = new Random();
+
+        for (int i = 0; i < notes.size(); i++) {
+            int chance = random.nextInt(100);
+
+            if (chance < 3) {
+                // three percent of notes will be missed
+                botMisses[i] = true;
+                continue;
+            }
+
+            int difference;
+
+            if (chance < 78) {
+                // choose a sick timing between 0 and 45 ms
+                difference = random.nextInt(46);
+            } else if (chance < 95) {
+                // choose a good timing between 46 and 90 ms
+                difference = 46 + random.nextInt(45);
+            } else {
+                // choose a bad timing between 91 and 135 ms
+                difference = 91 + random.nextInt(45);
+            }
+
+            // choose whether the bot presses early or late
+            if (random.nextBoolean()) {
+                difference = -difference;
+            }
+
+            botTimingOffsets[i] = difference;
+        }
     }
 
     public int tryHit(int voice, int lane, long songTimeMs) {
@@ -194,19 +232,43 @@ public final class NoteJudge {
                 continue;
             }
 
-            // let the bot hit the note when its scheduled time arrives
-            if (songTimeMs >= note.timeMs() && !hitNotes[i]) {
+            if (botMisses[i]) {
+                // judge the miss after the note's timing window has passed
+                if (!missedNotes[i]
+                        && !hitNotes[i]
+                        && songTimeMs > note.timeMs() + hitWindowMs) {
+                    missedNotes[i] = true;
+
+                    lastJudgements[side] = "MISS";
+                    judgementTimesMs[side] = songTimeMs;
+                    scores[side] -= 100;
+                    combos[side] = 0;
+                }
+
+                continue;
+            }
+
+            // use the timing chosen when the game started
+            long botHitTime = note.timeMs() + botTimingOffsets[i];
+
+            if (songTimeMs >= botHitTime
+                    && !hitNotes[i]
+                    && !missedNotes[i]) {
                 hitNotes[i] = true;
 
-                // the bot hits normal notes with perfect timing
-                scores[side] += getScore(0);
-                // count the bot's successful note
+                // record the bot's rating, score and combo
+                long difference = Math.abs(botTimingOffsets[i]);
+
+                lastJudgements[side] = getRating(difference);
+                judgementTimesMs[side] = songTimeMs;
+                scores[side] += getScore(difference);
                 combos[side]++;
             }
 
-            // light the receptor briefly after the note is hit
-            if (songTimeMs >= note.timeMs()
-                    && songTimeMs < note.timeMs() + 100) {
+            // light the receptor briefly after the bot hits the note
+            if (hitNotes[i]
+                    && songTimeMs >= botHitTime
+                    && songTimeMs - botHitTime < 100) {
                 botKeys[note.lane()] = true;
             }
         }
