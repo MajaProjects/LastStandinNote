@@ -75,13 +75,26 @@ public class GameScreen implements Screen, AutoCloseable {
         music.play();
     }
     public void update() {
-        // decide which sides have a human player
+        // read the audio position once for this update
+        long songTimeMs = music.getPositionMs();
+
+        if (!twoPlayers) {
+            // the bot controls the side not selected by the player
+            int botVoice = playerVoice == 1 ? 2 : 1;
+            boolean[] botKeys = noteJudge.updateBot(botVoice, songTimeMs);
+
+            // pass the bot's active lanes to the receptor renderer
+            for (int lane = 0; lane < botKeys.length; lane++) {
+                heldKeys[botVoice - 1][lane] = botKeys[lane];
+            }
+        }
+
+        // judge misses only on the sides controlled by human players
         boolean judgeVoiceOne = twoPlayers || playerVoice == 1;
         boolean judgeVoiceTwo = twoPlayers || playerVoice == 2;
 
-        // use the current audio position to find missed notes
         noteJudge.updateMisses(
-                music.getPositionMs(),
+                songTimeMs,
                 judgeVoiceOne,
                 judgeVoiceTwo
         );
@@ -206,6 +219,16 @@ public class GameScreen implements Screen, AutoCloseable {
                 heldKeys,
                 noteJudge
         );
+        // show the latest judgement above each human player's side
+        if (twoPlayers || playerVoice == 1) {
+            String judgement = noteJudge.getVisibleJudgement(1, songTimeMs);
+            drawLabel(g, judgement, width / 4, 60);
+        }
+
+        if (twoPlayers || playerVoice == 2) {
+            String judgement = noteJudge.getVisibleJudgement(2, songTimeMs);
+            drawLabel(g, judgement, width * 3 / 4, 60);
+        }
     }
 
     private void drawIdle(
