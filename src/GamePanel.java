@@ -20,6 +20,14 @@ public class GamePanel extends JPanel {
     private final AudioPlayer menuBack = new AudioPlayer(
             "/audio/menu_back.wav"
     );
+    // keep both music tracks loaded for screen transitions
+    private final MusicPlayer titleMusic = new MusicPlayer(
+            "/audio/title_music.wav"
+    );
+
+    private final MusicPlayer menuMusic = new MusicPlayer(
+            "/audio/menu_music.wav"
+    );
 
     public GamePanel() {
         setBackground(Color.BLACK);
@@ -58,6 +66,10 @@ public class GamePanel extends JPanel {
                     pantallaActual = new MenuScreen();
                 } else if (pantallaActual instanceof MenuScreen) {
                     pantallaActual = new TitleScreen();
+
+                    // restore the title track when returning to the start
+                    menuMusic.stop();
+                    titleMusic.playLoop();
                 } else {
                     return;
                 }
@@ -66,6 +78,10 @@ public class GamePanel extends JPanel {
                 repaint();
             }
         });
+
+        // open the title screen and start its music
+        pantallaActual = new TitleScreen();
+        titleMusic.playLoop();
 
         // use vertical arrows for menus and songs
         bindMenuNavigation("menuUp", KeyEvent.VK_UP, -1);
@@ -136,6 +152,11 @@ public class GamePanel extends JPanel {
     private void activateSelection() {
         if (pantallaActual instanceof TitleScreen) {
             pantallaActual = new MenuScreen();
+
+            // switch tracks when entering the main menu
+            titleMusic.stop();
+            menuMusic.playLoop();
+
             menuConfirm.play();
             repaint();
             return;
