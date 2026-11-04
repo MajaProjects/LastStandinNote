@@ -8,19 +8,26 @@ public class GamePanel extends JPanel {
     private SongSelectScreen previousSongScreen;
     private ModeSelectScreen previousModeScreen;
 
-    // load the navigation sound once and reuse it
+    // load the menu effects once
     private final AudioPlayer menuMove = new AudioPlayer(
             "/audio/menu_move.wav"
+    );
+
+    private final AudioPlayer menuConfirm = new AudioPlayer(
+            "/audio/menu_confirm.wav"
+    );
+
+    private final AudioPlayer menuBack = new AudioPlayer(
+            "/audio/menu_back.wav"
     );
 
     public GamePanel() {
         setBackground(Color.BLACK);
         setPreferredSize(new Dimension(960, 540));
 
-        // open the title screen when the game starts
         pantallaActual = new TitleScreen();
 
-        // connect enter to the selection action
+        // confirm the current selection with enter
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
                 KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
                 "openMenu"
@@ -42,7 +49,7 @@ public class GamePanel extends JPanel {
         getActionMap().put("backToTitle", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
-                // reuse previous screens to preserve their selections
+                // return one screen and preserve previous selections
                 if (pantallaActual instanceof CharacterSelectScreen) {
                     pantallaActual = previousSongScreen;
                 } else if (pantallaActual instanceof SongSelectScreen) {
@@ -55,19 +62,20 @@ public class GamePanel extends JPanel {
                     return;
                 }
 
+                menuBack.play();
                 repaint();
             }
         });
 
-        // navigate menus and songs with the vertical arrows
+        // use vertical arrows for menus and songs
         bindMenuNavigation("menuUp", KeyEvent.VK_UP, -1);
         bindMenuNavigation("menuDown", KeyEvent.VK_DOWN, 1);
 
-        // choose a character with the horizontal arrows
+        // use horizontal arrows for characters
         bindCharacterNavigation("characterLeft", KeyEvent.VK_LEFT, -1);
         bindCharacterNavigation("characterRight", KeyEvent.VK_RIGHT, 1);
 
-        // request regular redraws for the interface animations
+        // redraw regularly to keep interface animations running
         Timer animationTimer = new Timer(16, event -> repaint());
         animationTimer.start();
     }
@@ -96,7 +104,6 @@ public class GamePanel extends JPanel {
                     return;
                 }
 
-                // play the sound after a navigation action
                 menuMove.play();
                 repaint();
             }
@@ -129,6 +136,7 @@ public class GamePanel extends JPanel {
     private void activateSelection() {
         if (pantallaActual instanceof TitleScreen) {
             pantallaActual = new MenuScreen();
+            menuConfirm.play();
             repaint();
             return;
         }
@@ -136,20 +144,23 @@ public class GamePanel extends JPanel {
         if (pantallaActual instanceof MenuScreen menu
                 && menu.getSelectedOption().equals("JUGAR")) {
             pantallaActual = new ModeSelectScreen();
+            menuConfirm.play();
             repaint();
             return;
         }
 
         if (pantallaActual instanceof ModeSelectScreen modes) {
-            // keep the mode selection before opening the song list
+            // preserve the selected mode before opening the songs
             previousModeScreen = modes;
             pantallaActual = new SongSelectScreen();
+
+            menuConfirm.play();
             repaint();
             return;
         }
 
         if (pantallaActual instanceof SongSelectScreen songs) {
-            // keep the song selection and pass the chosen mode
+            // preserve the selected song and pass the game mode
             previousSongScreen = songs;
 
             boolean twoPlayers = previousModeScreen
@@ -161,13 +172,14 @@ public class GamePanel extends JPanel {
                     twoPlayers
             );
 
+            menuConfirm.play();
             repaint();
             return;
         }
 
         if (pantallaActual instanceof MenuScreen menu
                 && menu.getSelectedOption().equals("SALIR")) {
-            // close the window using its configured closing behavior
+            // close the window using its normal closing behavior
             Window window = SwingUtilities.getWindowAncestor(this);
 
             if (window != null) {
