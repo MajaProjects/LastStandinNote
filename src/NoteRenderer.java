@@ -54,8 +54,8 @@ public final class NoteRenderer {
         Graphics2D field = (Graphics2D) g.create();
 
         try {
-            // reserve space for the song title and bottom labels
-            field.clipRect(0, 80, width, height - 144);
+            // let notes enter from the top edge and leave room for the bottom labels
+            field.clipRect(0, 0, width, height - 64);
 
             for (int voice = 1; voice <= 2; voice++) {
                 for (int lane = 0; lane < 4; lane++) {
