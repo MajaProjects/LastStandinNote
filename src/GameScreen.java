@@ -73,7 +73,26 @@ public class GameScreen implements Screen, AutoCloseable {
                 monitor, width / 2 - 48, height - 280, 96, 96, null
         );
 
-        drawIdle(g, kernelIdle, beat, width / 2, groundY, 1);
+        // enlarge the monitor while keeping its current center
+        int monitorSize = 192;
+        int monitorCenterY = height - 232;
+        int monitorX = width / 2 - monitorSize / 2;
+        int monitorY = monitorCenterY - monitorSize / 2;
+
+        g.drawImage(
+                monitor,
+                monitorX,
+                monitorY,
+                monitorSize,
+                monitorSize,
+                null
+        );
+
+    // account for transparent margins and place kernel on the top edge
+        int kernelBottom = monitorY + 56;
+
+    // draw kernel last so her legs appear in front of the monitor
+        drawIdle(g, kernelIdle, beat, width / 2, kernelBottom, 1);
 
         drawLabel(g, "PLAYER ONE", width / 4, height - 42);
         drawLabel(g, opponentLabel, width * 3 / 4, height - 42);
