@@ -5,6 +5,8 @@ import java.awt.event.KeyEvent;
 public class GameScreen implements Screen, AutoCloseable {
 
     private final SongChart chart;
+    // check player input against the song's notes
+    private final NoteJudge noteJudge;
     private final MusicPlayer music;
     private final BitmapFont font;
     private final BufferedImage background;
@@ -39,6 +41,8 @@ public class GameScreen implements Screen, AutoCloseable {
 
         // load the selected song's settings and notes
         chart = SongChart.load(songFolder + "chart.txt");
+        // allow a 150 ms difference on either side of the note
+        noteJudge = new NoteJudge(chart.notes(), 160);
 
         background = ImageLoader.load(
                 "/images/backgrounds/fondo1_480x270.png"
@@ -70,6 +74,19 @@ public class GameScreen implements Screen, AutoCloseable {
         // start the song after the screen has been installed
         music.play();
     }
+    public void update() {
+        // decide which sides have a human player
+        boolean judgeVoiceOne = twoPlayers || playerVoice == 1;
+        boolean judgeVoiceTwo = twoPlayers || playerVoice == 2;
+
+        // use the current audio position to find missed notes
+        noteJudge.updateMisses(
+                music.getPositionMs(),
+                judgeVoiceOne,
+                judgeVoiceTwo
+        );
+    }
+
 
     public void setKeyPressed(int keyCode, boolean pressed) {
         // shared play uses the left layout first; solo play uses dfjk
@@ -109,6 +126,15 @@ public class GameScreen implements Screen, AutoCloseable {
             return;
         }
 
+        boolean wasPressed = heldKeys[voice - 1][lane];
+
+        // judge a note only when the key changes from released to pressed
+        if (pressed && !wasPressed) {
+            long songTimeMs = music.getPositionMs();
+            noteJudge.tryHit(voice, lane, songTimeMs);
+        }
+
+        // remember whether the key is currently held
         heldKeys[voice - 1][lane] = pressed;
     }
 
@@ -177,7 +203,8 @@ public class GameScreen implements Screen, AutoCloseable {
                 songTimeMs,
                 width,
                 height,
-                heldKeys
+                heldKeys,
+                noteJudge
         );
     }
 

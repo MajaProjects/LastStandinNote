@@ -112,8 +112,15 @@ public class GamePanel extends JPanel {
                     }
                 });
 
-        // request regular redraws for interface and gameplay animations
-        Timer animationTimer = new Timer(16, event -> repaint());
+// update gameplay and redraw the current screen regularly
+        Timer animationTimer = new Timer(16, event -> {
+            if (pantallaActual instanceof GameScreen game) {
+                game.update();
+            }
+
+            repaint();
+        });
+
         animationTimer.start();
     }
 

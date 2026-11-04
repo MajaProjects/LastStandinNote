@@ -58,14 +58,13 @@ public final class NoteRenderer {
     }
 
     public void render(
-
             Graphics2D g,
             List<Note> notes,
             long songTimeMs,
             int width,
             int height,
-            boolean[][] heldKeys
-
+            boolean[][] heldKeys,
+            NoteJudge noteJudge
     ) {
         int receptorY = height - 100;
         Graphics2D field = (Graphics2D) g.create();
@@ -74,10 +73,10 @@ public final class NoteRenderer {
             // allow notes to enter from the top and protect the bottom labels
             field.clipRect(0, 0, width, height - 64);
 
+            // draw the receptors for both sides
             for (int voice = 1; voice <= 2; voice++) {
                 for (int lane = 0; lane < 4; lane++) {
                     int x = getLaneX(voice, lane, width);
-                    // choose the receptor sprite using the current keyboard state
                     BufferedImage receptorImage = receptor;
 
                     if (heldKeys[voice - 1][lane]) {
@@ -88,7 +87,15 @@ public final class NoteRenderer {
                 }
             }
 
-            for (Note note : notes) {
+            // use the note index to check its state in the judge
+            for (int i = 0; i < notes.size(); i++) {
+                Note note = notes.get(i);
+
+// hide notes after they have been hit or missed
+                if (noteJudge.isHit(i) || noteJudge.isMissed(i)) {
+                    continue;
+                }
+
                 // the head reaches the receptor when the note starts
                 double headY = receptorY
                         + (songTimeMs - note.timeMs()) * pixelsPerMs;
@@ -109,7 +116,12 @@ public final class NoteRenderer {
 
                 if (note.durationMs() > 0) {
                     drawSustain(
-                            field, note.lane(), x, headY, tailY, height
+                            field,
+                            note.lane(),
+                            x,
+                            headY,
+                            tailY,
+                            height
                     );
                 }
 
