@@ -5,13 +5,15 @@ import java.util.List;
 public final class NoteRenderer {
 
     private final BufferedImage[] arrows = new BufferedImage[4];
+    private final BufferedImage[] bodies = new BufferedImage[4];
+    private final BufferedImage[] tails = new BufferedImage[4];
     private final BufferedImage receptor;
 
     private final int arrowSize;
     private final int gap;
     private final double pixelsPerMs;
 
-    // original sprites point right, so each lane needs its own rotation
+    // rotate the original right-facing arrow for each lane
     private final double[] rotations = {
             Math.PI,
             Math.PI / 2,
@@ -30,12 +32,20 @@ public final class NoteRenderer {
         this.gap = gap;
         this.pixelsPerMs = pixelsPerSecond / 1000.0;
 
-        // reuse the atlas reader to load the four colored arrows
         SpriteAtlas atlas = new SpriteAtlas("/images/arrows/arrows.txt");
 
+        // load the head, body and tail for each lane
         for (int lane = 0; lane < arrows.length; lane++) {
             arrows[lane] = atlas.getAnimation(
                     "arrow", "normal_" + lane
+            ).getFrame(0);
+
+            bodies[lane] = atlas.getAnimation(
+                    "arrow", "body_" + lane
+            ).getFrame(0);
+
+            tails[lane] = atlas.getAnimation(
+                    "arrow", "tail_" + lane
             ).getFrame(0);
         }
 
@@ -50,11 +60,10 @@ public final class NoteRenderer {
             int height
     ) {
         int receptorY = height - 100;
-
         Graphics2D field = (Graphics2D) g.create();
 
         try {
-            // let notes enter from the top edge and leave room for the bottom labels
+            // allow notes to enter from the top and protect the bottom labels
             field.clipRect(0, 0, width, height - 64);
 
             for (int voice = 1; voice <= 2; voice++) {
@@ -65,36 +74,49 @@ public final class NoteRenderer {
             }
 
             for (Note note : notes) {
-                // reach the receptor exactly at the note's chart time
-                double y = receptorY
+                // the head reaches the receptor when the note starts
+                double headY = receptorY
                         + (songTimeMs - note.timeMs()) * pixelsPerMs;
 
-                // the chart is sorted, so later notes are even farther above
-                if (y < -arrowSize) {
+                // the tail reaches the receptor when the note ends
+                double tailY = headY - note.durationMs() * pixelsPerMs;
+
+                if (headY < -arrowSize) {
                     break;
                 }
 
-                if (y > height + arrowSize) {
+                // keep sustained notes visible until their tails leave
+                if (tailY > height + arrowSize) {
                     continue;
                 }
 
                 int x = getLaneX(note.voice(), note.lane(), width);
 
-                drawArrow(
-                        field,
-                        arrows[note.lane()],
-                        note.lane(),
-                        x,
-                        (int) Math.round(y)
-                );
+                if (note.durationMs() > 0) {
+                    drawSustain(
+                            field, note.lane(), x, headY, tailY, height
+                    );
+                }
+
+                // draw the head over its sustained body
+                if (headY <= height + arrowSize) {
+                    drawArrow(
+                            field,
+                            arrows[note.lane()],
+                            note.lane(),
+                            x,
+                            (int) Math.round(headY)
+                    );
+                }
             }
         } finally {
+            // release the graphics copy even if drawing fails
             field.dispose();
         }
     }
 
     private int getLaneX(int voice, int lane, int width) {
-        // keep each voice's four lanes centered on its side of the stage
+        // center each voice's four lanes on its side of the stage
         int centerX = width / 4;
 
         if (voice == 2) {
@@ -107,6 +129,42 @@ public final class NoteRenderer {
         return left + lane * (arrowSize + gap) + arrowSize / 2;
     }
 
+    private void drawSustain(
+            Graphics2D g,
+            int lane,
+            int centerX,
+            double headY,
+            double tailY,
+            int screenHeight
+    ) {
+        // limit the body to the screen before converting to integers
+        int top = (int) Math.round(Math.max(0, tailY));
+        int bottom = (int) Math.round(Math.min(screenHeight, headY));
+
+        if (bottom > top) {
+            g.drawImage(
+                    bodies[lane],
+                    centerX - arrowSize / 2,
+                    top,
+                    arrowSize,
+                    bottom - top,
+                    null
+            );
+        }
+
+        if (tailY >= -arrowSize && tailY <= screenHeight + arrowSize) {
+            // keep the rounded tail vertical above the body
+            g.drawImage(
+                    tails[lane],
+                    centerX - arrowSize / 2,
+                    (int) Math.round(tailY) - arrowSize / 2,
+                    arrowSize,
+                    arrowSize,
+                    null
+            );
+        }
+    }
+
     private void drawArrow(
             Graphics2D g,
             BufferedImage image,
@@ -117,7 +175,7 @@ public final class NoteRenderer {
         Graphics2D arrow = (Graphics2D) g.create();
 
         try {
-            // rotate around the center to keep the arrow inside its lane
+            // rotate around the center to preserve lane alignment
             arrow.translate(centerX, centerY);
             arrow.rotate(rotations[lane]);
 

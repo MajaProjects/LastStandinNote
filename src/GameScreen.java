@@ -45,6 +45,15 @@ public class GameScreen implements Screen, AutoCloseable {
         System.out.println(
                 "Loaded " + chart.name() + " with " + chart.notes().size() + " notes"
         );
+        // check the sustained notes loaded from the chart
+        for (Note note : chart.notes()) {
+            if (note.durationMs() > 0) {
+                System.out.println(
+                        "hold time_ms=" + note.timeMs()
+                                + " duration_ms=" + note.durationMs()
+                );
+            }
+        }
     }
 
     public void start() {
