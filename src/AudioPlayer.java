@@ -4,7 +4,8 @@ import java.net.URL;
 
 public final class AudioPlayer implements AutoCloseable {
 
-    private final Clip clip;
+    private final Clip[] clips = new Clip[4];
+    private int nextClip = 0;
 
     public AudioPlayer(String path) {
         URL resource = AudioPlayer.class.getResource(path);
@@ -13,35 +14,45 @@ public final class AudioPlayer implements AutoCloseable {
             throw new IllegalArgumentException("Audio file not found: " + path);
         }
 
-        Clip loadedClip = null;
-
-        // load the sound once so playback can start without reading the file again
+        // read the sound once and share its data between playback channels
         try (AudioInputStream stream = AudioSystem.getAudioInputStream(resource)) {
-            loadedClip = AudioSystem.getClip();
-            loadedClip.open(stream);
-            clip = loadedClip;
+            AudioFormat format = stream.getFormat();
+            byte[] audioData = stream.readAllBytes();
+
+            for (int i = 0; i < clips.length; i++) {
+                clips[i] = AudioSystem.getClip();
+                clips[i].open(format, audioData, 0, audioData.length);
+            }
         } catch (UnsupportedAudioFileException
                  | IOException
-                 | LineUnavailableException error) {
-            // release the audio device if loading fails
-            if (loadedClip != null) {
-                loadedClip.close();
-            }
+                 | LineUnavailableException
+                 | IllegalArgumentException error) {
+            // release any channels opened before the failure
+            close();
 
-            throw new IllegalStateException("Could not load audio: " + path, error);
+            throw new IllegalStateException(
+                    "Could not load audio: " + path,
+                    error
+            );
         }
     }
 
     public void play() {
-        // restart the sound when another navigation input arrives
+        // rotate through the channels for consecutive navigation sounds
+        Clip clip = clips[nextClip];
+        nextClip = (nextClip + 1) % clips.length;
+
         clip.stop();
         clip.setFramePosition(0);
         clip.start();
     }
-
     @Override
     public void close() {
-        // release the audio resources when this player is discarded
-        clip.close();
+        // release every audio channel that was opened
+        for (Clip clip : clips) {
+            if (clip != null) {
+                clip.close();
+            }
+        }
     }
 }
