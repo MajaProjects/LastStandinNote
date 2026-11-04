@@ -1,0 +1,138 @@
+# arrow atlas version 1
+# lane 0=left, 1=down, 2=up, 3=right
+# original arrowheads point right; rotate them when drawing
+# body and tail sprites remain vertical for downscroll
+# duration 0 represents a static sprite
+image;arrows.png
+
+# source Sprite-0001.png
+animation;arrow;normal_0;false
+frame;arrow;normal_0;0;4;4;32;32;0
+
+# source Sprite-0002.png
+animation;arrow;normal_1;false
+frame;arrow;normal_1;0;40;4;32;32;0
+
+# source Sprite-0003.png
+animation;arrow;normal_2;false
+frame;arrow;normal_2;0;76;4;32;32;0
+
+# source Sprite-0004.png
+animation;arrow;normal_3;false
+frame;arrow;normal_3;0;112;4;32;32;0
+
+# source Sprite-fallo1.png
+animation;arrow;miss_0;false
+frame;arrow;miss_0;0;148;4;32;32;0
+
+# source Sprite-fallo2.png
+animation;arrow;miss_1;false
+frame;arrow;miss_1;0;184;4;32;32;0
+
+# source Sprite-fallo3.png
+animation;arrow;miss_2;false
+frame;arrow;miss_2;0;220;4;32;32;0
+
+# source Sprite-fallo4.png
+animation;arrow;miss_3;false
+frame;arrow;miss_3;0;256;4;32;32;0
+
+# source Sprite-presion1.png
+animation;arrow;pressed_0;false
+frame;arrow;pressed_0;0;4;40;32;32;0
+
+# source Sprite-presion2.png
+animation;arrow;pressed_1;false
+frame;arrow;pressed_1;0;40;40;32;32;0
+
+# source Sprite-presion3.png
+animation;arrow;pressed_2;false
+frame;arrow;pressed_2;0;76;40;32;32;0
+
+# source Sprite-presion4.png
+animation;arrow;pressed_3;false
+frame;arrow;pressed_3;0;112;40;32;32;0
+
+# source Sprite-adicional1.png
+animation;arrow;additional_0;false
+frame;arrow;additional_0;0;148;40;32;32;0
+
+# source Sprite-adicional2.png
+animation;arrow;additional_1;false
+frame;arrow;additional_1;0;184;40;32;32;0
+
+# source Sprite-adicional3.png
+animation;arrow;additional_2;false
+frame;arrow;additional_2;0;220;40;32;32;0
+
+# source Sprite-adicional4.png
+animation;arrow;additional_3;false
+frame;arrow;additional_3;0;256;40;32;32;0
+
+# source Sprite-cola1.png
+animation;arrow;tail_0;false
+frame;arrow;tail_0;0;4;76;32;32;0
+
+# source Sprite-cola2.png
+animation;arrow;tail_1;false
+frame;arrow;tail_1;0;40;76;32;32;0
+
+# source Sprite-cola3.png
+animation;arrow;tail_2;false
+frame;arrow;tail_2;0;76;76;32;32;0
+
+# source Sprite-cola4.png
+animation;arrow;tail_3;false
+frame;arrow;tail_3;0;112;76;32;32;0
+
+# source Sprite-colaoscura1.png
+animation;arrow;tail_miss_0;false
+frame;arrow;tail_miss_0;0;148;76;32;32;0
+
+# source Sprite-colaoscura2.png
+animation;arrow;tail_miss_1;false
+frame;arrow;tail_miss_1;0;184;76;32;32;0
+
+# source Sprite-colaoscura3.png
+animation;arrow;tail_miss_2;false
+frame;arrow;tail_miss_2;0;220;76;32;32;0
+
+# source Sprite-colaoscura4.png
+animation;arrow;tail_miss_3;false
+frame;arrow;tail_miss_3;0;256;76;32;32;0
+
+# source Sprite-largo1.png
+animation;arrow;body_0;false
+frame;arrow;body_0;0;4;112;32;32;0
+
+# source Sprite-largo2.png
+animation;arrow;body_1;false
+frame;arrow;body_1;0;40;112;32;32;0
+
+# source Sprite-largo3.png
+animation;arrow;body_2;false
+frame;arrow;body_2;0;76;112;32;32;0
+
+# source Sprite-largo4.png
+animation;arrow;body_3;false
+frame;arrow;body_3;0;112;112;32;32;0
+
+# source Sprite-largooscura1.png
+animation;arrow;body_miss_0;false
+frame;arrow;body_miss_0;0;148;112;32;32;0
+
+# source Sprite-largooscuro2.png
+animation;arrow;body_miss_1;false
+frame;arrow;body_miss_1;0;184;112;32;32;0
+
+# source Sprite-largooscuro3.png
+animation;arrow;body_miss_2;false
+frame;arrow;body_miss_2;0;220;112;32;32;0
+
+# source Sprite-largooscuro4.png
+animation;arrow;body_miss_3;false
+frame;arrow;body_miss_3;0;256;112;32;32;0
+
+# source Sprite-enblanco.png
+animation;arrow;receptor;false
+frame;arrow;receptor;0;4;148;32;32;0
