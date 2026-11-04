@@ -8,6 +8,11 @@ public class GamePanel extends JPanel {
     private SongSelectScreen previousSongScreen;
     private ModeSelectScreen previousModeScreen;
 
+    // load the navigation sound once and reuse it
+    private final AudioPlayer menuMove = new AudioPlayer(
+            "/audio/menu_move.wav"
+    );
+
     public GamePanel() {
         setBackground(Color.BLACK);
         setPreferredSize(new Dimension(960, 540));
@@ -15,7 +20,7 @@ public class GamePanel extends JPanel {
         // open the title screen when the game starts
         pantallaActual = new TitleScreen();
 
-        // confirm the current selection with enter
+        // connect enter to the selection action
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
                 KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
                 "openMenu"
@@ -28,7 +33,7 @@ public class GamePanel extends JPanel {
             }
         });
 
-        // return to the previous screen with escape
+        // connect escape to the back action
         getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
                 KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
                 "backToTitle"
@@ -62,7 +67,7 @@ public class GamePanel extends JPanel {
         bindCharacterNavigation("characterLeft", KeyEvent.VK_LEFT, -1);
         bindCharacterNavigation("characterRight", KeyEvent.VK_RIGHT, 1);
 
-        // redraw regularly so the interface animations remain visible
+        // request regular redraws for the interface animations
         Timer animationTimer = new Timer(16, event -> repaint());
         animationTimer.start();
     }
@@ -80,7 +85,7 @@ public class GamePanel extends JPanel {
         getActionMap().put(actionName, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
-                // send the movement to the active menu
+                // move the selection in the active menu
                 if (pantallaActual instanceof MenuScreen menu) {
                     menu.moveSelection(direction);
                 } else if (pantallaActual instanceof ModeSelectScreen modes) {
@@ -91,6 +96,8 @@ public class GamePanel extends JPanel {
                     return;
                 }
 
+                // play the sound after a navigation action
+                menuMove.play();
                 repaint();
             }
         });
@@ -109,9 +116,10 @@ public class GamePanel extends JPanel {
         getActionMap().put(actionName, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
-                // change the character while its selection screen is open
+                // apply horizontal navigation on the character screen
                 if (pantallaActual instanceof CharacterSelectScreen characters) {
                     characters.moveSelection(direction);
+                    menuMove.play();
                     repaint();
                 }
             }
@@ -133,7 +141,7 @@ public class GamePanel extends JPanel {
         }
 
         if (pantallaActual instanceof ModeSelectScreen modes) {
-            // remember the mode selection before opening the songs
+            // keep the mode selection before opening the song list
             previousModeScreen = modes;
             pantallaActual = new SongSelectScreen();
             repaint();
@@ -141,7 +149,7 @@ public class GamePanel extends JPanel {
         }
 
         if (pantallaActual instanceof SongSelectScreen songs) {
-            // preserve the song selection and identify the selected game mode
+            // keep the song selection and pass the chosen mode
             previousSongScreen = songs;
 
             boolean twoPlayers = previousModeScreen
@@ -174,7 +182,7 @@ public class GamePanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // use a graphics copy to keep drawing settings local
+        // keep drawing settings inside a separate graphics context
         Graphics2D g2 = (Graphics2D) g.create();
 
         try {
