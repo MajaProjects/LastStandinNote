@@ -10,7 +10,10 @@ public class GameScreen implements Screen, AutoCloseable {
     private final MusicPlayer music;
     private final BitmapFont font;
     private final BufferedImage background;
-    private final BufferedImage monitor;
+    // keep the monitor images for a tie and for each leader
+    private final BufferedImage monitorVersus;
+    private final BufferedImage monitorLinux;
+    private final BufferedImage monitorWindows;
 
     private final SpriteAnimation playerIdle;
     private final SpriteAnimation opponentIdle;
@@ -41,7 +44,7 @@ public class GameScreen implements Screen, AutoCloseable {
 
         // load the selected song's settings and notes
         chart = SongChart.load(songFolder + "chart.txt");
-        // allow a 150 ms difference on either side of the note
+        // allow a 160 ms difference on either side of the note
         noteJudge = new NoteJudge(chart.notes(), 160);
 
         background = ImageLoader.load(
@@ -58,7 +61,10 @@ public class GameScreen implements Screen, AutoCloseable {
         playerIdle = atlas.getAnimation(playerCharacter, "idle");
         opponentIdle = atlas.getAnimation(opponentCharacter, "idle");
         kernelIdle = atlas.getAnimation("kernel", "idle");
-        monitor = atlas.getAnimation("monitor", "versus").getFrame(0);
+        // load the three monitor images from the sprite atlas
+        monitorVersus = atlas.getAnimation("monitor", "versus").getFrame(0);
+        monitorLinux = atlas.getAnimation("monitor", "linux").getFrame(0);
+        monitorWindows = atlas.getAnimation("monitor", "windows").getFrame(0);
 
         opponentLabel = twoPlayers ? "PLAYER TWO" : "BOT";
 
@@ -192,8 +198,22 @@ public class GameScreen implements Screen, AutoCloseable {
         int monitorX = width / 2 - monitorSize / 2;
         int monitorY = monitorCenterY - monitorSize / 2;
 
+// compare the scores of the two sides
+        int windowsScore = noteJudge.getScoreForVoice(1);
+        int tuxScore = noteJudge.getScoreForVoice(2);
+
+// show versus when the scores are equal
+        BufferedImage currentMonitor = monitorVersus;
+
+// show the character that currently has the higher score
+        if (windowsScore > tuxScore) {
+            currentMonitor = monitorWindows;
+        } else if (tuxScore > windowsScore) {
+            currentMonitor = monitorLinux;
+        }
+
         g.drawImage(
-                monitor,
+                currentMonitor,
                 monitorX,
                 monitorY,
                 monitorSize,

@@ -8,6 +8,8 @@ public final class NoteJudge {
     private final long hitWindowMs;
     // keep the score and latest judgement for each side
     private final int[] scores = new int[2];
+    // track consecutive hits separately for each side
+    private final int[] combos = new int[2];
     private final String[] lastJudgements = {"", ""};
     private final long[] judgementTimesMs = {-1, -1};
 
@@ -68,6 +70,9 @@ public final class NoteJudge {
             lastJudgements[side] = getRating(closestDifference);
             judgementTimesMs[side] = songTimeMs;
             scores[side] += getScore(closestDifference);
+
+            // increase the combo after a successful hit
+            combos[side]++;
         }
 
         return closestIndex;
@@ -109,6 +114,9 @@ public final class NoteJudge {
                 lastJudgements[side] = "MISS";
                 judgementTimesMs[side] = songTimeMs;
                 scores[side] -= 100;
+
+            // reset the combo when this side misses a note
+                combos[side] = 0;
             }
         }
     }
@@ -192,6 +200,8 @@ public final class NoteJudge {
 
                 // the bot hits normal notes with perfect timing
                 scores[side] += getScore(0);
+                // count the bot's successful note
+                combos[side]++;
             }
 
             // light the receptor briefly after the note is hit
@@ -202,5 +212,15 @@ public final class NoteJudge {
         }
 
         return botKeys;
+    }
+
+    public int getScoreForVoice(int voice) {
+        // return the score of the requested side
+        return scores[voice - 1];
+    }
+
+    public int getComboForVoice(int voice) {
+        // return the current combo for the requested side
+        return combos[voice - 1];
     }
 }
