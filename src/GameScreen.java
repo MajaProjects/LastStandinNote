@@ -8,11 +8,17 @@ public class GameScreen implements Screen, AutoCloseable {
     private final BitmapFont font;
     private final BufferedImage background;
     private final BufferedImage monitor;
+
     private final SpriteAnimation playerIdle;
     private final SpriteAnimation opponentIdle;
     private final SpriteAnimation kernelIdle;
+
+    private final boolean twoPlayers;
     private final String opponentLabel;
-    // use 48-pixel arrows, a 12-pixel gap and 300 pixels of movement per second
+
+    // store the four held lanes for each player
+    private final boolean[][] heldKeys = new boolean[2][4];
+
     private final NoteRenderer noteRenderer = new NoteRenderer(48, 12, 300);
 
     public GameScreen(
@@ -21,6 +27,8 @@ public class GameScreen implements Screen, AutoCloseable {
             String opponentCharacter,
             boolean twoPlayers
     ) {
+        this.twoPlayers = twoPlayers;
+
         // load the selected song's settings and notes
         chart = SongChart.load(songFolder + "chart.txt");
 
@@ -31,7 +39,7 @@ public class GameScreen implements Screen, AutoCloseable {
 
         SpriteAtlas atlas = new SpriteAtlas("/images/sprites/sprites.txt");
 
-        // use the characters assigned on the selection screen
+        // load the characters assigned on the selection screen
         playerIdle = atlas.getAnimation(playerCharacter, "idle");
         opponentIdle = atlas.getAnimation(opponentCharacter, "idle");
         kernelIdle = atlas.getAnimation("kernel", "idle");
@@ -39,34 +47,43 @@ public class GameScreen implements Screen, AutoCloseable {
 
         opponentLabel = twoPlayers ? "PLAYER TWO" : "BOT";
 
-        // load audio after the other resources are ready
         music = new MusicPlayer(songFolder + "instrumental.wav");
 
         System.out.println(
                 "Loaded " + chart.name() + " with " + chart.notes().size() + " notes"
         );
-        // check the sustained notes loaded from the chart
-        for (Note note : chart.notes()) {
-            if (note.durationMs() > 0) {
-                System.out.println(
-                        "hold time_ms=" + note.timeMs()
-                                + " duration_ms=" + note.durationMs()
-                );
-            }
-        }
     }
 
     public void start() {
-        // begin playback after the game screen has been installed
+        // start the song after the screen has been installed
         music.play();
+    }
+
+    public void setLanePressed(int voice, int lane, boolean pressed) {
+        // ignore the second player's keyboard in single-player mode
+        if (voice == 2 && !twoPlayers) {
+            return;
+        }
+
+        heldKeys[voice - 1][lane] = pressed;
+    }
+
+    public void releaseKeys() {
+        // clear all held lanes when the game loses window focus
+        for (boolean[] playerKeys : heldKeys) {
+            for (int lane = 0; lane < playerKeys.length; lane++) {
+                playerKeys[lane] = false;
+            }
+        }
     }
 
     @Override
     public void render(Graphics2D g, int width, int height) {
         g.drawImage(background, 0, 0, width, height, null);
 
-        // calculate musical time from the audio position and chart settings
+        // derive musical time from the audio position
         long songTimeMs = music.getPositionMs();
+
         double beat = Math.max(
                 0.0,
                 (songTimeMs - chart.beatOffsetMs()) * chart.bpm() / 60_000.0
@@ -78,16 +95,8 @@ public class GameScreen implements Screen, AutoCloseable {
 
         drawIdle(g, playerIdle, beat, width / 4, groundY, 2);
         drawIdle(g, opponentIdle, beat, width * 3 / 4, groundY, 2);
-        // draw the chart notes using the same audio clock as the characters
-        noteRenderer.render(g, chart.notes(), songTimeMs, width, height);
 
-
-        // place the monitor above kernel in the middle of the stage
-        g.drawImage(
-                monitor, width / 2 - 48, height - 280, 96, 96, null
-        );
-
-        // enlarge the monitor while keeping its current center
+        // enlarge the monitor while preserving its center
         int monitorSize = 192;
         int monitorCenterY = height - 232;
         int monitorX = width / 2 - monitorSize / 2;
@@ -102,14 +111,17 @@ public class GameScreen implements Screen, AutoCloseable {
                 null
         );
 
-    // account for transparent margins and place kernel on the top edge
+        // position kernel on the monitor and draw her legs in front
         int kernelBottom = monitorY + 56;
-
-    // draw kernel last so her legs appear in front of the monitor
         drawIdle(g, kernelIdle, beat, width / 2, kernelBottom, 1);
 
         drawLabel(g, "PLAYER ONE", width / 4, height - 42);
         drawLabel(g, opponentLabel, width * 3 / 4, height - 42);
+
+        // share the audio clock and held inputs with the note renderer
+        noteRenderer.render(
+                g, chart.notes(), songTimeMs, width, height, heldKeys
+        );
     }
 
     private void drawIdle(
@@ -120,7 +132,7 @@ public class GameScreen implements Screen, AutoCloseable {
             int bottom,
             int scale
     ) {
-        // fit one complete idle cycle into each musical beat
+        // fit a complete idle animation into each musical beat
         long animationTimeMs = (long) (beat * animation.getDurationMs());
         BufferedImage frame = animation.getFrame(animationTimeMs);
 
@@ -149,7 +161,7 @@ public class GameScreen implements Screen, AutoCloseable {
 
     @Override
     public void close() {
-        // stop playback and release the song's audio channel
+        // release the song's audio resources when leaving the stage
         music.close();
     }
 }

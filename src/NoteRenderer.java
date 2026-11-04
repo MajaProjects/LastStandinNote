@@ -12,6 +12,7 @@ public final class NoteRenderer {
     private final int arrowSize;
     private final int gap;
     private final double pixelsPerMs;
+    private final BufferedImage[] pressedArrows = new BufferedImage[4];
 
     // rotate the original right-facing arrow for each lane
     private final double[] rotations = {
@@ -34,7 +35,7 @@ public final class NoteRenderer {
 
         SpriteAtlas atlas = new SpriteAtlas("/images/arrows/arrows.txt");
 
-        // load the head, body and tail for each lane
+        // load all sprites belonging to each lane
         for (int lane = 0; lane < arrows.length; lane++) {
             arrows[lane] = atlas.getAnimation(
                     "arrow", "normal_" + lane
@@ -47,17 +48,24 @@ public final class NoteRenderer {
             tails[lane] = atlas.getAnimation(
                     "arrow", "tail_" + lane
             ).getFrame(0);
-        }
 
+            // load the illuminated receptor inside the same loop
+            pressedArrows[lane] = atlas.getAnimation(
+                    "arrow", "pressed_" + lane
+            ).getFrame(0);
+        }
         receptor = atlas.getAnimation("arrow", "receptor").getFrame(0);
     }
 
     public void render(
+
             Graphics2D g,
             List<Note> notes,
             long songTimeMs,
             int width,
-            int height
+            int height,
+            boolean[][] heldKeys
+
     ) {
         int receptorY = height - 100;
         Graphics2D field = (Graphics2D) g.create();
@@ -69,7 +77,14 @@ public final class NoteRenderer {
             for (int voice = 1; voice <= 2; voice++) {
                 for (int lane = 0; lane < 4; lane++) {
                     int x = getLaneX(voice, lane, width);
-                    drawArrow(field, receptor, lane, x, receptorY);
+                    // choose the receptor sprite using the current keyboard state
+                    BufferedImage receptorImage = receptor;
+
+                    if (heldKeys[voice - 1][lane]) {
+                        receptorImage = pressedArrows[lane];
+                    }
+
+                    drawArrow(field, receptorImage, lane, x, receptorY);
                 }
             }
 
