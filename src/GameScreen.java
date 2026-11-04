@@ -12,6 +12,8 @@ public class GameScreen implements Screen, AutoCloseable {
     private final SpriteAnimation opponentIdle;
     private final SpriteAnimation kernelIdle;
     private final String opponentLabel;
+    // use 48-pixel arrows, a 12-pixel gap and 300 pixels of movement per second
+    private final NoteRenderer noteRenderer = new NoteRenderer(48, 12, 300);
 
     public GameScreen(
             String songFolder,
@@ -67,6 +69,9 @@ public class GameScreen implements Screen, AutoCloseable {
 
         drawIdle(g, playerIdle, beat, width / 4, groundY, 2);
         drawIdle(g, opponentIdle, beat, width * 3 / 4, groundY, 2);
+        // draw the chart notes using the same audio clock as the characters
+        noteRenderer.render(g, chart.notes(), songTimeMs, width, height);
+
 
         // place the monitor above kernel in the middle of the stage
         g.drawImage(
