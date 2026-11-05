@@ -236,13 +236,14 @@ public class GamePanel extends JPanel {
             // preserve the chosen mode before opening the song list
             previousModeScreen = modes;
             pantallaActual = new SongSelectScreen(selectedDifficulty);
+
             menuConfirm.play();
             repaint();
             return;
         }
 
         if (pantallaActual instanceof SongSelectScreen songs) {
-            // preserve the song selection and pass the selected mode
+            // preserve the song selection before choosing a character
             previousSongScreen = songs;
 
             boolean twoPlayers = previousModeScreen
@@ -262,12 +263,20 @@ public class GamePanel extends JPanel {
         if (pantallaActual instanceof CharacterSelectScreen characters) {
             String folder = previousSongScreen.getSelectedSongFolder();
 
-            // check the required files before preparing the stage
-            if (GamePanel.class.getResource(folder + "chart.txt") == null
-                    || GamePanel.class.getResource(folder + "instrumental.wav") == null) {
+            // build the chart path from the selected difficulty
+            String difficultyName = previousSongScreen.getDifficulty()
+                    .name()
+                    .toLowerCase(java.util.Locale.ROOT);
+
+            String chartPath = folder + "chart_" + difficultyName + ".txt";
+            String musicPath = folder + "instrumental.wav";
+
+            // check the selected chart and the shared song audio
+            if (GamePanel.class.getResource(chartPath) == null
+                    || GamePanel.class.getResource(musicPath) == null) {
                 JOptionPane.showMessageDialog(
                         GamePanel.this,
-                        "Missing chart.txt or instrumental.wav in " + folder
+                        "Missing song files:\n" + chartPath + "\n" + musicPath
                 );
                 return;
             }
@@ -278,6 +287,7 @@ public class GamePanel extends JPanel {
 
             GameScreen game = new GameScreen(
                     folder,
+                    chartPath,
                     characters.getSelectedCharacter(),
                     characters.getOtherCharacter(),
                     twoPlayers
@@ -295,6 +305,7 @@ public class GamePanel extends JPanel {
 
         if (pantallaActual instanceof MenuScreen menu
                 && menu.getSelectedOption().equals("SALIR")) {
+            // close the window through its normal closing behavior
             Window window = SwingUtilities.getWindowAncestor(this);
 
             if (window != null) {

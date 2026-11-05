@@ -50,7 +50,7 @@ public class GameScreen implements Screen, AutoCloseable {
     );
     // load the sound used when a human player misses a note
     private final AudioPlayer missSound = new AudioPlayer(
-            "/audio/miss sound.wav"
+            "/audio/miss_sound_16bit.wav"
     );
     // remember the most recent direction and input time for each side
     private final int[] lastDirections = {-1, -1};
@@ -58,6 +58,7 @@ public class GameScreen implements Screen, AutoCloseable {
 
     public GameScreen(
             String songFolder,
+            String chartPath,
             String playerCharacter,
             String opponentCharacter,
             boolean twoPlayers
@@ -67,8 +68,8 @@ public class GameScreen implements Screen, AutoCloseable {
         // tux stays on the right even when another character is selected
         playerVoice = playerCharacter.equals("tux") ? 2 : 1;
 
-        // load the selected song's settings and notes
-        chart = SongChart.load(songFolder + "chart.txt");
+        // load the chart selected for this song and difficulty
+        chart = SongChart.load(chartPath);
         // allow a 160 ms difference on either side of the note
         noteJudge = new NoteJudge(chart.notes(), 160);
 
