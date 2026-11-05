@@ -8,7 +8,8 @@ public class GamePanel extends JPanel {
     private SongSelectScreen previousSongScreen;
     private ModeSelectScreen previousModeScreen;
     private CharacterSelectScreen previousCharacterScreen;
-
+    // keep the chosen difficulty while moving between screens
+    private Difficulty selectedDifficulty = Difficulty.ADMIN;
     // load the interface sounds once
     private final AudioPlayer menuMove = new AudioPlayer(
             "/audio/menu_move.wav"
@@ -168,7 +169,18 @@ public class GamePanel extends JPanel {
             @Override
             public void actionPerformed(ActionEvent event) {
                 if (pantallaActual instanceof CharacterSelectScreen characters) {
+                    // move between characters
                     characters.moveSelection(direction);
+                    menuMove.play();
+                    repaint();
+                    return;
+                }
+
+                if (pantallaActual instanceof SongSelectScreen songs) {
+                    // change difficulty from anywhere on the song screen
+                    songs.changeDifficulty(direction);
+                    selectedDifficulty = songs.getDifficulty();
+
                     menuMove.play();
                     repaint();
                 }
@@ -223,8 +235,7 @@ public class GamePanel extends JPanel {
         if (pantallaActual instanceof ModeSelectScreen modes) {
             // preserve the chosen mode before opening the song list
             previousModeScreen = modes;
-            pantallaActual = new SongSelectScreen();
-
+            pantallaActual = new SongSelectScreen(selectedDifficulty);
             menuConfirm.play();
             repaint();
             return;

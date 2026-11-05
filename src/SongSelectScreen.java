@@ -50,13 +50,34 @@ public class SongSelectScreen implements Screen {
             throw new IllegalArgumentException("The song list is empty");
         }
     }
+    public SongSelectScreen(Difficulty difficulty) {
+        // load the same resources and songs as the regular constructor
+        this();
+
+        // restore the difficulty selected earlier in the session
+        this.difficulty = difficulty;
+    }
     private final BufferedImage songBar = ImageLoader.load("/images/ui/barra_cancion.png");
     private int selectedSong = 0;
+    // keep the highlighted row and the chosen difficulty
+    private Difficulty difficulty = Difficulty.ADMIN;
 
     public void moveSelection(int direction) {
-        if (!songs.isEmpty()) {
-            selectedSong = Math.floorMod(selectedSong + direction, songs.size());
-        }
+        // move only between the available songs
+        selectedSong = Math.floorMod(
+                selectedSong + direction,
+                songs.size()
+        );
+    }
+
+
+    public void changeDifficulty(int direction) {
+        // move between user, admin and root
+        difficulty = difficulty.move(direction);
+    }
+
+    public Difficulty getDifficulty() {
+        return difficulty;
     }
     public String getSelectedSong() {
         return songs.get(selectedSong);
@@ -100,13 +121,48 @@ public class SongSelectScreen implements Screen {
         for (int i = 0; i < songs.size(); i++) {
             boolean selected = i == selectedSong;
             int centerX = width / 2;
-
             if (selected) {
                 centerX -= 12;
             }
 
             int centerY = height / 2 - 40 + i * 75;
             drawSongButton(g, songs.get(i), centerX, centerY, selected, seconds);
+        }
+        // draw the difficulty as a separate menu row
+        drawDifficultySelector(g, width, height);
+    }
+    private void drawDifficultySelector(Graphics2D g, int width, int height) {
+        int rowX = width / 2 - 250;
+        int rowY = height - 82;
+        int rowWidth = 500;
+        int rowHeight = 60;
+
+        // draw a separate background for the difficulty display
+        g.setColor(new java.awt.Color(12, 12, 20, 220));
+        g.fillRoundRect(rowX, rowY, rowWidth, rowHeight, 12, 12);
+
+        g.setColor(new java.awt.Color(95, 75, 120));
+        g.drawRoundRect(rowX, rowY, rowWidth, rowHeight, 12, 12);
+
+        // show the selected difficulty
+        font.draw(g, "DIFFICULTY", rowX + 45, rowY + 12, 1);
+        font.draw(g, difficulty.name(), rowX + 280, rowY + 12, 1);
+
+        // fill one, two or three segments for the chosen difficulty
+        int filledLevels = difficulty.ordinal() + 1;
+        int meterX = rowX + 420;
+        int meterY = rowY + 21;
+
+        for (int i = 0; i < 3; i++) {
+            int segmentX = meterX + i * 21;
+
+            if (i < filledLevels) {
+                g.setColor(new java.awt.Color(170, 80, 230));
+                g.fillRect(segmentX, meterY, 14, 18);
+            }
+
+            g.setColor(new java.awt.Color(220, 180, 255));
+            g.drawRect(segmentX, meterY, 13, 17);
         }
     }
 }

@@ -33,6 +33,7 @@ public class MenuScreen implements Screen {
                 options.length
         );
     }
+
     public String getSelectedOption() {
         return options[selectedOption];
     }
@@ -78,11 +79,13 @@ public class MenuScreen implements Screen {
 
         int optionX = (width - font.getTextWidth(selectedText, 1)) / 2;
         optionX -= selectionOffset;
+
         int markerX = optionX - font.getTextWidth("*", 1) - 12;
         int markerY = 210 + selectedOption * 65;
 
         font.draw(g, "*", markerX, markerY, 1);
     }
+
     private void drawOption(
             Graphics2D g,
             String text,
@@ -121,6 +124,7 @@ public class MenuScreen implements Screen {
             animated.dispose();
         }
     }
+
     private void drawCentered(
             Graphics2D g,
             String text,
