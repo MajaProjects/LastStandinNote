@@ -239,16 +239,12 @@ public class GameScreen implements Screen, AutoCloseable {
                 heldKeys,
                 noteJudge
         );
-        // show the latest judgement above each human player's side
-        if (twoPlayers || playerVoice == 1) {
-            String judgement = noteJudge.getVisibleJudgement(1, songTimeMs);
-            drawLabel(g, judgement, width / 4, 60);
-        }
+        // show the latest judgement above each side
+        String leftJudgement = noteJudge.getVisibleJudgement(1, songTimeMs);
+        String rightJudgement = noteJudge.getVisibleJudgement(2, songTimeMs);
 
-        if (twoPlayers || playerVoice == 2) {
-            String judgement = noteJudge.getVisibleJudgement(2, songTimeMs);
-            drawLabel(g, judgement, width * 3 / 4, 60);
-        }
+        drawLabel(g, leftJudgement, width / 4, 60);
+        drawLabel(g, rightJudgement, width * 3 / 4, 60);
     }
 
     private void drawIdle(
