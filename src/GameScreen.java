@@ -178,6 +178,11 @@ public class GameScreen implements Screen, AutoCloseable {
         boolean judgeVoiceOne = twoPlayers || playerVoice == 1;
         boolean judgeVoiceTwo = twoPlayers || playerVoice == 2;
 
+        int[] previousCombos = {
+                noteJudge.getComboForVoice(1),
+                noteJudge.getComboForVoice(2)
+        };
+
         // check completed and missed sustained notes
         int[] results = noteJudge.updateSustains(
                 songTimeMs,
@@ -195,7 +200,9 @@ public class GameScreen implements Screen, AutoCloseable {
             int voice = side + 1;
 
             // prepare a combo alert after completing a sustained note
-            if (results[side] > 0 && noteJudge.isComboMilestone(voice)) {
+            if (results[side] > 0
+                    && noteJudge.getComboForVoice(voice) > previousCombos[side]
+                    && noteJudge.isComboMilestone(voice)) {
                 comboAlertValues[side] = noteJudge.getComboForVoice(voice);
                 comboAlertTimesMs[side] = songTimeMs;
                 comboSound.play();
@@ -243,23 +250,25 @@ public class GameScreen implements Screen, AutoCloseable {
 
         int side = voice - 1;
         boolean wasPressed = heldKeys[side][lane];
+
+        // repeated press events must not judge another note
+        if (pressed == wasPressed) {
+            return;
+        }
+
         long songTimeMs = music.getPositionMs();
-        // remember direction changes when a key is pressed or released
-        if (pressed != wasPressed) {
-            lastDirections[side] = lane;
-            lastDirectionTimesMs[side] = songTimeMs;
-        }
 
-        if (!pressed && wasPressed) {
-            // complete notes that ended before the key was released
-            updateHumanSustains(songTimeMs);
-        }
+        // evaluate any release gap before accepting the new input state
+        updateHumanSustains(songTimeMs);
 
-        if (pressed && !wasPressed) {
-            // judge a note when the key changes from released to pressed
+        heldKeys[side][lane] = pressed;
+        lastDirections[side] = lane;
+        lastDirectionTimesMs[side] = songTimeMs;
+
+        if (pressed) {
             int hitIndex = noteJudge.tryHit(voice, lane, songTimeMs);
 
-            // announce milestones after a normal note is completed
+            // normal notes can advance the combo immediately
             if (hitIndex != -1
                     && !noteJudge.isSustainActive(hitIndex)
                     && noteJudge.isComboMilestone(voice)) {
@@ -269,14 +278,10 @@ public class GameScreen implements Screen, AutoCloseable {
             }
         }
 
-        // remember whether the key is currently held
-        heldKeys[side][lane] = pressed;
-
-        if (!pressed && wasPressed) {
-            // detect an early release immediately
-            updateHumanSustains(songTimeMs);
-        }
+        // record the start of a release or resume the held sustain
+        updateHumanSustains(songTimeMs);
     }
+
     public void releaseKeys() {
         // clear all held lanes when the game loses window focus
         for (boolean[] sideKeys : heldKeys) {
@@ -360,18 +365,19 @@ public class GameScreen implements Screen, AutoCloseable {
                 null
         );
 
-        // choose kernel's reaction to tux's latest judgement
+        // react to misses and combo progress using their own timers
         SpriteAnimation kernelAnimation = kernelIdle;
         String tuxJudgement = noteJudge.getVisibleJudgement(2, songTimeMs);
+        long tuxComboAge = noteJudge.getComboAgeMs(2, songTimeMs);
 
         if (tuxJudgement.equals("MISS")) {
             kernelAnimation = kernelSad;
-        } else if (!tuxJudgement.isEmpty()
+        } else if (tuxComboAge >= 0 && tuxComboAge < 700
                 && noteJudge.isComboMilestone(2)) {
             kernelAnimation = kernelHappy;
         }
 
-    // position kernel on the monitor and draw her legs in front
+        // position kernel on the monitor and draw her legs in front
         int kernelBottom = monitorY + 56;
         drawIdle(g, kernelAnimation, beat, width / 2, kernelBottom, 1);
 

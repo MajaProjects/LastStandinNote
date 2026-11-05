@@ -14,6 +14,8 @@ public final class NoteJudge {
     private final int[] scores = new int[2];
     // track consecutive hits separately for each side
     private final int[] combos = new int[2];
+    // keep combo reactions independent from the head judgement timer
+    private final long[] comboProgressTimesMs = {-1, -1};
     private final String[] lastJudgements = {"", ""};
     // remember the lane of the latest miss for each side
     private final int[] lastMissLanes = {-1, -1};
@@ -21,6 +23,14 @@ public final class NoteJudge {
     // store one timing choice for each note
     private final int[] botTimingOffsets;
     private final boolean[] botMisses;
+    // remember bad hits so the renderer can show their dark sprites
+    private final boolean[] badHits;
+    private final long[] badHitTimesMs;
+    // allow a brief release when pressing another note in the same lane
+    private static final long SUSTAIN_RELEASE_GRACE_MS = 60;
+    private static final long SUSTAIN_JOIN_TOLERANCE_MS = 2;
+
+    private final long[] sustainReleaseTimesMs;
 
 
     public NoteJudge(List<Note> notes, long hitWindowMs) {
@@ -35,8 +45,12 @@ public final class NoteJudge {
         this.hitNotes = new boolean[notes.size()];
         this.missedNotes = new boolean[notes.size()];
         this.activeSustains = new boolean[notes.size()];
+        sustainReleaseTimesMs = new long[notes.size()];
+        java.util.Arrays.fill(sustainReleaseTimesMs, -1);
         this.sustainDifferencesMs = new long[notes.size()];
         this.hitWindowMs = hitWindowMs;
+        badHits = new boolean[notes.size()];
+        badHitTimesMs = new long[notes.size()];
         // choose the bot's result once for each note
         botTimingOffsets = new int[notes.size()];
         botMisses = new boolean[notes.size()];
@@ -133,10 +147,14 @@ public final class NoteJudge {
 
         Note selectedNote = notes.get(closestIndex);
 
+        // show the head judgement when the key is pressed
+        registerHeadJudgement(closestIndex, closestDifference, songTimeMs);
+
         if (selectedNote.durationMs() > 0) {
             // start the sustained note and keep the head timing
             activeSustains[closestIndex] = true;
             sustainDifferencesMs[closestIndex] = closestDifference;
+            sustainReleaseTimesMs[closestIndex] = -1;
 
             return closestIndex;
         }
@@ -146,10 +164,8 @@ public final class NoteJudge {
 
         int side = voice - 1;
 
-        lastJudgements[side] = getRating(closestDifference);
-        judgementTimesMs[side] = songTimeMs;
         scores[side] += getScore(closestDifference);
-        combos[side]++;
+        registerComboHit(closestIndex, songTimeMs);
 
         return closestIndex;
     }
@@ -200,6 +216,40 @@ public final class NoteJudge {
         }
         return newMisses;
     }
+    private long getRepressDeadlineMs(int sustainIndex, long releaseTimeMs) {
+        long normalDeadline = releaseTimeMs + SUSTAIN_RELEASE_GRACE_MS;
+        Note sustain = notes.get(sustainIndex);
+        long sustainEndMs = sustain.timeMs() + sustain.durationMs();
+
+        for (int i = 0; i < notes.size(); i++) {
+            Note next = notes.get(i);
+
+            // only another pending sustained head can extend this release
+            if (i == sustainIndex || next.durationMs() <= 0
+                    || hitNotes[i] || missedNotes[i] || activeSustains[i]
+                    || next.voice() != sustain.voice()
+                    || next.lane() != sustain.lane()) {
+                continue;
+            }
+
+            // allow overlapping holds and adjacent heads with rounded times
+            if (next.timeMs() <= sustain.timeMs()
+                    || next.timeMs() > sustainEndMs + SUSTAIN_JOIN_TOLERANCE_MS) {
+                continue;
+            }
+
+            // the release itself must happen within the new head's hit window
+            if (Math.abs(next.timeMs() - releaseTimeMs) > hitWindowMs) {
+                continue;
+            }
+
+            // use the existing timing window; never register the new head here
+            return Math.max(normalDeadline, next.timeMs() + hitWindowMs);
+        }
+
+        return normalDeadline;
+    }
+
     public int[] updateSustains(
             long songTimeMs,
             boolean[][] heldKeys,
@@ -212,24 +262,24 @@ public final class NoteJudge {
         for (int i = 0; i < notes.size(); i++) {
             Note note = notes.get(i);
 
-            // only process sustained notes that are still pending
-            if (note.durationMs() <= 0 || hitNotes[i] || missedNotes[i]) {
+            if (note.durationMs() <= 0
+                    || hitNotes[i]
+                    || missedNotes[i]) {
                 continue;
             }
 
-            // only judge sides controlled by human players
-            if (note.voice() == 1 && !judgeVoiceOne) {
-                continue;
-            }
+            boolean humanControlled = note.voice() == 1
+                    ? judgeVoiceOne
+                    : judgeVoiceTwo;
 
-            if (note.voice() == 2 && !judgeVoiceTwo) {
+            if (!humanControlled) {
                 continue;
             }
 
             int side = note.voice() - 1;
 
             if (!activeSustains[i]) {
-                // miss the note if its head was not pressed in time
+                // the head still needs its own correctly timed press
                 if (songTimeMs > note.timeMs() + hitWindowMs) {
                     missedNotes[i] = true;
 
@@ -245,37 +295,58 @@ public final class NoteJudge {
                 continue;
             }
 
-            // check whether the player is still holding this lane
+            long endTimeMs = note.timeMs() + note.durationMs();
             boolean stillHeld = heldKeys[side][note.lane()];
 
-            if (!stillHeld) {
-                // releasing the key early breaks the sustained note
-                activeSustains[i] = false;
-                missedNotes[i] = true;
+            if (stillHeld) {
+                // resume the sustain after a brief release
+                sustainReleaseTimesMs[i] = -1;
+            } else {
+                if (sustainReleaseTimesMs[i] < 0) {
+                    sustainReleaseTimesMs[i] = songTimeMs;
+                }
 
-                lastJudgements[side] = "MISS";
-                lastMissLanes[side] = note.lane();
-                judgementTimesMs[side] = songTimeMs;
-                scores[side] -= 100;
-                combos[side] = 0;
+                // only measure the released portion before the note ends
+                long releasedUntilMs = Math.min(songTimeMs, endTimeMs);
+                long releasedDurationMs =
+                        releasedUntilMs - sustainReleaseTimesMs[i];
 
-                results[side + 2]++;
-                continue;
+                if (releasedDurationMs > SUSTAIN_RELEASE_GRACE_MS) {
+                    long deadlineMs = getRepressDeadlineMs(
+                            i, sustainReleaseTimesMs[i]
+                    );
+
+                    if (songTimeMs > deadlineMs) {
+                        activeSustains[i] = false;
+                        missedNotes[i] = true;
+
+                        lastJudgements[side] = "MISS";
+                        lastMissLanes[side] = note.lane();
+                        judgementTimesMs[side] = songTimeMs;
+                        scores[side] -= 100;
+                        combos[side] = 0;
+
+                        results[side + 2]++;
+                    }
+
+                    // wait for the re-press; do not award completion while released
+                    continue;
+                }
             }
 
-            long endTimeMs = note.timeMs() + note.durationMs();
-
             if (songTimeMs >= endTimeMs) {
-                // complete the note after it has been held to the end
+                // complete the sustain without penalizing a brief final release
                 activeSustains[i] = false;
                 hitNotes[i] = true;
+                sustainReleaseTimesMs[i] = -1;
 
                 long difference = sustainDifferencesMs[i];
 
-                lastJudgements[side] = getRating(difference);
-                judgementTimesMs[side] = songTimeMs;
+                // score the stored head timing without repeating its judgement
                 scores[side] += getScore(difference);
-                combos[side]++;
+
+                // preserve the rule that bad hits break the combo
+                registerComboHit(i, songTimeMs);
 
                 results[side]++;
             }
@@ -401,6 +472,8 @@ public final class NoteJudge {
                         && !hitNotes[i]
                         && !missedNotes[i]
                         && songTimeMs >= botHitTime) {
+                    // give the bot the same head feedback as human players
+                    registerHeadJudgement(i, difference, songTimeMs);
                     activeSustains[i] = true;
                     sustainDifferencesMs[i] = difference;
                 }
@@ -413,10 +486,8 @@ public final class NoteJudge {
                         activeSustains[i] = false;
                         hitNotes[i] = true;
 
-                        lastJudgements[side] = getRating(difference);
-                        judgementTimesMs[side] = songTimeMs;
                         scores[side] += getScore(difference);
-                        combos[side]++;
+                        registerComboHit(i, songTimeMs);
                     } else {
                         // keep the bot's receptor pressed until the note ends
                         botKeys[note.lane()] = true;
@@ -430,12 +501,10 @@ public final class NoteJudge {
             if (songTimeMs >= botHitTime
                     && !hitNotes[i]
                     && !missedNotes[i]) {
+                registerHeadJudgement(i, difference, songTimeMs);
                 hitNotes[i] = true;
-
-                lastJudgements[side] = getRating(difference);
-                judgementTimesMs[side] = songTimeMs;
                 scores[side] += getScore(difference);
-                combos[side]++;
+                registerComboHit(i, songTimeMs);
             }
 
             // light the receptor briefly after a normal note is hit
@@ -457,5 +526,51 @@ public final class NoteJudge {
     public int getComboForVoice(int voice) {
         // return the current combo for the requested side
         return combos[voice - 1];
+    }
+    private void registerHeadJudgement(
+            int noteIndex,
+            long timingDifferenceMs,
+            long songTimeMs
+    ) {
+        int side = notes.get(noteIndex).voice() - 1;
+        String rating = getRating(timingDifferenceMs);
+
+        lastJudgements[side] = rating;
+        judgementTimesMs[side] = songTimeMs;
+        badHits[noteIndex] = rating.equals("BAD");
+
+        if (badHits[noteIndex]) {
+            // break the combo immediately, once for this head
+            combos[side] = 0;
+            badHitTimesMs[noteIndex] = songTimeMs;
+        }
+    }
+
+    private void registerComboHit(int noteIndex, long songTimeMs) {
+        int side = notes.get(noteIndex).voice() - 1;
+
+        // bad heads already broke the combo when they were pressed
+        if (!badHits[noteIndex]) {
+            combos[side]++;
+            comboProgressTimesMs[side] = songTimeMs;
+        }
+    }
+
+    public long getComboAgeMs(int voice, long songTimeMs) {
+        long progressTime = comboProgressTimesMs[voice - 1];
+        return progressTime < 0 ? -1 : Math.max(0, songTimeMs - progressTime);
+    }
+
+    public boolean isBadHit(int index) {
+        return badHits[index];
+    }
+
+    public long getBadHitAgeMs(int index, long songTimeMs) {
+        if (!badHits[index]) {
+            return -1;
+        }
+
+        // measure feedback duration using the music clock
+        return Math.max(0, songTimeMs - badHitTimesMs[index]);
     }
 }
