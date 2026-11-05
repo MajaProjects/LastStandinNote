@@ -3,6 +3,7 @@ import java.awt.image.BufferedImage;
 import java.awt.event.KeyEvent;
 import java.awt.Point;
 import java.util.Map;
+import java.util.Set;
 
 
 public class GameScreen implements Screen, AutoCloseable {
@@ -11,6 +12,8 @@ public class GameScreen implements Screen, AutoCloseable {
     // check player input against the song's notes
     private final NoteJudge noteJudge;
     private final MusicPlayer music;
+    private boolean paused;
+    private long pausedSongTimeMs;
     private final BitmapFont font;
     private final BufferedImage background;
     // keep the monitor images for a tie and for each leader
@@ -166,11 +169,100 @@ public class GameScreen implements Screen, AutoCloseable {
 
     public void start() {
         // start the song after the screen has been installed
+        paused = false;
         music.play();
     }
+
+    public void pause() {
+        if (paused) {
+            return;
+        }
+
+        music.pause();
+        pausedSongTimeMs = music.getPositionMs();
+
+        // finish the current instant before freezing the gameplay state
+        update();
+        paused = true;
+    }
+
+    public boolean resume(Set<Integer> pressedKeys) {
+        if (!paused) {
+            return true;
+        }
+
+        if (!getMissingResumeKeys(pressedKeys).isEmpty()) {
+            return false;
+        }
+
+        // restore physical inputs without judging keys pressed in the menu
+        for (int voice = 1; voice <= 2; voice++) {
+            String keys = getKeysForVoice(voice);
+            if (keys == null) {
+                continue;
+            }
+
+            for (int lane = 0; lane < 4; lane++) {
+                int code = KeyEvent.getExtendedKeyCodeForChar(keys.charAt(lane));
+                heldKeys[voice - 1][lane] = pressedKeys.contains(code);
+            }
+        }
+
+        music.resume();
+        paused = false;
+        return true;
+    }
+
+    public String getMissingResumeKeys(Set<Integer> pressedKeys) {
+        boolean[][] required = new boolean[2][4];
+
+        for (int i = 0; i < chart.notes().size(); i++) {
+            if (noteJudge.isSustainActive(i)) {
+                Note note = chart.notes().get(i);
+                required[note.voice() - 1][note.lane()] = true;
+            }
+        }
+
+        StringBuilder missing = new StringBuilder();
+        for (int voice = 1; voice <= 2; voice++) {
+            String keys = getKeysForVoice(voice);
+            if (keys == null) {
+                continue;
+            }
+
+            for (int lane = 0; lane < 4; lane++) {
+                char key = keys.charAt(lane);
+                int code = KeyEvent.getExtendedKeyCodeForChar(key);
+                if (required[voice - 1][lane] && !pressedKeys.contains(code)) {
+                    if (missing.length() > 0) {
+                        missing.append(' ');
+                    }
+                    missing.append(key);
+                }
+            }
+        }
+
+        return missing.toString();
+    }
+
+    private String getKeysForVoice(int voice) {
+        if (twoPlayers) {
+            return voice == 1 ? "ASDF" : "JKLÑ";
+        }
+        return voice == playerVoice ? "DFJK" : null;
+    }
+
+    private long getSongTimeMs() {
+        return paused ? pausedSongTimeMs : music.getPositionMs();
+    }
+
     public void update() {
+        if (paused) {
+            return;
+        }
+
         // read the audio position once for this update
-        long songTimeMs = music.getPositionMs();
+        long songTimeMs = getSongTimeMs();
 
         if (!twoPlayers) {
             // the bot controls the side not selected by the player
@@ -244,31 +336,16 @@ public class GameScreen implements Screen, AutoCloseable {
     }
 
     public void setKeyPressed(int keyCode, boolean pressed) {
-        // shared play uses the left layout first; solo play uses dfjk
-        String primaryKeys = twoPlayers ? "ASDF" : "DFJK";
-        String rightKeys = "JKLÑ";
-
-        for (int lane = 0; lane < 4; lane++) {
-            int primaryCode = KeyEvent.getExtendedKeyCodeForChar(
-                    primaryKeys.charAt(lane)
-            );
-
-            if (keyCode == primaryCode) {
-                // solo input follows the selected character's side
-                int voice = twoPlayers ? 1 : playerVoice;
-
-                setLanePressed(voice, lane, pressed);
-                return;
+        for (int voice = 1; voice <= 2; voice++) {
+            String keys = getKeysForVoice(voice);
+            if (keys == null) {
+                continue;
             }
 
-            // jklñ always controls tux when both players share a keyboard
-            if (twoPlayers) {
-                int rightCode = KeyEvent.getExtendedKeyCodeForChar(
-                        rightKeys.charAt(lane)
-                );
-
-                if (keyCode == rightCode) {
-                    setLanePressed(2, lane, pressed);
+            for (int lane = 0; lane < 4; lane++) {
+                int code = KeyEvent.getExtendedKeyCodeForChar(keys.charAt(lane));
+                if (keyCode == code) {
+                    setLanePressed(voice, lane, pressed);
                     return;
                 }
             }
@@ -277,7 +354,7 @@ public class GameScreen implements Screen, AutoCloseable {
 
     public void setLanePressed(int voice, int lane, boolean pressed) {
         // solo keyboard input only controls the selected character
-        if (!twoPlayers && voice != playerVoice) {
+        if (paused || (!twoPlayers && voice != playerVoice)) {
             return;
         }
 
@@ -289,7 +366,7 @@ public class GameScreen implements Screen, AutoCloseable {
             return;
         }
 
-        long songTimeMs = music.getPositionMs();
+        long songTimeMs = getSongTimeMs();
 
         // evaluate any release gap before accepting the new input state
         updateHumanSustains(songTimeMs);
@@ -327,7 +404,7 @@ public class GameScreen implements Screen, AutoCloseable {
     @Override
     public void render(Graphics2D g, int width, int height) {
         // derive every visual effect from the same audio position
-        long songTimeMs = music.getPositionMs();
+        long songTimeMs = getSongTimeMs();
         double beat = Math.max(
                 0.0,
                 (songTimeMs - chart.beatOffsetMs())

@@ -1,10 +1,16 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.HashSet;
+import java.util.Set;
 
 public class GamePanel extends JPanel {
 
     private Screen pantallaActual;
+    // track physical keys even while the gameplay screen is paused
+    private final Set<Integer> pressedGameplayKeys = new HashSet<>();
+    private final Set<Integer> pressedActionKeys = new HashSet<>();
+
     private SongSelectScreen previousSongScreen;
     private ModeSelectScreen previousModeScreen;
     private CharacterSelectScreen previousCharacterScreen;
@@ -39,51 +45,10 @@ public class GamePanel extends JPanel {
         pantallaActual = new TitleScreen();
         titleMusic.playLoop();
 
-        // confirm the current selection with enter
-        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
-                "openMenu"
-        );
-
-        getActionMap().put("openMenu", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                activateSelection();
-            }
-        });
-
-        // return to the previous screen with escape
-        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
-                "backToTitle"
-        );
-
-        getActionMap().put("backToTitle", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                if (pantallaActual instanceof GameScreen game) {
-                    game.close();
-                    pantallaActual = previousCharacterScreen;
-                    menuMusic.playLoop();
-                } else if (pantallaActual instanceof CharacterSelectScreen) {
-                    pantallaActual = previousSongScreen;
-                } else if (pantallaActual instanceof SongSelectScreen) {
-                    pantallaActual = previousModeScreen;
-                } else if (pantallaActual instanceof ModeSelectScreen) {
-                    pantallaActual = new MenuScreen();
-                } else if (pantallaActual instanceof MenuScreen) {
-                    pantallaActual = new TitleScreen();
-
-                    menuMusic.stop();
-                    titleMusic.playLoop();
-                } else {
-                    return;
-                }
-
-                menuBack.play();
-                repaint();
-            }
-        });
+        // these actions run once per press, even if the key is held
+        bindSinglePress("openMenu", KeyEvent.VK_ENTER, this::activateSelection);
+        bindSinglePress("backToTitle", KeyEvent.VK_ESCAPE, this::goBack);
+        bindSinglePress("pauseGame", KeyEvent.VK_P, this::togglePause);
 
         // navigate menus and song selections vertically
         bindMenuNavigation("menuUp", KeyEvent.VK_UP, -1);
@@ -103,17 +68,15 @@ public class GamePanel extends JPanel {
         bindGameplayKey(KeyEvent.VK_L);
         bindGameplayKey(KeyEvent.getExtendedKeyCodeForChar('Ñ'));
 
-        // clear held inputs when switching away from this window
+        // losing focus pauses the song before keys can become stuck
         KeyboardFocusManager.getCurrentKeyboardFocusManager()
                 .addPropertyChangeListener("focusedWindow", event -> {
-                    if (event.getNewValue() != SwingUtilities.getWindowAncestor(this)
-                            && pantallaActual instanceof GameScreen game) {
-                        game.releaseKeys();
-                        repaint();
+                    if (event.getNewValue() != SwingUtilities.getWindowAncestor(this)) {
+                        onFocusLost();
                     }
                 });
 
-// update gameplay and redraw the current screen regularly
+        // paused screens redraw without advancing gameplay
         Timer animationTimer = new Timer(16, event -> {
             if (pantallaActual instanceof GameScreen game) {
                 game.update();
@@ -123,6 +86,140 @@ public class GamePanel extends JPanel {
         });
 
         animationTimer.start();
+    }
+
+    private void bindSinglePress(String actionName, int keyCode, Runnable action) {
+        String releasedAction = actionName + "Released";
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+                KeyStroke.getKeyStroke(keyCode, 0), actionName
+        );
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+                KeyStroke.getKeyStroke(keyCode, 0, true), releasedAction
+        );
+
+        getActionMap().put(actionName, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                if (pressedActionKeys.add(keyCode)) {
+                    action.run();
+                }
+            }
+        });
+        getActionMap().put(releasedAction, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                pressedActionKeys.remove(keyCode);
+            }
+        });
+    }
+
+    private void goBack() {
+        if (pantallaActual instanceof PauseScreen pause) {
+            requestResume(pause);
+            return;
+        }
+
+        if (pantallaActual instanceof GameScreen game) {
+            game.close();
+            pantallaActual = previousCharacterScreen;
+            menuMusic.playLoop();
+        } else if (pantallaActual instanceof CharacterSelectScreen) {
+            pantallaActual = previousSongScreen;
+        } else if (pantallaActual instanceof SongSelectScreen) {
+            pantallaActual = previousModeScreen;
+        } else if (pantallaActual instanceof ModeSelectScreen) {
+            pantallaActual = new MenuScreen();
+        } else if (pantallaActual instanceof MenuScreen) {
+            pantallaActual = new TitleScreen();
+            menuMusic.stop();
+            titleMusic.playLoop();
+        } else {
+            return;
+        }
+
+        menuBack.play();
+        repaint();
+    }
+
+    private void togglePause() {
+        if (pantallaActual instanceof GameScreen game) {
+            game.pause();
+            pantallaActual = new PauseScreen(game);
+            repaint();
+        } else if (pantallaActual instanceof PauseScreen pause) {
+            requestResume(pause);
+        }
+    }
+
+    private void requestResume(PauseScreen pause) {
+        GameScreen game = pause.getGame();
+        pause.requestResume(game.getMissingResumeKeys(pressedGameplayKeys));
+
+        if (game.resume(pressedGameplayKeys)) {
+            pantallaActual = game;
+            menuConfirm.play();
+        }
+
+        repaint();
+    }
+
+    private void onFocusLost() {
+        pressedGameplayKeys.clear();
+        pressedActionKeys.clear();
+
+        if (pantallaActual instanceof GameScreen) {
+            togglePause();
+        } else if (pantallaActual instanceof PauseScreen pause) {
+            pause.cancelResume();
+        }
+    }
+
+    private GameScreen createSelectedGame(CharacterSelectScreen characters) {
+        String folder = previousSongScreen.getSelectedSongFolder();
+        Difficulty difficulty = previousSongScreen.getDifficulty();
+        String name = difficulty.name().toLowerCase(java.util.Locale.ROOT);
+        String chartPath = folder + "chart_" + name + ".txt";
+        String musicPath = folder + "instrumental.wav";
+
+        if (GamePanel.class.getResource(chartPath) == null
+                || GamePanel.class.getResource(musicPath) == null) {
+            throw new IllegalStateException("Missing song files:\n" + chartPath + "\n" + musicPath);
+        }
+
+        return new GameScreen(
+                folder, chartPath,
+                characters.getSelectedCharacter(), characters.getOtherCharacter(),
+                previousModeScreen.getSelectedMode().equals("DOS JUGADORES"),
+                difficulty
+        );
+    }
+
+    private void restartPausedGame(PauseScreen pause) {
+        // release the previous audio channels before loading the song again
+        pause.getGame().close();
+
+        try {
+            GameScreen game = createSelectedGame(previousCharacterScreen);
+            pantallaActual = game;
+            game.start();
+            menuConfirm.play();
+        } catch (RuntimeException error) {
+            pantallaActual = previousSongScreen;
+            menuMusic.playLoop();
+            JOptionPane.showMessageDialog(
+                    this, "Could not restart song:\n" + error.getMessage()
+            );
+        }
+
+        repaint();
+    }
+
+    private void returnToSongs(PauseScreen pause) {
+        pause.getGame().close();
+        pantallaActual = previousSongScreen;
+        menuMusic.playLoop();
+        menuBack.play();
+        repaint();
     }
 
     private void bindMenuNavigation(
@@ -145,6 +242,8 @@ public class GamePanel extends JPanel {
                     modes.moveSelection(direction);
                 } else if (pantallaActual instanceof SongSelectScreen songs) {
                     songs.moveSelection(direction);
+                } else if (pantallaActual instanceof PauseScreen pause) {
+                    pause.moveSelection(direction);
                 } else {
                     return;
                 }
@@ -201,17 +300,37 @@ public class GamePanel extends JPanel {
             getActionMap().put(actionName, new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent event) {
-                    // let the game screen choose the player and lane
+                    boolean changed = pressed
+                            ? pressedGameplayKeys.add(keyCode)
+                            : pressedGameplayKeys.remove(keyCode);
+
+                    if (!changed) {
+                        return;
+                    }
+
                     if (pantallaActual instanceof GameScreen game) {
                         game.setKeyPressed(keyCode, pressed);
-                        repaint();
+                    } else if (pantallaActual instanceof PauseScreen pause
+                            && pause.isResumeRequested()) {
+                        requestResume(pause);
                     }
+
+                    repaint();
                 }
             });
         }
     }
 
     private void activateSelection() {
+        if (pantallaActual instanceof PauseScreen pause) {
+            switch (pause.getSelectedOption()) {
+                case "RESUME" -> requestResume(pause);
+                case "RESTART" -> restartPausedGame(pause);
+                case "SONG SELECT" -> returnToSongs(pause);
+            }
+            return;
+        }
+
         if (pantallaActual instanceof TitleScreen) {
             pantallaActual = new MenuScreen();
 
@@ -261,44 +380,17 @@ public class GamePanel extends JPanel {
         }
 
         if (pantallaActual instanceof CharacterSelectScreen characters) {
-            String folder = previousSongScreen.getSelectedSongFolder();
-            Difficulty difficulty = previousSongScreen.getDifficulty();
-
-            // build the chart path from the selected difficulty
-            String difficultyName = difficulty.name()
-                    .toLowerCase(java.util.Locale.ROOT);
-
-            String chartPath = folder + "chart_" + difficultyName + ".txt";
-            String musicPath = folder + "instrumental.wav";
-
-            // check the selected chart and the shared song audio
-            if (GamePanel.class.getResource(chartPath) == null
-                    || GamePanel.class.getResource(musicPath) == null) {
+            try {
+                GameScreen game = createSelectedGame(characters);
+                previousCharacterScreen = characters;
+                menuMusic.stop();
+                pantallaActual = game;
+                game.start();
+            } catch (RuntimeException error) {
                 JOptionPane.showMessageDialog(
-                        GamePanel.this,
-                        "Missing song files:\n" + chartPath + "\n" + musicPath
+                        this, "Could not start song:\n" + error.getMessage()
                 );
-                return;
             }
-
-            boolean twoPlayers = previousModeScreen
-                    .getSelectedMode()
-                    .equals("DOS JUGADORES");
-
-            GameScreen game = new GameScreen(
-                    folder,
-                    chartPath,
-                    characters.getSelectedCharacter(),
-                    characters.getOtherCharacter(),
-                    twoPlayers,
-                    difficulty
-            );
-
-            // switch screens after the gameplay resources have loaded
-            previousCharacterScreen = characters;
-            menuMusic.stop();
-            pantallaActual = game;
-            game.start();
 
             repaint();
             return;

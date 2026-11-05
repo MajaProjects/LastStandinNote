@@ -5,6 +5,9 @@ import java.net.URL;
 public final class MusicPlayer implements AutoCloseable {
 
     private final Clip clip;
+    private boolean paused;
+    private int pausedFrame;
+    private long pausedPositionMs;
 
     public MusicPlayer(String path) {
         URL resource = MusicPlayer.class.getResource(path);
@@ -39,29 +42,59 @@ public final class MusicPlayer implements AutoCloseable {
     public void playLoop() {
         // start from the beginning and repeat until stopped
         clip.stop();
+        paused = false;
         clip.setFramePosition(0);
         clip.loop(Clip.LOOP_CONTINUOUSLY);
     }
     public void play() {
         // start the song from the beginning and play it once
         clip.stop();
+        paused = false;
         clip.setFramePosition(0);
         clip.start();
     }
 
     public long getPositionMs() {
         // use the audio position as the clock for gameplay
-        return clip.getMicrosecondPosition() / 1000;
+        return paused ? pausedPositionMs : clip.getMicrosecondPosition() / 1000;
+    }
+
+    public void pause() {
+        if (paused) {
+            return;
+        }
+
+        // remember the stopped audio frame without rewinding the track
+        clip.stop();
+        pausedFrame = clip.getFramePosition();
+        pausedPositionMs = clip.getMicrosecondPosition() / 1000;
+        paused = true;
+    }
+
+    public void resume() {
+        if (!paused) {
+            return;
+        }
+
+        clip.setFramePosition(pausedFrame);
+        paused = false;
+
+        // an already finished track must not restart from the beginning
+        if (pausedFrame < clip.getFrameLength()) {
+            clip.start();
+        }
     }
 
     public void stop() {
         // stop playback when another track takes over
         clip.stop();
+        paused = false;
     }
 
     @Override
     public void close() {
         // release the audio channel when this player is discarded
         clip.close();
+        paused = false;
     }
 }
