@@ -91,18 +91,21 @@ public final class NoteRenderer {
             for (int i = 0; i < notes.size(); i++) {
                 Note note = notes.get(i);
 
-// hide notes after they have been hit or missed
+            // hide notes after they have been hit or missed
                 if (noteJudge.isHit(i) || noteJudge.isMissed(i)) {
                     continue;
                 }
 
-                // the head reaches the receptor when the note starts
+                // calculate the positions using the song's current time
                 double headY = receptorY
                         + (songTimeMs - note.timeMs()) * pixelsPerMs;
 
-                // the tail reaches the receptor when the note ends
                 double tailY = headY - note.durationMs() * pixelsPerMs;
 
+            // keep an active sustain's head at the receptor while its tail moves
+                if (note.durationMs() > 0 && noteJudge.isSustainActive(i)) {
+                    headY = Math.min(headY, receptorY);
+                }
                 if (headY < -arrowSize) {
                     break;
                 }

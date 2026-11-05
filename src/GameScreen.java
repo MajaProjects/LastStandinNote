@@ -106,7 +106,10 @@ public class GameScreen implements Screen, AutoCloseable {
             }
         }
 
-        // judge misses only on the sides controlled by human players
+        // update sustained notes controlled by human players
+        updateHumanSustains(songTimeMs);
+
+        // judge normal note misses on human-controlled sides
         boolean judgeVoiceOne = twoPlayers || playerVoice == 1;
         boolean judgeVoiceTwo = twoPlayers || playerVoice == 2;
 
@@ -116,9 +119,36 @@ public class GameScreen implements Screen, AutoCloseable {
                 judgeVoiceTwo
         );
 
-        // play one sound when this update detects human misses
         if (newMisses > 0) {
             missSound.play();
+        }
+    }
+    private void updateHumanSustains(long songTimeMs) {
+        boolean judgeVoiceOne = twoPlayers || playerVoice == 1;
+        boolean judgeVoiceTwo = twoPlayers || playerVoice == 2;
+
+        // check completed and missed sustained notes
+        int[] results = noteJudge.updateSustains(
+                songTimeMs,
+                heldKeys,
+                judgeVoiceOne,
+                judgeVoiceTwo
+        );
+
+        // play the miss sound if a human missed a sustained note
+        if (results[2] > 0 || results[3] > 0) {
+            missSound.play();
+        }
+
+        for (int side = 0; side < 2; side++) {
+            int voice = side + 1;
+
+            // prepare a combo alert after completing a sustained note
+            if (results[side] > 0 && noteJudge.isComboMilestone(voice)) {
+                comboAlertValues[side] = noteJudge.getComboForVoice(voice);
+                comboAlertTimesMs[side] = songTimeMs;
+                comboSound.play();
+            }
         }
     }
 
@@ -160,28 +190,37 @@ public class GameScreen implements Screen, AutoCloseable {
             return;
         }
 
-        boolean wasPressed = heldKeys[voice - 1][lane];
+        int side = voice - 1;
+        boolean wasPressed = heldKeys[side][lane];
+        long songTimeMs = music.getPositionMs();
 
-        // judge a note only when the key changes from released to pressed
+        if (!pressed && wasPressed) {
+            // complete notes that ended before the key was released
+            updateHumanSustains(songTimeMs);
+        }
+
         if (pressed && !wasPressed) {
-            long songTimeMs = music.getPositionMs();
+            // judge a note when the key changes from released to pressed
             int hitIndex = noteJudge.tryHit(voice, lane, songTimeMs);
 
-            if (hitIndex != -1 && noteJudge.isComboMilestone(voice)) {
-                int side = voice - 1;
-
+            // announce milestones after a normal note is completed
+            if (hitIndex != -1
+                    && !noteJudge.isSustainActive(hitIndex)
+                    && noteJudge.isComboMilestone(voice)) {
                 comboAlertValues[side] = noteJudge.getComboForVoice(voice);
                 comboAlertTimesMs[side] = songTimeMs;
-
-                // play the sound when a human reaches a combo milestone
                 comboSound.play();
             }
         }
 
         // remember whether the key is currently held
-        heldKeys[voice - 1][lane] = pressed;
-    }
+        heldKeys[side][lane] = pressed;
 
+        if (!pressed && wasPressed) {
+            // detect an early release immediately
+            updateHumanSustains(songTimeMs);
+        }
+    }
     public void releaseKeys() {
         // clear all held lanes when the game loses window focus
         for (boolean[] sideKeys : heldKeys) {

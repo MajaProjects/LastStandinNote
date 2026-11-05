@@ -4,6 +4,10 @@ public final class NoteJudge {
 
     private final List<Note> notes;
     private final boolean[] hitNotes;
+    // track sustained notes that are currently being held
+    private final boolean[] activeSustains;
+    // remember the head timing for each sustained note
+    private final long[] sustainDifferencesMs;
     private final boolean[] missedNotes;
     private final long hitWindowMs;
     // keep the score and latest judgement for each side
@@ -16,6 +20,7 @@ public final class NoteJudge {
     private final int[] botTimingOffsets;
     private final boolean[] botMisses;
 
+
     public NoteJudge(List<Note> notes, long hitWindowMs) {
         if (hitWindowMs < 0) {
             throw new IllegalArgumentException(
@@ -27,6 +32,8 @@ public final class NoteJudge {
         this.notes = List.copyOf(notes);
         this.hitNotes = new boolean[notes.size()];
         this.missedNotes = new boolean[notes.size()];
+        this.activeSustains = new boolean[notes.size()];
+        this.sustainDifferencesMs = new long[notes.size()];
         this.hitWindowMs = hitWindowMs;
         // choose the bot's result once for each note
         botTimingOffsets = new int[notes.size()];
@@ -68,9 +75,9 @@ public final class NoteJudge {
         int totalNotes = 0;
         int combo = combos[voice - 1];
 
-        // count the normal notes belonging to this side
+        // count all notes belonging to this side
         for (Note note : notes) {
-            if (note.voice() == voice && note.durationMs() == 0) {
+            if (note.voice() == voice) {
                 totalNotes++;
             }
         }
@@ -98,13 +105,8 @@ public final class NoteJudge {
         for (int i = 0; i < notes.size(); i++) {
             Note note = notes.get(i);
 
-            // sustained notes will be judged separately later
-            if (note.durationMs() > 0) {
-                continue;
-            }
-
-            // ignore notes that have already been judged
-            if (hitNotes[i] || missedNotes[i]) {
+            // ignore notes that are finished or already being held
+            if (hitNotes[i] || missedNotes[i] || activeSustains[i]) {
                 continue;
             }
 
@@ -121,23 +123,31 @@ public final class NoteJudge {
                 closestIndex = i;
                 closestDifference = difference;
             }
-
         }
 
-        if (closestIndex != -1) {
-            // prevent the same note from being judged twice
-            hitNotes[closestIndex] = true;
-
-            // record the rating and score for the side that hit the note
-            int side = voice - 1;
-
-            lastJudgements[side] = getRating(closestDifference);
-            judgementTimesMs[side] = songTimeMs;
-            scores[side] += getScore(closestDifference);
-
-            // increase the combo after a successful hit
-            combos[side]++;
+        if (closestIndex == -1) {
+            return -1;
         }
+
+        Note selectedNote = notes.get(closestIndex);
+
+        if (selectedNote.durationMs() > 0) {
+            // start the sustained note and keep the head timing
+            activeSustains[closestIndex] = true;
+            sustainDifferencesMs[closestIndex] = closestDifference;
+
+            return closestIndex;
+        }
+
+        // complete and score a normal note immediately
+        hitNotes[closestIndex] = true;
+
+        int side = voice - 1;
+
+        lastJudgements[side] = getRating(closestDifference);
+        judgementTimesMs[side] = songTimeMs;
+        scores[side] += getScore(closestDifference);
+        combos[side]++;
 
         return closestIndex;
     }
@@ -185,15 +195,97 @@ public final class NoteJudge {
                 newMisses++;
             }
         }
-
         return newMisses;
+    }
+    public int[] updateSustains(
+            long songTimeMs,
+            boolean[][] heldKeys,
+            boolean judgeVoiceOne,
+            boolean judgeVoiceTwo
+    ) {
+        // store completed and missed sustains for each side
+        int[] results = new int[4];
+
+        for (int i = 0; i < notes.size(); i++) {
+            Note note = notes.get(i);
+
+            // only process sustained notes that are still pending
+            if (note.durationMs() <= 0 || hitNotes[i] || missedNotes[i]) {
+                continue;
+            }
+
+            // only judge sides controlled by human players
+            if (note.voice() == 1 && !judgeVoiceOne) {
+                continue;
+            }
+
+            if (note.voice() == 2 && !judgeVoiceTwo) {
+                continue;
+            }
+
+            int side = note.voice() - 1;
+
+            if (!activeSustains[i]) {
+                // miss the note if its head was not pressed in time
+                if (songTimeMs > note.timeMs() + hitWindowMs) {
+                    missedNotes[i] = true;
+
+                    lastJudgements[side] = "MISS";
+                    judgementTimesMs[side] = songTimeMs;
+                    scores[side] -= 100;
+                    combos[side] = 0;
+
+                    results[side + 2]++;
+                }
+
+                continue;
+            }
+
+            // check whether the player is still holding this lane
+            boolean stillHeld = heldKeys[side][note.lane()];
+
+            if (!stillHeld) {
+                // releasing the key early breaks the sustained note
+                activeSustains[i] = false;
+                missedNotes[i] = true;
+
+                lastJudgements[side] = "MISS";
+                judgementTimesMs[side] = songTimeMs;
+                scores[side] -= 100;
+                combos[side] = 0;
+
+                results[side + 2]++;
+                continue;
+            }
+
+            long endTimeMs = note.timeMs() + note.durationMs();
+
+            if (songTimeMs >= endTimeMs) {
+                // complete the note after it has been held to the end
+                activeSustains[i] = false;
+                hitNotes[i] = true;
+
+                long difference = sustainDifferencesMs[i];
+
+                lastJudgements[side] = getRating(difference);
+                judgementTimesMs[side] = songTimeMs;
+                scores[side] += getScore(difference);
+                combos[side]++;
+
+                results[side]++;
+            }
+        }
+
+        return results;
     }
     public boolean isHit(int index) {
         return hitNotes[index];
     }
-
     public boolean isMissed(int index) {
         return missedNotes[index];
+    }
+    public boolean isSustainActive(int index) {
+        return activeSustains[index];
     }
 
     public static String getRating(long timingDifferenceMs) {
