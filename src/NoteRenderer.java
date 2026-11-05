@@ -1,7 +1,6 @@
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public final class NoteRenderer {
 
@@ -20,6 +19,11 @@ public final class NoteRenderer {
     private final int arrowSize;
     private final int gap;
     private final double pixelsPerMs;
+
+    // root effects change drawing positions without changing note timing
+    private final double waveAmplitudePx;
+    private final double wavePeriodBeats;
+    private final double waveSettleDistancePx;
 
     // remember visual feedback without changing the judge's results
     private NoteJudge visualJudge;
@@ -40,6 +44,15 @@ public final class NoteRenderer {
             int gap,
             double pixelsPerSecond
     ) {
+        this(arrowSize, gap, pixelsPerSecond, false);
+    }
+
+    public NoteRenderer(
+            int arrowSize,
+            int gap,
+            double pixelsPerSecond,
+            boolean rootEffects
+    ) {
         if (arrowSize <= 0 || gap < 0
                 || !Double.isFinite(pixelsPerSecond)
                 || pixelsPerSecond <= 0) {
@@ -51,6 +64,29 @@ public final class NoteRenderer {
         this.arrowSize = arrowSize;
         this.gap = gap;
         this.pixelsPerMs = pixelsPerSecond / 1000.0;
+
+        if (rootEffects) {
+            Map<String, String> settings = loadRootSettings();
+            String enabled = settings.get("wave_enabled");
+
+            if (!"true".equalsIgnoreCase(enabled)
+                    && !"false".equalsIgnoreCase(enabled)) {
+                throw new IllegalArgumentException(
+                        "ROOT wave_enabled must be true or false"
+                );
+            }
+
+            double amplitude = readWaveNumber(settings, "wave_amplitude_px", true);
+            waveAmplitudePx = Boolean.parseBoolean(enabled) ? amplitude : 0;
+            wavePeriodBeats = readWaveNumber(settings, "wave_period_beats", false);
+            waveSettleDistancePx = readWaveNumber(
+                    settings, "wave_settle_distance_px", false
+            );
+        } else {
+            waveAmplitudePx = 0;
+            wavePeriodBeats = 1;
+            waveSettleDistancePx = 1;
+        }
 
         SpriteAtlas atlas = new SpriteAtlas(
                 "/images/arrows/arrows.txt"
@@ -101,6 +137,19 @@ public final class NoteRenderer {
             boolean[][] heldKeys,
             NoteJudge noteJudge
     ) {
+        render(g, notes, songTimeMs, width, height, heldKeys, noteJudge, 0.0);
+    }
+
+    public void render(
+            Graphics2D g,
+            List<Note> notes,
+            long songTimeMs,
+            int width,
+            int height,
+            boolean[][] heldKeys,
+            NoteJudge noteJudge,
+            double beat
+    ) {
         int receptorY = height - 100;
         Graphics2D field = (Graphics2D) g.create();
 
@@ -113,7 +162,7 @@ public final class NoteRenderer {
             // draw all sustained bodies behind the receptors and heads
             drawNotes(
                     field, notes, songTimeMs, width, height,
-                    receptorY, noteJudge, true
+                    receptorY, noteJudge, true, beat
             );
 
             for (int voice = 1; voice <= 2; voice++) {
@@ -137,7 +186,7 @@ public final class NoteRenderer {
             // keep note heads visible above sustained bodies
             drawNotes(
                     field, notes, songTimeMs, width, height,
-                    receptorY, noteJudge, false
+                    receptorY, noteJudge, false, beat
             );
         } finally {
             field.dispose();
@@ -171,7 +220,8 @@ public final class NoteRenderer {
             int height,
             int receptorY,
             NoteJudge judge,
-            boolean drawBodies
+            boolean drawBodies,
+            double beat
     ) {
         for (int i = 0; i < notes.size(); i++) {
             // briefly show bad hits even though they are already judged
@@ -219,6 +269,14 @@ public final class NoteRenderer {
             int lane = note.lane();
             int x = getLaneX(note.voice(), lane, width);
 
+            if (waveAmplitudePx > 0) {
+                // settle into the original lane as the head reaches the receptor
+                double distance = Math.max(0, receptorY - headY);
+                double strength = Math.min(1.0, distance / waveSettleDistancePx);
+                double phase = beat * 2.0 * Math.PI / wavePeriodBeats;
+                x += (int) Math.round(Math.sin(phase) * waveAmplitudePx * strength);
+            }
+
             if (drawBodies) {
                 // a completed bad sustain only needs head feedback
                 if (note.durationMs() > 0 && !badFlash) {
@@ -243,7 +301,6 @@ public final class NoteRenderer {
 
             if (missed || badFlash) {
                 image = missedArrows[lane];
-                image = missedArrows[lane];
             } else if (active) {
                 // confirm visually that the sustained note was registered
                 image = pressedArrows[lane];
@@ -259,6 +316,61 @@ public final class NoteRenderer {
                 );
             }
         }
+    }
+
+    private static Map<String, String> loadRootSettings() {
+        Map<String, String> settings = new HashMap<>();
+        Set<String> allowed = Set.of(
+                "wave_enabled", "wave_amplitude_px",
+                "wave_period_beats", "wave_settle_distance_px"
+        );
+
+        // read once when the root song is prepared
+        for (String originalLine : TextLoader.load("/songs/root_effects.txt")) {
+            String line = originalLine.strip();
+
+            if (line.isEmpty() || line.startsWith("#")) {
+                continue;
+            }
+
+            String[] fields = line.split(";", -1);
+
+            if (fields.length != 2 || !allowed.contains(fields[0].strip())) {
+                throw new IllegalArgumentException("Invalid ROOT setting: " + line);
+            }
+
+            String key = fields[0].strip();
+            if (settings.putIfAbsent(key, fields[1].strip()) != null) {
+                throw new IllegalArgumentException("Duplicate ROOT setting: " + key);
+            }
+        }
+
+        return settings;
+    }
+
+    private static double readWaveNumber(
+            Map<String, String> settings,
+            String key,
+            boolean allowZero
+    ) {
+        String text = settings.get(key);
+
+        if (text == null) {
+            throw new IllegalArgumentException("Missing ROOT setting: " + key);
+        }
+
+        double value;
+        try {
+            value = Double.parseDouble(text);
+        } catch (NumberFormatException error) {
+            throw new IllegalArgumentException("Invalid ROOT number: " + key, error);
+        }
+
+        if (!Double.isFinite(value) || (allowZero ? value < 0 : value <= 0)) {
+            throw new IllegalArgumentException("Invalid ROOT value for " + key);
+        }
+
+        return value;
     }
 
     private int getLaneX(int voice, int lane, int width) {

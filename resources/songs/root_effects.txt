@@ -1,0 +1,5 @@
+# setting;value
+wave_enabled;true
+wave_amplitude_px;12
+wave_period_beats;4
+wave_settle_distance_px;180

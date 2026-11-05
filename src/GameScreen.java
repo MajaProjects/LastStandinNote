@@ -65,8 +65,10 @@ public class GameScreen implements Screen, AutoCloseable {
     ) {
         this.twoPlayers = twoPlayers;
 
-        // use the selected difficulty's configured speed for note drawing
-        noteRenderer = new NoteRenderer(48, 12, difficulty.getScrollSpeed());
+        // root can add visual effects while every mode keeps its configured speed
+        noteRenderer = new NoteRenderer(
+                48, 12, difficulty.getScrollSpeed(), difficulty == Difficulty.ROOT
+        );
 
         // tux stays on the right even when another character is selected
         playerVoice = playerCharacter.equals("tux") ? 2 : 1;
@@ -396,7 +398,8 @@ public class GameScreen implements Screen, AutoCloseable {
                 width,
                 height,
                 heldKeys,
-                noteJudge
+                noteJudge,
+                beat
         );
 
         // animate the latest judgement on each side
