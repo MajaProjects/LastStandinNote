@@ -18,6 +18,10 @@ public class GameScreen implements Screen, AutoCloseable {
     private final SpriteAnimation playerIdle;
     private final SpriteAnimation opponentIdle;
     private final SpriteAnimation kernelIdle;
+    // keep kernel's reactions ready for combo milestones and misses
+    private final SpriteAnimation kernelHappy;
+    private final SpriteAnimation kernelSad;
+
 
     private final boolean twoPlayers;
     private final String opponentLabel;
@@ -72,6 +76,9 @@ public class GameScreen implements Screen, AutoCloseable {
         playerIdle = atlas.getAnimation(playerCharacter, "idle");
         opponentIdle = atlas.getAnimation(opponentCharacter, "idle");
         kernelIdle = atlas.getAnimation("kernel", "idle");
+        // load kernel's reactions from the shared sprite atlas
+        kernelHappy = atlas.getAnimation("kernel", "happy");
+        kernelSad = atlas.getAnimation("kernel", "sad");
         // load the three monitor images from the sprite atlas
         monitorVersus = atlas.getAnimation("monitor", "versus").getFrame(0);
         monitorLinux = atlas.getAnimation("monitor", "linux").getFrame(0);
@@ -285,9 +292,20 @@ public class GameScreen implements Screen, AutoCloseable {
                 null
         );
 
-        // position kernel on the monitor and draw her legs in front
+        // choose kernel's reaction to tux's latest judgement
+        SpriteAnimation kernelAnimation = kernelIdle;
+        String tuxJudgement = noteJudge.getVisibleJudgement(2, songTimeMs);
+
+        if (tuxJudgement.equals("MISS")) {
+            kernelAnimation = kernelSad;
+        } else if (!tuxJudgement.isEmpty()
+                && noteJudge.isComboMilestone(2)) {
+            kernelAnimation = kernelHappy;
+        }
+
+    // position kernel on the monitor and draw her legs in front
         int kernelBottom = monitorY + 56;
-        drawIdle(g, kernelIdle, beat, width / 2, kernelBottom, 1);
+        drawIdle(g, kernelAnimation, beat, width / 2, kernelBottom, 1);
 
         // place each controller label below the character it belongs to
         drawLabel(g, "PLAYER ONE", playerX, height - 42);
