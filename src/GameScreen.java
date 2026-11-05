@@ -52,6 +52,9 @@ public class GameScreen implements Screen, AutoCloseable {
     private final AudioPlayer missSound = new AudioPlayer(
             "/audio/miss sound.wav"
     );
+    // remember the most recent direction and input time for each side
+    private final int[] lastDirections = {-1, -1};
+    private final long[] lastDirectionTimesMs = {-1, -1};
 
     public GameScreen(
             String songFolder,
@@ -140,9 +143,16 @@ public class GameScreen implements Screen, AutoCloseable {
             int botVoice = playerVoice == 1 ? 2 : 1;
             boolean[] botKeys = noteJudge.updateBot(botVoice, songTimeMs);
 
-            // pass the bot's active lanes to the receptor renderer
             for (int lane = 0; lane < botKeys.length; lane++) {
-                heldKeys[botVoice - 1][lane] = botKeys[lane];
+                int side = botVoice - 1;
+
+                // remember when the bot starts or releases a direction
+                if (botKeys[lane] != heldKeys[side][lane]) {
+                    lastDirections[side] = lane;
+                    lastDirectionTimesMs[side] = songTimeMs;
+                }
+
+                heldKeys[side][lane] = botKeys[lane];
             }
         }
 
@@ -233,6 +243,11 @@ public class GameScreen implements Screen, AutoCloseable {
         int side = voice - 1;
         boolean wasPressed = heldKeys[side][lane];
         long songTimeMs = music.getPositionMs();
+        // remember direction changes when a key is pressed or released
+        if (pressed != wasPressed) {
+            lastDirections[side] = lane;
+            lastDirectionTimesMs[side] = songTimeMs;
+        }
 
         if (!pressed && wasPressed) {
             // complete notes that ended before the key was released
@@ -461,6 +476,13 @@ public class GameScreen implements Screen, AutoCloseable {
             if (heldKeys[side][lane]) {
                 return directions[lane];
             }
+        }
+        // keep the most recent singing pose briefly after release
+        int lastLane = lastDirections[side];
+        long directionAge = songTimeMs - lastDirectionTimesMs[side];
+
+        if (lastLane >= 0 && directionAge >= 0 && directionAge < 150) {
+            return directions[lastLane];
         }
 
         return idle;
