@@ -2,6 +2,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.event.KeyEvent;
 
+
 public class GameScreen implements Screen, AutoCloseable {
 
     private final SongChart chart;
@@ -17,6 +18,9 @@ public class GameScreen implements Screen, AutoCloseable {
 
     private final SpriteAnimation playerIdle;
     private final SpriteAnimation opponentIdle;
+    // keep the four singing directions for each character
+    private final SpriteAnimation[] playerDirections = new SpriteAnimation[4];
+    private final SpriteAnimation[] opponentDirections = new SpriteAnimation[4];
     private final SpriteAnimation kernelIdle;
     // keep kernel's reactions ready for combo milestones and misses
     private final SpriteAnimation kernelHappy;
@@ -75,6 +79,20 @@ public class GameScreen implements Screen, AutoCloseable {
         // keep the selected character assigned to player one
         playerIdle = atlas.getAnimation(playerCharacter, "idle");
         opponentIdle = atlas.getAnimation(opponentCharacter, "idle");
+        // load singing animations in the same order as the note lanes
+        String[] directions = {"left", "down", "up", "right"};
+
+        for (int lane = 0; lane < directions.length; lane++) {
+            playerDirections[lane] = atlas.getAnimation(
+                    playerCharacter,
+                    directions[lane]
+            );
+
+            opponentDirections[lane] = atlas.getAnimation(
+                    opponentCharacter,
+                    directions[lane]
+            );
+        }
         kernelIdle = atlas.getAnimation("kernel", "idle");
         // load kernel's reactions from the shared sprite atlas
         kernelHappy = atlas.getAnimation("kernel", "happy");
@@ -260,8 +278,24 @@ public class GameScreen implements Screen, AutoCloseable {
         int playerX = playerVoice == 2 ? rightX : leftX;
         int opponentX = playerVoice == 2 ? leftX : rightX;
 
-        drawIdle(g, playerIdle, beat, playerX, groundY, 2);
-        drawIdle(g, opponentIdle, beat, opponentX, groundY, 2);
+// find the voice controlled by the other participant
+        int opponentVoice = playerVoice == 1 ? 2 : 1;
+
+// choose a singing pose when a lane is held
+        SpriteAnimation playerAnimation = getCharacterAnimation(
+                playerIdle,
+                playerDirections,
+                playerVoice
+        );
+
+        SpriteAnimation opponentAnimation = getCharacterAnimation(
+                opponentIdle,
+                opponentDirections,
+                opponentVoice
+        );
+
+        drawIdle(g, playerAnimation, beat, playerX, groundY, 2);
+        drawIdle(g, opponentAnimation, beat, opponentX, groundY, 2);
 
         // enlarge the monitor while preserving its center
         int monitorSize = 192;
@@ -381,7 +415,23 @@ public class GameScreen implements Screen, AutoCloseable {
         String text = "COMBO " + comboAlertValues[side];
         drawLabel(g, text, centerX, y);
     }
+    private SpriteAnimation getCharacterAnimation(
+            SpriteAnimation idle,
+            SpriteAnimation[] directions,
+            int voice
+    ) {
+        int side = voice - 1;
 
+        // use the first held lane as the character's singing direction
+        for (int lane = 0; lane < directions.length; lane++) {
+            if (heldKeys[side][lane]) {
+                return directions[lane];
+            }
+        }
+
+        // return to the idle animation when no lane is held
+        return idle;
+    }
     private void drawIdle(
             Graphics2D g,
             SpriteAnimation animation,
