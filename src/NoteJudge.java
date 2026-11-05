@@ -142,11 +142,13 @@ public final class NoteJudge {
         return closestIndex;
     }
 
-    public void updateMisses(
+    public int updateMisses(
             long songTimeMs,
             boolean judgeVoiceOne,
             boolean judgeVoiceTwo
     ) {
+        int newMisses = 0;
+
         for (int i = 0; i < notes.size(); i++) {
             Note note = notes.get(i);
 
@@ -172,19 +174,20 @@ public final class NoteJudge {
             if (songTimeMs > note.timeMs() + hitWindowMs) {
                 missedNotes[i] = true;
 
-                // record the miss and apply its score penalty
                 int side = note.voice() - 1;
 
                 lastJudgements[side] = "MISS";
                 judgementTimesMs[side] = songTimeMs;
                 scores[side] -= 100;
-
-            // reset the combo when this side misses a note
                 combos[side] = 0;
+
+                // report this new miss to the game screen
+                newMisses++;
             }
         }
-    }
 
+        return newMisses;
+    }
     public boolean isHit(int index) {
         return hitNotes[index];
     }

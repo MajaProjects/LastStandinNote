@@ -37,6 +37,10 @@ public class GameScreen implements Screen, AutoCloseable {
     private final AudioPlayer comboSound = new AudioPlayer(
             "/audio/comboSound.wav"
     );
+    // load the sound used when a human player misses a note
+    private final AudioPlayer missSound = new AudioPlayer(
+            "/audio/miss sound.wav"
+    );
 
     public GameScreen(
             String songFolder,
@@ -106,13 +110,17 @@ public class GameScreen implements Screen, AutoCloseable {
         boolean judgeVoiceOne = twoPlayers || playerVoice == 1;
         boolean judgeVoiceTwo = twoPlayers || playerVoice == 2;
 
-        noteJudge.updateMisses(
+        int newMisses = noteJudge.updateMisses(
                 songTimeMs,
                 judgeVoiceOne,
                 judgeVoiceTwo
         );
-    }
 
+        // play one sound when this update detects human misses
+        if (newMisses > 0) {
+            missSound.play();
+        }
+    }
 
     public void setKeyPressed(int keyCode, boolean pressed) {
         // shared play uses the left layout first; solo play uses dfjk
@@ -356,8 +364,9 @@ public class GameScreen implements Screen, AutoCloseable {
 
     @Override
     public void close() {
-        // release the song and combo sound resources
+        // release the song and sound resources
         music.close();
         comboSound.close();
+        missSound.close();
     }
 }
