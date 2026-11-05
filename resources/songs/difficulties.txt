@@ -1,0 +1,4 @@
+# difficulty;scroll speed in pixels per second
+USER;300
+ADMIN;360
+ROOT;420

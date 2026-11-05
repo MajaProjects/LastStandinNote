@@ -39,8 +39,7 @@ public class GameScreen implements Screen, AutoCloseable {
     // store the four held lanes for each side of the stage
     private final boolean[][] heldKeys = new boolean[2][4];
 
-    private final NoteRenderer noteRenderer =
-            new NoteRenderer(48, 12, 300);
+    private final NoteRenderer noteRenderer;
     // remember the latest combo alert for each side
     private final long[] comboAlertTimesMs = {-1, -1};
     private final int[] comboAlertValues = new int[2];
@@ -61,9 +60,13 @@ public class GameScreen implements Screen, AutoCloseable {
             String chartPath,
             String playerCharacter,
             String opponentCharacter,
-            boolean twoPlayers
+            boolean twoPlayers,
+            Difficulty difficulty
     ) {
         this.twoPlayers = twoPlayers;
+
+        // use the selected difficulty's configured speed for note drawing
+        noteRenderer = new NoteRenderer(48, 12, difficulty.getScrollSpeed());
 
         // tux stays on the right even when another character is selected
         playerVoice = playerCharacter.equals("tux") ? 2 : 1;

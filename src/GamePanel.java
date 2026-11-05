@@ -262,10 +262,10 @@ public class GamePanel extends JPanel {
 
         if (pantallaActual instanceof CharacterSelectScreen characters) {
             String folder = previousSongScreen.getSelectedSongFolder();
+            Difficulty difficulty = previousSongScreen.getDifficulty();
 
             // build the chart path from the selected difficulty
-            String difficultyName = previousSongScreen.getDifficulty()
-                    .name()
+            String difficultyName = difficulty.name()
                     .toLowerCase(java.util.Locale.ROOT);
 
             String chartPath = folder + "chart_" + difficultyName + ".txt";
@@ -290,7 +290,8 @@ public class GamePanel extends JPanel {
                     chartPath,
                     characters.getSelectedCharacter(),
                     characters.getOtherCharacter(),
-                    twoPlayers
+                    twoPlayers,
+                    difficulty
             );
 
             // switch screens after the gameplay resources have loaded
