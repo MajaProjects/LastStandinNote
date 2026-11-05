@@ -15,6 +15,8 @@ public final class NoteJudge {
     // track consecutive hits separately for each side
     private final int[] combos = new int[2];
     private final String[] lastJudgements = {"", ""};
+    // remember the lane of the latest miss for each side
+    private final int[] lastMissLanes = {-1, -1};
     private final long[] judgementTimesMs = {-1, -1};
     // store one timing choice for each note
     private final int[] botTimingOffsets;
@@ -187,6 +189,7 @@ public final class NoteJudge {
                 int side = note.voice() - 1;
 
                 lastJudgements[side] = "MISS";
+                lastMissLanes[side] = note.lane();
                 judgementTimesMs[side] = songTimeMs;
                 scores[side] -= 100;
                 combos[side] = 0;
@@ -231,6 +234,7 @@ public final class NoteJudge {
                     missedNotes[i] = true;
 
                     lastJudgements[side] = "MISS";
+                    lastMissLanes[side] = note.lane();
                     judgementTimesMs[side] = songTimeMs;
                     scores[side] -= 100;
                     combos[side] = 0;
@@ -250,6 +254,7 @@ public final class NoteJudge {
                 missedNotes[i] = true;
 
                 lastJudgements[side] = "MISS";
+                lastMissLanes[side] = note.lane();
                 judgementTimesMs[side] = songTimeMs;
                 scores[side] -= 100;
                 combos[side] = 0;
@@ -277,6 +282,10 @@ public final class NoteJudge {
         }
 
         return results;
+    }
+    public int getLastMissLane(int voice) {
+        // return the direction of this side's latest missed note
+        return lastMissLanes[voice - 1];
     }
     public boolean isHit(int index) {
         return hitNotes[index];
@@ -373,6 +382,7 @@ public final class NoteJudge {
                     missedNotes[i] = true;
 
                     lastJudgements[side] = "MISS";
+                    lastMissLanes[side] = note.lane();
                     judgementTimesMs[side] = songTimeMs;
                     scores[side] -= 100;
                     combos[side] = 0;

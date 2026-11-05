@@ -20,6 +20,9 @@ public class GameScreen implements Screen, AutoCloseable {
     private final SpriteAnimation opponentIdle;
     // keep the four singing directions for each character
     private final SpriteAnimation[] playerDirections = new SpriteAnimation[4];
+    // keep the four miss poses for each character
+    private final SpriteAnimation[] playerMissDirections = new SpriteAnimation[4];
+    private final SpriteAnimation[] opponentMissDirections = new SpriteAnimation[4];
     private final SpriteAnimation[] opponentDirections = new SpriteAnimation[4];
     private final SpriteAnimation kernelIdle;
     // keep kernel's reactions ready for combo milestones and misses
@@ -83,6 +86,7 @@ public class GameScreen implements Screen, AutoCloseable {
         String[] directions = {"left", "down", "up", "right"};
 
         for (int lane = 0; lane < directions.length; lane++) {
+            // load the normal singing pose for each character
             playerDirections[lane] = atlas.getAnimation(
                     playerCharacter,
                     directions[lane]
@@ -91,6 +95,17 @@ public class GameScreen implements Screen, AutoCloseable {
             opponentDirections[lane] = atlas.getAnimation(
                     opponentCharacter,
                     directions[lane]
+            );
+
+            // load the matching miss pose from the atlas
+            playerMissDirections[lane] = atlas.getAnimation(
+                    playerCharacter,
+                    directions[lane] + "_miss"
+            );
+
+            opponentMissDirections[lane] = atlas.getAnimation(
+                    opponentCharacter,
+                    directions[lane] + "_miss"
             );
         }
         kernelIdle = atlas.getAnimation("kernel", "idle");
@@ -278,25 +293,28 @@ public class GameScreen implements Screen, AutoCloseable {
         int playerX = playerVoice == 2 ? rightX : leftX;
         int opponentX = playerVoice == 2 ? leftX : rightX;
 
-// find the voice controlled by the other participant
+        // find the voice controlled by the other participant
         int opponentVoice = playerVoice == 1 ? 2 : 1;
 
-// choose a singing pose when a lane is held
+        // choose the current pose for each character
         SpriteAnimation playerAnimation = getCharacterAnimation(
                 playerIdle,
                 playerDirections,
-                playerVoice
+                playerMissDirections,
+                playerVoice,
+                songTimeMs
         );
 
         SpriteAnimation opponentAnimation = getCharacterAnimation(
                 opponentIdle,
                 opponentDirections,
-                opponentVoice
+                opponentMissDirections,
+                opponentVoice,
+                songTimeMs
         );
 
         drawIdle(g, playerAnimation, beat, playerX, groundY, 2);
         drawIdle(g, opponentAnimation, beat, opponentX, groundY, 2);
-
         // enlarge the monitor while preserving its center
         int monitorSize = 192;
         int monitorCenterY = height - 232;
@@ -418,18 +436,33 @@ public class GameScreen implements Screen, AutoCloseable {
     private SpriteAnimation getCharacterAnimation(
             SpriteAnimation idle,
             SpriteAnimation[] directions,
-            int voice
+            SpriteAnimation[] missDirections,
+            int voice,
+            long songTimeMs
     ) {
         int side = voice - 1;
 
-        // use the first held lane as the character's singing direction
+        String judgement = noteJudge.getVisibleJudgement(voice, songTimeMs);
+        long judgementAge = noteJudge.getJudgementAgeMs(voice, songTimeMs);
+
+        // briefly show the direction of the latest missed note
+        if (judgement.equals("MISS")
+                && judgementAge >= 0
+                && judgementAge < 250) {
+            int missLane = noteJudge.getLastMissLane(voice);
+
+            if (missLane >= 0) {
+                return missDirections[missLane];
+            }
+        }
+
+        // use the first held lane as the singing direction
         for (int lane = 0; lane < directions.length; lane++) {
             if (heldKeys[side][lane]) {
                 return directions[lane];
             }
         }
 
-        // return to the idle animation when no lane is held
         return idle;
     }
     private void drawIdle(
