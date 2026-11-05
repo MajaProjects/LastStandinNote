@@ -239,12 +239,42 @@ public class GameScreen implements Screen, AutoCloseable {
                 heldKeys,
                 noteJudge
         );
-        // show the latest judgement above each side
-        String leftJudgement = noteJudge.getVisibleJudgement(1, songTimeMs);
-        String rightJudgement = noteJudge.getVisibleJudgement(2, songTimeMs);
+        // animate the latest judgement on each side
+        drawJudgement(g, 1, width / 4, 60, songTimeMs);
+        drawJudgement(g, 2, width * 3 / 4, 60, songTimeMs);
+    }
+    private void drawJudgement(
+            Graphics2D g,
+            int voice,
+            int centerX,
+            int y,
+            long songTimeMs
+    ) {
+        String judgement = noteJudge.getVisibleJudgement(voice, songTimeMs);
 
-        drawLabel(g, leftJudgement, width / 4, 60);
-        drawLabel(g, rightJudgement, width * 3 / 4, 60);
+        // skip drawing when there is no visible judgement
+        if (judgement.isEmpty()) {
+            return;
+        }
+
+        long ageMs = noteJudge.getJudgementAgeMs(voice, songTimeMs);
+
+        // shrink from a larger size during the first 180 ms
+        double progress = Math.min(ageMs / 180.0, 1.0);
+        double scale = 1.0 + 0.4 * (1.0 - progress);
+
+        Graphics2D copy = (Graphics2D) g.create();
+
+        try {
+            // scale around the horizontal center of the text
+            copy.translate(centerX, y);
+            copy.scale(scale, scale);
+
+            int textWidth = font.getTextWidth(judgement, 1);
+            font.draw(copy, judgement, -textWidth / 2, 0, 1);
+        } finally {
+            copy.dispose();
+        }
     }
 
     private void drawIdle(

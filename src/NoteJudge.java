@@ -219,6 +219,18 @@ public final class NoteJudge {
 
         return lastJudgements[side];
     }
+    public long getJudgementAgeMs(int voice, long songTimeMs) {
+        int side = voice - 1;
+        long judgementTime = judgementTimesMs[side];
+
+        // report when this side has no judgement yet
+        if (judgementTime < 0) {
+            return -1;
+        }
+
+        // measure how long the latest judgement has been visible
+        return Math.max(0, songTimeMs - judgementTime);
+    }
 
     public boolean[] updateBot(int voice, long songTimeMs) {
         boolean[] botKeys = new boolean[4];
