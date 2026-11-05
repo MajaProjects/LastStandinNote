@@ -8,3 +8,9 @@ fade_enabled;true
 fade_min_alpha;0.25
 fade_start_distance_px;400
 fade_full_opacity_distance_px;140
+
+shake_enabled;true
+shake_amplitude_px;3
+shake_interval_beats;4
+shake_duration_beats;0.35
+shake_cycles;3

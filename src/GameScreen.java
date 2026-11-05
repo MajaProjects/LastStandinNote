@@ -1,6 +1,8 @@
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.event.KeyEvent;
+import java.awt.Point;
+import java.util.Map;
 
 
 public class GameScreen implements Screen, AutoCloseable {
@@ -40,6 +42,11 @@ public class GameScreen implements Screen, AutoCloseable {
     private final boolean[][] heldKeys = new boolean[2][4];
 
     private final NoteRenderer noteRenderer;
+
+    private final double shakeAmplitudePx;
+    private final double shakeIntervalBeats;
+    private final double shakeDurationBeats;
+    private final double shakeCycles;
     // remember the latest combo alert for each side
     private final long[] comboAlertTimesMs = {-1, -1};
     private final int[] comboAlertValues = new int[2];
@@ -69,6 +76,27 @@ public class GameScreen implements Screen, AutoCloseable {
         noteRenderer = new NoteRenderer(
                 48, 12, difficulty.getScrollSpeed(), difficulty == Difficulty.ROOT
         );
+
+        if (difficulty == Difficulty.ROOT) {
+            Map<String, String> settings = TextLoader.loadSettings("/songs/root_effects.txt");
+            boolean enabled = TextLoader.getBooleanSetting(settings, "shake_enabled");
+            double amplitude = TextLoader.getNumberSetting(settings, "shake_amplitude_px", true);
+            shakeAmplitudePx = enabled ? amplitude : 0;
+            shakeIntervalBeats = TextLoader.getNumberSetting(settings, "shake_interval_beats", false);
+            shakeDurationBeats = TextLoader.getNumberSetting(settings, "shake_duration_beats", false);
+            shakeCycles = TextLoader.getNumberSetting(settings, "shake_cycles", false);
+
+            if (shakeDurationBeats > shakeIntervalBeats) {
+                throw new IllegalArgumentException(
+                        "ROOT shake duration must not exceed its interval"
+                );
+            }
+        } else {
+            shakeAmplitudePx = 0;
+            shakeIntervalBeats = 1;
+            shakeDurationBeats = 1;
+            shakeCycles = 1;
+        }
 
         // tux stays on the right even when another character is selected
         playerVoice = playerCharacter.equals("tux") ? 2 : 1;
@@ -298,93 +326,104 @@ public class GameScreen implements Screen, AutoCloseable {
 
     @Override
     public void render(Graphics2D g, int width, int height) {
-        g.drawImage(background, 0, 0, width, height, null);
-
-        // derive musical time from the audio position
+        // derive every visual effect from the same audio position
         long songTimeMs = music.getPositionMs();
-
         double beat = Math.max(
                 0.0,
                 (songTimeMs - chart.beatOffsetMs())
                         * chart.bpm() / 60_000.0
         );
 
-        drawLabel(g, chart.name(), width / 2, 20);
-
         int groundY = height - 52;
         int leftX = width / 4;
         int rightX = width * 3 / 4;
-
-        // selection changes the controller, while character positions stay fixed
         int playerX = playerVoice == 2 ? rightX : leftX;
         int opponentX = playerVoice == 2 ? leftX : rightX;
+        Point offset = getStageOffset(beat);
 
-        // find the voice controlled by the other participant
-        int opponentVoice = playerVoice == 1 ? 2 : 1;
+        // fill the edges before moving the stage so no empty border appears
+        g.drawImage(background, 0, 0, width, height, null);
+        Graphics2D stage = (Graphics2D) g.create();
 
-        // choose the current pose for each character
-        SpriteAnimation playerAnimation = getCharacterAnimation(
-                playerIdle,
-                playerDirections,
-                playerMissDirections,
-                playerVoice,
-                songTimeMs
-        );
+        try {
+            stage.translate(offset.x, offset.y);
+            if (offset.x != 0 || offset.y != 0) {
+                stage.drawImage(background, 0, 0, width, height, null);
+            }
 
-        SpriteAnimation opponentAnimation = getCharacterAnimation(
-                opponentIdle,
-                opponentDirections,
-                opponentMissDirections,
-                opponentVoice,
-                songTimeMs
-        );
+            // find the voice controlled by the other participant
+            int opponentVoice = playerVoice == 1 ? 2 : 1;
 
-        drawIdle(g, playerAnimation, beat, playerX, groundY, 2);
-        drawIdle(g, opponentAnimation, beat, opponentX, groundY, 2);
-        // enlarge the monitor while preserving its center
-        int monitorSize = 192;
-        int monitorCenterY = height - 232;
-        int monitorX = width / 2 - monitorSize / 2;
-        int monitorY = monitorCenterY - monitorSize / 2;
+            // choose the current pose for each character
+            SpriteAnimation playerAnimation = getCharacterAnimation(
+                    playerIdle,
+                    playerDirections,
+                    playerMissDirections,
+                    playerVoice,
+                    songTimeMs
+            );
 
-// compare the scores of the two sides
-        int windowsScore = noteJudge.getScoreForVoice(1);
-        int tuxScore = noteJudge.getScoreForVoice(2);
+            SpriteAnimation opponentAnimation = getCharacterAnimation(
+                    opponentIdle,
+                    opponentDirections,
+                    opponentMissDirections,
+                    opponentVoice,
+                    songTimeMs
+            );
 
-// show versus when the scores are equal
-        BufferedImage currentMonitor = monitorVersus;
+            drawIdle(stage, playerAnimation, beat, playerX, groundY, 2);
+            drawIdle(stage, opponentAnimation, beat, opponentX, groundY, 2);
+            // enlarge the monitor while preserving its center
+            int monitorSize = 192;
+            int monitorCenterY = height - 232;
+            int monitorX = width / 2 - monitorSize / 2;
+            int monitorY = monitorCenterY - monitorSize / 2;
 
-// show the character that currently has the higher score
-        if (windowsScore > tuxScore) {
-            currentMonitor = monitorWindows;
-        } else if (tuxScore > windowsScore) {
-            currentMonitor = monitorLinux;
+            // compare the scores of the two sides
+            int windowsScore = noteJudge.getScoreForVoice(1);
+            int tuxScore = noteJudge.getScoreForVoice(2);
+
+            // show versus when the scores are equal
+            BufferedImage currentMonitor = monitorVersus;
+
+            // show the character that currently has the higher score
+            if (windowsScore > tuxScore) {
+                currentMonitor = monitorWindows;
+            } else if (tuxScore > windowsScore) {
+                currentMonitor = monitorLinux;
+            }
+
+            stage.drawImage(
+                    currentMonitor,
+                    monitorX,
+                    monitorY,
+                    monitorSize,
+                    monitorSize,
+                    null
+            );
+
+            // react to misses and combo progress using their own timers
+            SpriteAnimation kernelAnimation = kernelIdle;
+            String tuxJudgement = noteJudge.getVisibleJudgement(2, songTimeMs);
+            long tuxComboAge = noteJudge.getComboAgeMs(2, songTimeMs);
+
+            if (tuxJudgement.equals("MISS")) {
+                kernelAnimation = kernelSad;
+            } else if (tuxComboAge >= 0 && tuxComboAge < 700
+                    && noteJudge.isComboMilestone(2)) {
+                kernelAnimation = kernelHappy;
+            }
+
+            // position kernel on the monitor and draw her legs in front
+            int kernelBottom = monitorY + 56;
+            drawIdle(stage, kernelAnimation, beat, width / 2, kernelBottom, 1);
+
+        } finally {
+            stage.dispose();
         }
 
-        g.drawImage(
-                currentMonitor,
-                monitorX,
-                monitorY,
-                monitorSize,
-                monitorSize,
-                null
-        );
-
-        // react to misses and combo progress using their own timers
-        SpriteAnimation kernelAnimation = kernelIdle;
-        String tuxJudgement = noteJudge.getVisibleJudgement(2, songTimeMs);
-        long tuxComboAge = noteJudge.getComboAgeMs(2, songTimeMs);
-
-        if (tuxJudgement.equals("MISS")) {
-            kernelAnimation = kernelSad;
-        } else if (tuxComboAge >= 0 && tuxComboAge < 700
-                && noteJudge.isComboMilestone(2)) {
-            kernelAnimation = kernelHappy;
-        }
-
-        // position kernel on the monitor and draw her legs in front
-        int kernelBottom = monitorY + 56;
-        drawIdle(g, kernelAnimation, beat, width / 2, kernelBottom, 1);
+        // keep the title, controls and note field outside the camera transform
+        drawLabel(g, chart.name(), width / 2, 20);
 
         // place each controller label below the character it belongs to
         drawLabel(g, "PLAYER ONE", playerX, height - 42);
@@ -410,6 +449,29 @@ public class GameScreen implements Screen, AutoCloseable {
         drawComboAlert(g, 1, width / 4, 105, songTimeMs);
         drawComboAlert(g, 2, width * 3 / 4, 105, songTimeMs);
     }
+
+    private Point getStageOffset(double beat) {
+        if (shakeAmplitudePx == 0) {
+            return new Point(0, 0);
+        }
+
+        double position = beat % shakeIntervalBeats;
+        if (position >= shakeDurationBeats) {
+            return new Point(0, 0);
+        }
+
+        // a short deterministic burst fades out after each marked beat
+        double progress = position / shakeDurationBeats;
+        double envelope = (1.0 - progress) * (1.0 - progress);
+        double phase = progress * Math.PI * 2.0 * shakeCycles;
+        int x = (int) Math.round(Math.sin(phase) * shakeAmplitudePx * envelope);
+        int y = (int) Math.round(
+                Math.sin(phase * 1.37) * shakeAmplitudePx * envelope * 0.6
+        );
+
+        return new Point(x, y);
+    }
+
     private void drawJudgement(
             Graphics2D g,
             int voice,

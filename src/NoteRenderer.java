@@ -74,21 +74,21 @@ public final class NoteRenderer {
 
         if (rootEffects) {
             Map<String, String> settings = loadRootSettings();
-            boolean waves = readEffectBoolean(settings, "wave_enabled");
+            boolean waves = TextLoader.getBooleanSetting(settings, "wave_enabled");
 
-            double amplitude = readEffectNumber(settings, "wave_amplitude_px", true);
+            double amplitude = TextLoader.getNumberSetting(settings, "wave_amplitude_px", true);
             waveAmplitudePx = waves ? amplitude : 0;
-            wavePeriodBeats = readEffectNumber(settings, "wave_period_beats", false);
-            waveSettleDistancePx = readEffectNumber(
+            wavePeriodBeats = TextLoader.getNumberSetting(settings, "wave_period_beats", false);
+            waveSettleDistancePx = TextLoader.getNumberSetting(
                     settings, "wave_settle_distance_px", false
             );
 
-            fadeEnabled = readEffectBoolean(settings, "fade_enabled");
-            fadeMinimumAlpha = readEffectNumber(settings, "fade_min_alpha", true);
-            fadeStartDistancePx = readEffectNumber(
+            fadeEnabled = TextLoader.getBooleanSetting(settings, "fade_enabled");
+            fadeMinimumAlpha = TextLoader.getNumberSetting(settings, "fade_min_alpha", true);
+            fadeStartDistancePx = TextLoader.getNumberSetting(
                     settings, "fade_start_distance_px", false
             );
-            fadeFullOpacityDistancePx = readEffectNumber(
+            fadeFullOpacityDistancePx = TextLoader.getNumberSetting(
                     settings, "fade_full_opacity_distance_px", true
             );
 
@@ -359,73 +359,24 @@ public final class NoteRenderer {
     }
 
     private static Map<String, String> loadRootSettings() {
-        Map<String, String> settings = new HashMap<>();
+        Map<String, String> settings = TextLoader.loadSettings("/songs/root_effects.txt");
         Set<String> allowed = Set.of(
                 "wave_enabled", "wave_amplitude_px",
                 "wave_period_beats", "wave_settle_distance_px",
                 "fade_enabled", "fade_min_alpha",
-                "fade_start_distance_px", "fade_full_opacity_distance_px"
+                "fade_start_distance_px", "fade_full_opacity_distance_px",
+                "shake_enabled", "shake_amplitude_px", "shake_interval_beats",
+                "shake_duration_beats", "shake_cycles"
         );
 
-        // read once when the root song is prepared
-        for (String originalLine : TextLoader.load("/songs/root_effects.txt")) {
-            String line = originalLine.strip();
-
-            if (line.isEmpty() || line.startsWith("#")) {
-                continue;
-            }
-
-            String[] fields = line.split(";", -1);
-
-            if (fields.length != 2 || !allowed.contains(fields[0].strip())) {
-                throw new IllegalArgumentException("Invalid ROOT setting: " + line);
-            }
-
-            String key = fields[0].strip();
-            if (settings.putIfAbsent(key, fields[1].strip()) != null) {
-                throw new IllegalArgumentException("Duplicate ROOT setting: " + key);
+        // validate shared root options before preparing any effects
+        for (String key : settings.keySet()) {
+            if (!allowed.contains(key)) {
+                throw new IllegalArgumentException("Unknown ROOT setting: " + key);
             }
         }
 
         return settings;
-    }
-
-    private static boolean readEffectBoolean(Map<String, String> settings, String key) {
-        String text = settings.get(key);
-
-        if ("true".equalsIgnoreCase(text)) {
-            return true;
-        }
-        if ("false".equalsIgnoreCase(text)) {
-            return false;
-        }
-
-        throw new IllegalArgumentException("ROOT " + key + " must be true or false");
-    }
-
-    private static double readEffectNumber(
-            Map<String, String> settings,
-            String key,
-            boolean allowZero
-    ) {
-        String text = settings.get(key);
-
-        if (text == null) {
-            throw new IllegalArgumentException("Missing ROOT setting: " + key);
-        }
-
-        double value;
-        try {
-            value = Double.parseDouble(text);
-        } catch (NumberFormatException error) {
-            throw new IllegalArgumentException("Invalid ROOT number: " + key, error);
-        }
-
-        if (!Double.isFinite(value) || (allowZero ? value < 0 : value <= 0)) {
-            throw new IllegalArgumentException("Invalid ROOT value for " + key);
-        }
-
-        return value;
     }
 
     private int getLaneX(int voice, int lane, int width) {
