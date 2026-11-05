@@ -30,6 +30,13 @@ public class GameScreen implements Screen, AutoCloseable {
 
     private final NoteRenderer noteRenderer =
             new NoteRenderer(48, 12, 300);
+    // remember the latest combo alert for each side
+    private final long[] comboAlertTimesMs = {-1, -1};
+    private final int[] comboAlertValues = new int[2];
+    // load the sound used for human combo alerts
+    private final AudioPlayer comboSound = new AudioPlayer(
+            "/audio/comboSound.wav"
+    );
 
     public GameScreen(
             String songFolder,
@@ -150,7 +157,17 @@ public class GameScreen implements Screen, AutoCloseable {
         // judge a note only when the key changes from released to pressed
         if (pressed && !wasPressed) {
             long songTimeMs = music.getPositionMs();
-            noteJudge.tryHit(voice, lane, songTimeMs);
+            int hitIndex = noteJudge.tryHit(voice, lane, songTimeMs);
+
+            if (hitIndex != -1 && noteJudge.isComboMilestone(voice)) {
+                int side = voice - 1;
+
+                comboAlertValues[side] = noteJudge.getComboForVoice(voice);
+                comboAlertTimesMs[side] = songTimeMs;
+
+                // play the sound when a human reaches a combo milestone
+                comboSound.play();
+            }
         }
 
         // remember whether the key is currently held
@@ -239,9 +256,14 @@ public class GameScreen implements Screen, AutoCloseable {
                 heldKeys,
                 noteJudge
         );
+
         // animate the latest judgement on each side
         drawJudgement(g, 1, width / 4, 60, songTimeMs);
         drawJudgement(g, 2, width * 3 / 4, 60, songTimeMs);
+
+        // show temporary combo alerts for human players
+        drawComboAlert(g, 1, width / 4, 105, songTimeMs);
+        drawComboAlert(g, 2, width * 3 / 4, 105, songTimeMs);
     }
     private void drawJudgement(
             Graphics2D g,
@@ -275,6 +297,24 @@ public class GameScreen implements Screen, AutoCloseable {
         } finally {
             copy.dispose();
         }
+    }
+    private void drawComboAlert(
+            Graphics2D g,
+            int voice,
+            int centerX,
+            int y,
+            long songTimeMs
+    ) {
+        int side = voice - 1;
+        long alertTime = comboAlertTimesMs[side];
+
+        // show the alert for one second after the milestone
+        if (alertTime < 0 || songTimeMs - alertTime >= 1000) {
+            return;
+        }
+
+        String text = "COMBO " + comboAlertValues[side];
+        drawLabel(g, text, centerX, y);
     }
 
     private void drawIdle(
@@ -316,7 +356,8 @@ public class GameScreen implements Screen, AutoCloseable {
 
     @Override
     public void close() {
-        // release the song's audio resources when leaving the stage
+        // release the song and combo sound resources
         music.close();
+        comboSound.close();
     }
 }

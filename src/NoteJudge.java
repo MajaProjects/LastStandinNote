@@ -64,6 +64,32 @@ public final class NoteJudge {
             botTimingOffsets[i] = difference;
         }
     }
+    public boolean isComboMilestone(int voice) {
+        int totalNotes = 0;
+        int combo = combos[voice - 1];
+
+        // count the normal notes belonging to this side
+        for (Note note : notes) {
+            if (note.voice() == voice && note.durationMs() == 0) {
+                totalNotes++;
+            }
+        }
+
+        if (totalNotes == 0 || combo == 0) {
+            return false;
+        }
+
+        // check the 20, 40, 60, 80 and 100 percent milestones
+        for (int step = 1; step <= 5; step++) {
+            int milestone = (totalNotes * step + 4) / 5;
+
+            if (combo == milestone) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     public int tryHit(int voice, int lane, long songTimeMs) {
         int closestIndex = -1;
