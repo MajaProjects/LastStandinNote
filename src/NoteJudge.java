@@ -360,8 +360,8 @@ public final class NoteJudge {
         for (int i = 0; i < notes.size(); i++) {
             Note note = notes.get(i);
 
-            // sustained notes will be handled separately
-            if (note.voice() != voice || note.durationMs() > 0) {
+            // only process notes belonging to the bot's side
+            if (note.voice() != voice) {
                 continue;
             }
 
@@ -383,14 +383,44 @@ public final class NoteJudge {
 
             // use the timing chosen when the game started
             long botHitTime = note.timeMs() + botTimingOffsets[i];
+            long difference = Math.abs(botTimingOffsets[i]);
 
+            if (note.durationMs() > 0) {
+                // start holding the sustained note at the chosen time
+                if (!activeSustains[i]
+                        && !hitNotes[i]
+                        && !missedNotes[i]
+                        && songTimeMs >= botHitTime) {
+                    activeSustains[i] = true;
+                    sustainDifferencesMs[i] = difference;
+                }
+
+                if (activeSustains[i]) {
+                    long endTimeMs = note.timeMs() + note.durationMs();
+
+                    if (songTimeMs >= endTimeMs) {
+                        // complete and score the sustained note
+                        activeSustains[i] = false;
+                        hitNotes[i] = true;
+
+                        lastJudgements[side] = getRating(difference);
+                        judgementTimesMs[side] = songTimeMs;
+                        scores[side] += getScore(difference);
+                        combos[side]++;
+                    } else {
+                        // keep the bot's receptor pressed until the note ends
+                        botKeys[note.lane()] = true;
+                    }
+                }
+
+                continue;
+            }
+
+            // hit and score a normal note at the chosen time
             if (songTimeMs >= botHitTime
                     && !hitNotes[i]
                     && !missedNotes[i]) {
                 hitNotes[i] = true;
-
-                // record the bot's rating, score and combo
-                long difference = Math.abs(botTimingOffsets[i]);
 
                 lastJudgements[side] = getRating(difference);
                 judgementTimesMs[side] = songTimeMs;
@@ -398,7 +428,7 @@ public final class NoteJudge {
                 combos[side]++;
             }
 
-            // light the receptor briefly after the bot hits the note
+            // light the receptor briefly after a normal note is hit
             if (hitNotes[i]
                     && songTimeMs >= botHitTime
                     && songTimeMs - botHitTime < 100) {
