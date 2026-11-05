@@ -3,3 +3,8 @@ wave_enabled;true
 wave_amplitude_px;12
 wave_period_beats;4
 wave_settle_distance_px;180
+
+fade_enabled;true
+fade_min_alpha;0.25
+fade_start_distance_px;400
+fade_full_opacity_distance_px;140

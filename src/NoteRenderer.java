@@ -1,3 +1,5 @@
+import java.awt.AlphaComposite;
+import java.awt.Composite;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.*;
@@ -24,6 +26,11 @@ public final class NoteRenderer {
     private final double waveAmplitudePx;
     private final double wavePeriodBeats;
     private final double waveSettleDistancePx;
+
+    private final boolean fadeEnabled;
+    private final double fadeMinimumAlpha;
+    private final double fadeStartDistancePx;
+    private final double fadeFullOpacityDistancePx;
 
     // remember visual feedback without changing the judge's results
     private NoteJudge visualJudge;
@@ -67,25 +74,38 @@ public final class NoteRenderer {
 
         if (rootEffects) {
             Map<String, String> settings = loadRootSettings();
-            String enabled = settings.get("wave_enabled");
+            boolean waves = readEffectBoolean(settings, "wave_enabled");
 
-            if (!"true".equalsIgnoreCase(enabled)
-                    && !"false".equalsIgnoreCase(enabled)) {
-                throw new IllegalArgumentException(
-                        "ROOT wave_enabled must be true or false"
-                );
-            }
-
-            double amplitude = readWaveNumber(settings, "wave_amplitude_px", true);
-            waveAmplitudePx = Boolean.parseBoolean(enabled) ? amplitude : 0;
-            wavePeriodBeats = readWaveNumber(settings, "wave_period_beats", false);
-            waveSettleDistancePx = readWaveNumber(
+            double amplitude = readEffectNumber(settings, "wave_amplitude_px", true);
+            waveAmplitudePx = waves ? amplitude : 0;
+            wavePeriodBeats = readEffectNumber(settings, "wave_period_beats", false);
+            waveSettleDistancePx = readEffectNumber(
                     settings, "wave_settle_distance_px", false
             );
+
+            fadeEnabled = readEffectBoolean(settings, "fade_enabled");
+            fadeMinimumAlpha = readEffectNumber(settings, "fade_min_alpha", true);
+            fadeStartDistancePx = readEffectNumber(
+                    settings, "fade_start_distance_px", false
+            );
+            fadeFullOpacityDistancePx = readEffectNumber(
+                    settings, "fade_full_opacity_distance_px", true
+            );
+
+            if (fadeMinimumAlpha > 1
+                    || fadeStartDistancePx <= fadeFullOpacityDistancePx) {
+                throw new IllegalArgumentException(
+                        "ROOT fade alpha must be at most 1 and start distance must exceed full opacity distance"
+                );
+            }
         } else {
             waveAmplitudePx = 0;
             wavePeriodBeats = 1;
             waveSettleDistancePx = 1;
+            fadeEnabled = false;
+            fadeMinimumAlpha = 1;
+            fadeStartDistancePx = 1;
+            fadeFullOpacityDistancePx = 0;
         }
 
         SpriteAtlas atlas = new SpriteAtlas(
@@ -178,7 +198,8 @@ public final class NoteRenderer {
                             image,
                             lane,
                             getLaneX(voice, lane, width),
-                            receptorY
+                            receptorY,
+                            1.0f
                     );
                 }
             }
@@ -277,6 +298,10 @@ public final class NoteRenderer {
                 x += (int) Math.round(Math.sin(phase) * waveAmplitudePx * strength);
             }
 
+            float opacity = getNoteOpacity(
+                    headY, receptorY, active || missed || badFlash
+            );
+
             if (drawBodies) {
                 // a completed bad sustain only needs head feedback
                 if (note.durationMs() > 0 && !badFlash) {
@@ -290,7 +315,7 @@ public final class NoteRenderer {
 
                     drawSustain(
                             g, body, tail, x,
-                            headY, tailY, height
+                            headY, tailY, height, opacity
                     );
                 }
 
@@ -312,17 +337,34 @@ public final class NoteRenderer {
                         image,
                         lane,
                         x,
-                        (int) Math.round(headY)
+                        (int) Math.round(headY),
+                        opacity
                 );
             }
         }
+    }
+
+    private float getNoteOpacity(double headY, int receptorY, boolean feedback) {
+        // active holds and error feedback must stay fully readable
+        if (!fadeEnabled || feedback) {
+            return 1.0f;
+        }
+
+        double distance = Math.max(0, receptorY - headY);
+        double range = fadeStartDistancePx - fadeFullOpacityDistancePx;
+        double amount = (distance - fadeFullOpacityDistancePx) / range;
+        amount = Math.max(0, Math.min(1, amount));
+
+        return (float) (1.0 - (1.0 - fadeMinimumAlpha) * amount);
     }
 
     private static Map<String, String> loadRootSettings() {
         Map<String, String> settings = new HashMap<>();
         Set<String> allowed = Set.of(
                 "wave_enabled", "wave_amplitude_px",
-                "wave_period_beats", "wave_settle_distance_px"
+                "wave_period_beats", "wave_settle_distance_px",
+                "fade_enabled", "fade_min_alpha",
+                "fade_start_distance_px", "fade_full_opacity_distance_px"
         );
 
         // read once when the root song is prepared
@@ -348,7 +390,20 @@ public final class NoteRenderer {
         return settings;
     }
 
-    private static double readWaveNumber(
+    private static boolean readEffectBoolean(Map<String, String> settings, String key) {
+        String text = settings.get(key);
+
+        if ("true".equalsIgnoreCase(text)) {
+            return true;
+        }
+        if ("false".equalsIgnoreCase(text)) {
+            return false;
+        }
+
+        throw new IllegalArgumentException("ROOT " + key + " must be true or false");
+    }
+
+    private static double readEffectNumber(
             Map<String, String> settings,
             String key,
             boolean allowZero
@@ -393,36 +448,59 @@ public final class NoteRenderer {
             int centerX,
             double headY,
             double tailY,
-            int screenHeight
+            int screenHeight,
+            float opacity
     ) {
-        // limit the stretched body to the visible area
-        int top = (int) Math.round(Math.max(0, tailY));
-        int bottom = (int) Math.round(
-                Math.min(screenHeight, headY)
-        );
+        Graphics2D sustain = (Graphics2D) g.create();
 
-        if (bottom > top) {
-            g.drawImage(
-                    body,
-                    centerX - arrowSize / 2,
-                    top,
-                    arrowSize,
-                    bottom - top,
-                    null
+        try {
+            applyOpacity(sustain, opacity);
+
+            // limit the stretched body to the visible area
+            int top = (int) Math.round(Math.max(0, tailY));
+            int bottom = (int) Math.round(
+                    Math.min(screenHeight, headY)
             );
+
+            if (bottom > top) {
+                sustain.drawImage(
+                        body,
+                        centerX - arrowSize / 2,
+                        top,
+                        arrowSize,
+                        bottom - top,
+                        null
+                );
+            }
+
+            // keep the tail vertical above the body
+            if (tailY >= -arrowSize
+                    && tailY <= screenHeight + arrowSize) {
+                sustain.drawImage(
+                        tail,
+                        centerX - arrowSize / 2,
+                        (int) Math.round(tailY) - arrowSize / 2,
+                        arrowSize,
+                        arrowSize,
+                        null
+                );
+            }
+        } finally {
+            sustain.dispose();
+        }
+    }
+
+    private static void applyOpacity(Graphics2D g, float opacity) {
+        if (opacity >= 1.0f) {
+            return;
         }
 
-        // keep the tail vertical above the body
-        if (tailY >= -arrowSize
-                && tailY <= screenHeight + arrowSize) {
-            g.drawImage(
-                    tail,
-                    centerX - arrowSize / 2,
-                    (int) Math.round(tailY) - arrowSize / 2,
-                    arrowSize,
-                    arrowSize,
-                    null
-            );
+        // preserve any transparency already applied by the screen
+        Composite original = g.getComposite();
+        if (original instanceof AlphaComposite composite) {
+            g.setComposite(composite.derive(composite.getAlpha() * opacity));
+        } else {
+            g.setComposite(AlphaComposite.SrcOver.derive(opacity));
         }
     }
 
@@ -431,11 +509,14 @@ public final class NoteRenderer {
             BufferedImage image,
             int lane,
             int centerX,
-            int centerY
+            int centerY,
+            float opacity
     ) {
         Graphics2D arrow = (Graphics2D) g.create();
 
         try {
+            applyOpacity(arrow, opacity);
+
             // rotate around the center to preserve lane alignment
             arrow.translate(centerX, centerY);
             arrow.rotate(rotations[lane]);
