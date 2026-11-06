@@ -12,7 +12,9 @@ public class GameScreen implements Screen, AutoCloseable {
     // check player input against the song's notes
     private final NoteJudge noteJudge;
     private final MusicPlayer music;
-    private boolean paused;
+    // keep a newly loaded song frozen until its countdown finishes
+    private boolean paused = true;
+    private boolean started;
     private long pausedSongTimeMs;
     private final BitmapFont font;
     private final BufferedImage background;
@@ -169,6 +171,7 @@ public class GameScreen implements Screen, AutoCloseable {
 
     public void start() {
         // start the song after the screen has been installed
+        started = true;
         paused = false;
         music.play();
     }
@@ -208,7 +211,13 @@ public class GameScreen implements Screen, AutoCloseable {
             }
         }
 
-        music.resume();
+        // a countdown can either start a new track or resume a paused one
+        if (started) {
+            music.resume();
+        } else {
+            music.play();
+            started = true;
+        }
         paused = false;
         return true;
     }

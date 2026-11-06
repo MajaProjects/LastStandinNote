@@ -76,12 +76,9 @@ public class GamePanel extends JPanel {
                     }
                 });
 
-        // paused screens redraw without advancing gameplay
+        // only the active song advances; countdowns use their own clock
         Timer animationTimer = new Timer(16, event -> {
-            if (pantallaActual instanceof GameScreen game) {
-                game.update();
-            }
-
+            updateCurrentScreen();
             repaint();
         });
 
@@ -114,6 +111,12 @@ public class GamePanel extends JPanel {
     }
 
     private void goBack() {
+        if (pantallaActual instanceof CountdownScreen countdown) {
+            pantallaActual = new PauseScreen(countdown.getGame());
+            repaint();
+            return;
+        }
+
         if (pantallaActual instanceof PauseScreen pause) {
             requestResume(pause);
             return;
@@ -142,7 +145,10 @@ public class GamePanel extends JPanel {
     }
 
     private void togglePause() {
-        if (pantallaActual instanceof GameScreen game) {
+        if (pantallaActual instanceof CountdownScreen countdown) {
+            pantallaActual = new PauseScreen(countdown.getGame());
+            repaint();
+        } else if (pantallaActual instanceof GameScreen game) {
             game.pause();
             pantallaActual = new PauseScreen(game);
             repaint();
@@ -153,21 +159,53 @@ public class GamePanel extends JPanel {
 
     private void requestResume(PauseScreen pause) {
         GameScreen game = pause.getGame();
-        pause.requestResume(game.getMissingResumeKeys(pressedGameplayKeys));
+        String missingKeys = game.getMissingResumeKeys(pressedGameplayKeys);
+        pause.requestResume(missingKeys);
 
-        if (game.resume(pressedGameplayKeys)) {
-            pantallaActual = game;
+        if (missingKeys.isEmpty()) {
+            pantallaActual = new CountdownScreen(game);
             menuConfirm.play();
         }
 
         repaint();
     }
 
+    private void updateCurrentScreen() {
+        if (pantallaActual instanceof GameScreen game) {
+            game.update();
+        } else if (pantallaActual instanceof CountdownScreen countdown) {
+            // check held sustains before allowing the music clock to restart
+            if (!checkCountdownKeys(countdown)) {
+                return;
+            }
+
+            if (countdown.isFinished()
+                    && countdown.getGame().resume(pressedGameplayKeys)) {
+                pantallaActual = countdown.getGame();
+            }
+        }
+    }
+
+    private boolean checkCountdownKeys(CountdownScreen countdown) {
+        String missingKeys = countdown.getGame()
+                .getMissingResumeKeys(pressedGameplayKeys);
+        if (missingKeys.isEmpty()) {
+            return true;
+        }
+
+        // releasing a required hold returns to pause without judging a miss
+        PauseScreen pause = new PauseScreen(countdown.getGame());
+        pause.requestResume(missingKeys);
+        pantallaActual = pause;
+        return false;
+    }
+
     private void onFocusLost() {
         pressedGameplayKeys.clear();
         pressedActionKeys.clear();
 
-        if (pantallaActual instanceof GameScreen) {
+        if (pantallaActual instanceof GameScreen
+                || pantallaActual instanceof CountdownScreen) {
             togglePause();
         } else if (pantallaActual instanceof PauseScreen pause) {
             pause.cancelResume();
@@ -200,8 +238,7 @@ public class GamePanel extends JPanel {
 
         try {
             GameScreen game = createSelectedGame(previousCharacterScreen);
-            pantallaActual = game;
-            game.start();
+            pantallaActual = new CountdownScreen(game);
             menuConfirm.play();
         } catch (RuntimeException error) {
             pantallaActual = previousSongScreen;
@@ -313,6 +350,9 @@ public class GamePanel extends JPanel {
                     } else if (pantallaActual instanceof PauseScreen pause
                             && pause.isResumeRequested()) {
                         requestResume(pause);
+                    } else if (pantallaActual instanceof CountdownScreen countdown) {
+                        // track physical keys without judging note heads yet
+                        checkCountdownKeys(countdown);
                     }
 
                     repaint();
@@ -384,8 +424,7 @@ public class GamePanel extends JPanel {
                 GameScreen game = createSelectedGame(characters);
                 previousCharacterScreen = characters;
                 menuMusic.stop();
-                pantallaActual = game;
-                game.start();
+                pantallaActual = new CountdownScreen(game);
             } catch (RuntimeException error) {
                 JOptionPane.showMessageDialog(
                         this, "Could not start song:\n" + error.getMessage()
