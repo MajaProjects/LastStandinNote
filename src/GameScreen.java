@@ -223,11 +223,12 @@ public class GameScreen implements Screen, AutoCloseable {
     }
 
     public int getWinningVoice() {
-        // zero represents a tie, including a tie between negative scores
-        int comparison = Integer.compare(
-                noteJudge.getScoreForVoice(1), noteJudge.getScoreForVoice(2)
-        );
-        return comparison > 0 ? 1 : comparison < 0 ? 2 : 0;
+        // final results compare each side against its own complete chart
+        return noteJudge.getLeadingVoice(true);
+    }
+
+    public double getPerformanceForVoice(int voice) {
+        return noteJudge.getPerformanceForVoice(voice, true);
     }
 
     public String getCharacterForVoice(int voice) {
@@ -580,17 +581,16 @@ public class GameScreen implements Screen, AutoCloseable {
             int monitorX = width / 2 - monitorSize / 2;
             int monitorY = monitorCenterY - monitorSize / 2;
 
-            // compare the scores of the two sides
-            int windowsScore = noteJudge.getScoreForVoice(1);
-            int tuxScore = noteJudge.getScoreForVoice(2);
+            // keep the monitor synchronized with the two visible portions of the life bar
+            int lifeComparison = Integer.compare(health.getHealth(1), health.getHealth(2));
 
-            // show versus when the scores are equal
+            // show versus when both sides have the same life
             BufferedImage currentMonitor = monitorVersus;
 
-            // show the character that currently has the higher score
-            if (windowsScore > tuxScore) {
+            // show the character that currently owns the larger portion of the bar
+            if (lifeComparison > 0) {
                 currentMonitor = monitorWindows;
-            } else if (tuxScore > windowsScore) {
+            } else if (lifeComparison < 0) {
                 currentMonitor = monitorLinux;
             }
 

@@ -530,6 +530,32 @@ public final class NoteJudge {
         return scores[voice - 1];
     }
 
+    public double getPerformanceForVoice(int voice, boolean finalResult) {
+        if (voice < 1 || voice > 2) {
+            throw new IllegalArgumentException("Note voice must be 1 or 2");
+        }
+        int opportunities = 0;
+        for (int i = 0; i < notes.size(); i++) {
+            if (notes.get(i).voice() == voice
+                    && (finalResult || hitNotes[i] || missedNotes[i])) {
+                opportunities++;
+            }
+        }
+        if (opportunities == 0) {
+            return 0.0;
+        }
+        // compare earned points with this side's own maximum, including miss penalties
+        double percentage = scores[voice - 1] * 100.0 / (500.0 * opportunities);
+        return Math.max(0.0, Math.min(100.0, percentage));
+    }
+
+    public int getLeadingVoice(boolean finalResult) {
+        // live comparisons exclude future notes and unfinished holds on both sides
+        double difference = getPerformanceForVoice(1, finalResult)
+                - getPerformanceForVoice(2, finalResult);
+        return Math.abs(difference) < 0.000000001 ? 0 : difference > 0 ? 1 : 2;
+    }
+
     public int getComboForVoice(int voice) {
         // return the current combo for the requested side
         return combos[voice - 1];

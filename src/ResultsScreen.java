@@ -9,7 +9,7 @@ public final class ResultsScreen implements Screen {
     private static final long COUNT_DURATION_NANOS = 800_000_000L;
     private static final String[] ROW_LABELS = {
             "TOTAL NOTES", "HIT NOTES", "SICK", "GOOD", "BAD", "SHIT", "MISS",
-            "MAX COMBO", "SCORE"
+            "MAX COMBO", "RAW SCORE", "PERFORMANCE"
     };
 
     private final GameScreen game;
@@ -20,6 +20,7 @@ public final class ResultsScreen implements Screen {
     private final String controllerText;
     private final int winningVoice;
     private final NoteJudge.Statistics[] statistics = new NoteJudge.Statistics[2];
+    private final double[] performances = new double[2];
     private final SpriteAnimation[] characters = new SpriteAnimation[2];
     private final String[] characterNames = new String[2];
     private final String[] controllerNames = new String[2];
@@ -41,13 +42,14 @@ public final class ResultsScreen implements Screen {
         for (int side = 0; side < 2; side++) {
             int voice = side + 1;
             statistics[side] = game.getStatisticsForVoice(voice);
+            performances[side] = game.getPerformanceForVoice(voice);
             characters[side] = game.getIdleForVoice(voice);
             characterNames[side] = game.getCharacterForVoice(voice).toUpperCase(Locale.ROOT);
             controllerNames[side] = game.getControllerForVoice(voice);
         }
 
         resultText = winningVoice == 0 ? "DRAW" : characterNames[winningVoice - 1] + " WINS";
-        controllerText = winningVoice == 0 ? "TIED SCORE" : controllerNames[winningVoice - 1];
+        controllerText = winningVoice == 0 ? "TIED PERFORMANCE" : controllerNames[winningVoice - 1];
         startNanos = clock.getAsLong();
     }
 
@@ -136,12 +138,15 @@ public final class ResultsScreen implements Screen {
                         stats.totalNotes(), stats.hitNotes(), stats.sick(), stats.good(),
                         stats.bad(), stats.shit(), stats.miss(), stats.maxCombo(), stats.score()
                 };
-                for (int row = 0; row < values.length; row++) {
-                    int y = top + 192 + row * 25;
+                for (int row = 0; row < ROW_LABELS.length; row++) {
+                    int y = top + 192 + row * 23;
                     if (side == 0) {
                         drawText(menu, ROW_LABELS[row], tableLeft, y, 0.72, false, 185);
                     }
-                    String value = String.valueOf(getAnimatedValue(values[row], progress));
+                    // retain raw points while making the fair comparison visible in results
+                    String value = row == values.length
+                            ? Math.round(performances[side] * progress) + "%"
+                            : String.valueOf(getAnimatedValue(values[row], progress));
                     drawText(menu, value, center, y, 0.8, true, 170);
                 }
             }

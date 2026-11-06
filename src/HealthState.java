@@ -8,8 +8,9 @@ public final class HealthState {
     private final boolean[] countedMisses;
     private final int playerVoice;
     private final boolean twoPlayers;
+    private final double[] noteWeights = {1.0, 1.0};
     // one shared balance: windows owns the left portion and tux owns the right
-    private int tuxHealth = MAX_HEALTH / 2;
+    private double tuxHealth = MAX_HEALTH / 2.0;
 
     public HealthState(List<Note> notes) {
         this(notes, 2, true);
@@ -21,13 +22,25 @@ public final class HealthState {
         this.twoPlayers = twoPlayers;
         countedHeads = new boolean[notes.size()];
         countedMisses = new boolean[notes.size()];
+        if (twoPlayers) {
+            int[] totals = new int[2];
+            for (Note note : this.notes) {
+                totals[note.voice() - 1]++;
+            }
+            int smallerChart = Math.min(totals[0], totals[1]);
+            for (int side = 0; side < 2; side++) {
+                // give both charts the same total influence on shared health
+                noteWeights[side] = totals[side] == 0 ? 0.0
+                        : smallerChart / (double) totals[side];
+            }
+        }
     }
 
     public void update(NoteJudge judge) {
         if (isGameOver()) {
             return;
         }
-        int movement = 0;
+        double movement = 0;
         for (int i = 0; i < notes.size(); i++) {
             int voice = notes.get(i).voice();
             if (!twoPlayers && voice != playerVoice) {
@@ -45,27 +58,35 @@ public final class HealthState {
                     case "SHIT" -> -5;
                     default -> 0;
                 };
-                movement += direction * change;
+                movement += direction * change * noteWeights[voice - 1];
             }
             if (!countedMisses[i] && judge.isMissed(i)) {
                 countedMisses[i] = true;
-                movement += direction * -8;
+                movement += direction * -8 * noteWeights[voice - 1];
             }
         }
         // combine events from this update before clamping the shared balance
         tuxHealth = Math.max(0, Math.min(MAX_HEALTH, tuxHealth + movement));
+        // snap tiny rounding residues at the ends so fractional weights cannot prevent defeat
+        if (tuxHealth < 0.000000001) {
+            tuxHealth = 0;
+        } else if (MAX_HEALTH - tuxHealth < 0.000000001) {
+            tuxHealth = MAX_HEALTH;
+        }
     }
 
     public int getHealth(int voice) {
-        return voice == 2 ? tuxHealth : MAX_HEALTH - tuxHealth;
+        int right = (int) Math.round(tuxHealth);
+        return voice == 2 ? right : MAX_HEALTH - right;
     }
 
     public boolean isDefeated(int voice) {
-        return (twoPlayers || voice == playerVoice) && getHealth(voice) == 0;
+        // shared play always continues until the song ends, even at an empty bar
+        return !twoPlayers && voice == playerVoice
+                && (voice == 2 ? tuxHealth == 0 : tuxHealth == MAX_HEALTH);
     }
 
     public boolean isGameOver() {
-        return twoPlayers ? tuxHealth == 0 || tuxHealth == MAX_HEALTH
-                : getHealth(playerVoice) == 0;
+        return !twoPlayers && isDefeated(playerVoice);
     }
 }
