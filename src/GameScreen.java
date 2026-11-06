@@ -1,4 +1,5 @@
 import java.awt.Graphics2D;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.event.KeyEvent;
 import java.awt.Point;
@@ -11,6 +12,7 @@ public class GameScreen implements Screen, AutoCloseable {
     private final SongChart chart;
     // check player input against the song's notes
     private final NoteJudge noteJudge;
+    private final HealthState health;
     private final SongPlayer music;
     private final boolean[] processedVocalHeads;
     private final boolean[] processedVocalMisses;
@@ -27,6 +29,8 @@ public class GameScreen implements Screen, AutoCloseable {
 
     private final SpriteAnimation playerIdle;
     private final SpriteAnimation opponentIdle;
+    private final SpriteAnimation playerDeath;
+    private final SpriteAnimation opponentDeath;
     // keep the four singing directions for each character
     private final SpriteAnimation[] playerDirections = new SpriteAnimation[4];
     // keep the four miss poses for each character
@@ -118,6 +122,7 @@ public class GameScreen implements Screen, AutoCloseable {
         processedVocalMisses = new boolean[chart.notes().size()];
         // allow a 160 ms difference on either side of the note
         noteJudge = new NoteJudge(chart.notes(), 160);
+        health = new HealthState(chart.notes(), playerVoice, twoPlayers);
 
         background = ImageLoader.load(
                 "/images/backgrounds/fondo1_480x270.png"
@@ -132,6 +137,8 @@ public class GameScreen implements Screen, AutoCloseable {
         // keep the selected character assigned to player one
         playerIdle = atlas.getAnimation(playerCharacter, "idle");
         opponentIdle = atlas.getAnimation(opponentCharacter, "idle");
+        playerDeath = atlas.getAnimation(playerCharacter, "death");
+        opponentDeath = atlas.getAnimation(opponentCharacter, "death");
         // load singing animations in the same order as the note lanes
         String[] directions = {"left", "down", "up", "right"};
 
@@ -195,6 +202,22 @@ public class GameScreen implements Screen, AutoCloseable {
         return started && !paused && music.isFinished();
     }
 
+    public boolean isGameOver() {
+        return health.isGameOver();
+    }
+
+    public boolean isDefeated(int voice) {
+        return health.isDefeated(voice);
+    }
+
+    public int getHealthForVoice(int voice) {
+        return health.getHealth(voice);
+    }
+
+    public SpriteAnimation getDeathForVoice(int voice) {
+        return voice == playerVoice ? playerDeath : opponentDeath;
+    }
+
     public String getSongName() {
         return chart.name();
     }
@@ -238,6 +261,9 @@ public class GameScreen implements Screen, AutoCloseable {
     }
 
     public boolean resume(Set<Integer> pressedKeys) {
+        if (health.isGameOver()) {
+            return false;
+        }
         if (!paused) {
             return true;
         }
@@ -316,7 +342,7 @@ public class GameScreen implements Screen, AutoCloseable {
     }
 
     public void update() {
-        if (paused) {
+        if (paused || health.isGameOver()) {
             return;
         }
 
@@ -358,6 +384,7 @@ public class GameScreen implements Screen, AutoCloseable {
             missSound.play();
         }
         syncVocalState(songTimeMs);
+        health.update(noteJudge);
     }
 
     private void syncVocalState(long songTimeMs) {
@@ -449,7 +476,7 @@ public class GameScreen implements Screen, AutoCloseable {
 
     public void setLanePressed(int voice, int lane, boolean pressed) {
         // solo keyboard input only controls the selected character
-        if (paused || (!twoPlayers && voice != playerVoice)) {
+        if (paused || health.isGameOver() || (!twoPlayers && voice != playerVoice)) {
             return;
         }
 
@@ -486,6 +513,7 @@ public class GameScreen implements Screen, AutoCloseable {
         // record the start of a release or resume the held sustain
         updateHumanSustains(songTimeMs);
         syncVocalState(songTimeMs);
+        health.update(noteJudge);
     }
 
     public void releaseKeys() {
@@ -599,8 +627,8 @@ public class GameScreen implements Screen, AutoCloseable {
         drawLabel(g, chart.name(), width / 2, 20);
 
         // place each controller label below the character it belongs to
-        drawLabel(g, "PLAYER ONE", playerX, height - 42);
-        drawLabel(g, opponentLabel, opponentX, height - 42);
+        drawLabel(g, "PLAYER ONE", playerX, height - 60);
+        drawLabel(g, opponentLabel, opponentX, height - 60);
 
         // share the audio clock and held inputs with the note renderer
         noteRenderer.render(
@@ -621,6 +649,27 @@ public class GameScreen implements Screen, AutoCloseable {
         // show temporary combo alerts for human players
         drawComboAlert(g, 1, width / 4, 105, songTimeMs);
         drawComboAlert(g, 2, width * 3 / 4, 105, songTimeMs);
+        drawHealthBar(g, width, height - 20);
+    }
+
+    private void drawHealthBar(Graphics2D g, int panelWidth, int top) {
+        int width = Math.min(620, panelWidth - 60);
+        int height = 12;
+        int left = (panelWidth - width) / 2;
+        int innerWidth = width - 4;
+        int windowsWidth = innerWidth * health.getHealth(1) / HealthState.MAX_HEALTH;
+        g.setColor(new Color(12, 12, 20));
+        g.fillRect(left, top, width, height);
+        // keep character colors fixed while the division moves between them
+        g.setColor(new Color(75, 140, 225));
+        g.fillRect(left + 2, top + 2, windowsWidth, height - 4);
+        g.setColor(new Color(65, 205, 120));
+        g.fillRect(left + 2 + windowsWidth, top + 2, innerWidth - windowsWidth, height - 4);
+        int dividerX = Math.max(left + 2, Math.min(left + width - 4, left + 1 + windowsWidth));
+        g.setColor(new Color(235, 225, 245));
+        g.fillRect(dividerX, top + 1, 2, height - 2);
+        g.setColor(new Color(150, 105, 190));
+        g.drawRect(left, top, width - 1, height - 1);
     }
 
     private Point getStageOffset(double beat) {

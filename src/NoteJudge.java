@@ -539,6 +539,10 @@ public final class NoteJudge {
         return headHitTimesMs[index];
     }
 
+    public String getHeadRating(int index) {
+        return headRatings[index] == null ? "" : headRatings[index];
+    }
+
     public record Statistics(
             int totalNotes,
             int hitNotes,

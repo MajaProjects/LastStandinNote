@@ -112,6 +112,13 @@ public class GamePanel extends JPanel {
     }
 
     private void goBack() {
+        if (pantallaActual instanceof GameOverScreen gameOver) {
+            if (!gameOver.isMenuReady()) {
+                return;
+            }
+            returnToSongs(gameOver.getGame());
+            return;
+        }
         if (pantallaActual instanceof LoadingScreen loading) {
             // let a completed background load release its own audio safely
             loading.abandon();
@@ -166,7 +173,7 @@ public class GamePanel extends JPanel {
             repaint();
         } else if (pantallaActual instanceof GameScreen game) {
             game.pause();
-            pantallaActual = new PauseScreen(game);
+            pantallaActual = game.isGameOver() ? new GameOverScreen(game) : new PauseScreen(game);
             repaint();
         } else if (pantallaActual instanceof PauseScreen pause) {
             requestResume(pause);
@@ -189,7 +196,10 @@ public class GamePanel extends JPanel {
     private void updateCurrentScreen() {
         if (pantallaActual instanceof GameScreen game) {
             game.update();
-            if (game.isFinished()) {
+            if (game.isGameOver()) {
+                game.pause();
+                pantallaActual = new GameOverScreen(game);
+            } else if (game.isFinished()) {
                 // finish the last gameplay update before freezing the result
                 game.pause();
                 pantallaActual = new ResultsScreen(game);
@@ -374,6 +384,8 @@ public class GamePanel extends JPanel {
                     pause.moveSelection(direction);
                 } else if (pantallaActual instanceof ResultsScreen results) {
                     results.moveSelection(direction);
+                } else if (pantallaActual instanceof GameOverScreen gameOver) {
+                    gameOver.moveSelection(direction);
                 } else {
                     return;
                 }
@@ -397,6 +409,12 @@ public class GamePanel extends JPanel {
         getActionMap().put(actionName, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
+                if (pantallaActual instanceof GameOverScreen gameOver) {
+                    gameOver.moveSelection(direction);
+                    menuMove.play();
+                    repaint();
+                    return;
+                }
                 if (pantallaActual instanceof ResultsScreen results) {
                     results.moveSelection(direction);
                     menuMove.play();
@@ -462,6 +480,16 @@ public class GamePanel extends JPanel {
     }
 
     private void activateSelection() {
+        if (pantallaActual instanceof GameOverScreen gameOver) {
+            if (!gameOver.isMenuReady()) {
+                return;
+            }
+            switch (gameOver.getSelectedOption()) {
+                case "RESTART" -> restartGame(gameOver.getGame());
+                case "SONG SELECT" -> returnToSongs(gameOver.getGame());
+            }
+            return;
+        }
         if (pantallaActual instanceof ResultsScreen results) {
             switch (results.getSelectedOption()) {
                 case "RESTART" -> restartGame(results.getGame());
