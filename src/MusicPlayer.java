@@ -8,6 +8,7 @@ public final class MusicPlayer implements AutoCloseable {
     private boolean paused;
     private int pausedFrame;
     private long pausedPositionMs;
+    private boolean playingOnce;
 
     public MusicPlayer(String path) {
         URL resource = MusicPlayer.class.getResource(path);
@@ -43,6 +44,7 @@ public final class MusicPlayer implements AutoCloseable {
         // start from the beginning and repeat until stopped
         clip.stop();
         paused = false;
+        playingOnce = false;
         clip.setFramePosition(0);
         clip.loop(Clip.LOOP_CONTINUOUSLY);
     }
@@ -50,6 +52,7 @@ public final class MusicPlayer implements AutoCloseable {
         // start the song from the beginning and play it once
         clip.stop();
         paused = false;
+        playingOnce = true;
         clip.setFramePosition(0);
         clip.start();
     }
@@ -57,6 +60,13 @@ public final class MusicPlayer implements AutoCloseable {
     public long getPositionMs() {
         // use the audio position as the clock for gameplay
         return paused ? pausedPositionMs : clip.getMicrosecondPosition() / 1000;
+    }
+
+    public boolean isFinished() {
+        // paused, stopped and looping tracks are not completed songs
+        return playingOnce && !paused
+                && clip.getFrameLength() > 0
+                && clip.getFramePosition() >= clip.getFrameLength();
     }
 
     public void pause() {
@@ -89,6 +99,7 @@ public final class MusicPlayer implements AutoCloseable {
         // stop playback when another track takes over
         clip.stop();
         paused = false;
+        playingOnce = false;
     }
 
     @Override
@@ -96,5 +107,6 @@ public final class MusicPlayer implements AutoCloseable {
         // release the audio channel when this player is discarded
         clip.close();
         paused = false;
+        playingOnce = false;
     }
 }

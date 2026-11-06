@@ -111,6 +111,11 @@ public class GamePanel extends JPanel {
     }
 
     private void goBack() {
+        if (pantallaActual instanceof ResultsScreen results) {
+            returnToSongs(results.getGame());
+            return;
+        }
+
         if (pantallaActual instanceof CountdownScreen countdown) {
             pantallaActual = new PauseScreen(countdown.getGame());
             repaint();
@@ -173,6 +178,11 @@ public class GamePanel extends JPanel {
     private void updateCurrentScreen() {
         if (pantallaActual instanceof GameScreen game) {
             game.update();
+            if (game.isFinished()) {
+                // finish the last gameplay update before freezing the result
+                game.pause();
+                pantallaActual = new ResultsScreen(game);
+            }
         } else if (pantallaActual instanceof CountdownScreen countdown) {
             // check held sustains before allowing the music clock to restart
             if (!checkCountdownKeys(countdown)) {
@@ -232,9 +242,9 @@ public class GamePanel extends JPanel {
         );
     }
 
-    private void restartPausedGame(PauseScreen pause) {
+    private void restartGame(GameScreen previousGame) {
         // release the previous audio channels before loading the song again
-        pause.getGame().close();
+        previousGame.close();
 
         try {
             GameScreen game = createSelectedGame(previousCharacterScreen);
@@ -251,8 +261,8 @@ public class GamePanel extends JPanel {
         repaint();
     }
 
-    private void returnToSongs(PauseScreen pause) {
-        pause.getGame().close();
+    private void returnToSongs(GameScreen game) {
+        game.close();
         pantallaActual = previousSongScreen;
         menuMusic.playLoop();
         menuBack.play();
@@ -281,6 +291,8 @@ public class GamePanel extends JPanel {
                     songs.moveSelection(direction);
                 } else if (pantallaActual instanceof PauseScreen pause) {
                     pause.moveSelection(direction);
+                } else if (pantallaActual instanceof ResultsScreen results) {
+                    results.moveSelection(direction);
                 } else {
                     return;
                 }
@@ -304,6 +316,13 @@ public class GamePanel extends JPanel {
         getActionMap().put(actionName, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
+                if (pantallaActual instanceof ResultsScreen results) {
+                    results.moveSelection(direction);
+                    menuMove.play();
+                    repaint();
+                    return;
+                }
+
                 if (pantallaActual instanceof CharacterSelectScreen characters) {
                     // move between characters
                     characters.moveSelection(direction);
@@ -362,11 +381,19 @@ public class GamePanel extends JPanel {
     }
 
     private void activateSelection() {
+        if (pantallaActual instanceof ResultsScreen results) {
+            switch (results.getSelectedOption()) {
+                case "RESTART" -> restartGame(results.getGame());
+                case "SONG SELECT" -> returnToSongs(results.getGame());
+            }
+            return;
+        }
+
         if (pantallaActual instanceof PauseScreen pause) {
             switch (pause.getSelectedOption()) {
                 case "RESUME" -> requestResume(pause);
-                case "RESTART" -> restartPausedGame(pause);
-                case "SONG SELECT" -> returnToSongs(pause);
+                case "RESTART" -> restartGame(pause.getGame());
+                case "SONG SELECT" -> returnToSongs(pause.getGame());
             }
             return;
         }

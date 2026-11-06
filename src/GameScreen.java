@@ -39,6 +39,8 @@ public class GameScreen implements Screen, AutoCloseable {
 
     private final boolean twoPlayers;
     private final String opponentLabel;
+    private final String playerCharacter;
+    private final String opponentCharacter;
 
     // voice one belongs to the left side and voice two to the right
     private final int playerVoice;
@@ -76,6 +78,8 @@ public class GameScreen implements Screen, AutoCloseable {
             Difficulty difficulty
     ) {
         this.twoPlayers = twoPlayers;
+        this.playerCharacter = playerCharacter;
+        this.opponentCharacter = opponentCharacter;
 
         // root can add visual effects while every mode keeps its configured speed
         noteRenderer = new NoteRenderer(
@@ -174,6 +178,40 @@ public class GameScreen implements Screen, AutoCloseable {
         started = true;
         paused = false;
         music.play();
+    }
+
+    public boolean isFinished() {
+        // only an actively playing song can open the results screen
+        return started && !paused && music.isFinished();
+    }
+
+    public String getSongName() {
+        return chart.name();
+    }
+
+    public int getWinningVoice() {
+        // zero represents a tie, including a tie between negative scores
+        int comparison = Integer.compare(
+                noteJudge.getScoreForVoice(1), noteJudge.getScoreForVoice(2)
+        );
+        return comparison > 0 ? 1 : comparison < 0 ? 2 : 0;
+    }
+
+    public String getCharacterForVoice(int voice) {
+        return voice == playerVoice ? playerCharacter : opponentCharacter;
+    }
+
+    public String getControllerForVoice(int voice) {
+        return voice == playerVoice ? "PLAYER ONE" : opponentLabel;
+    }
+
+    public NoteJudge.Statistics getStatisticsForVoice(int voice) {
+        return noteJudge.getStatisticsForVoice(voice);
+    }
+
+    public SpriteAnimation getIdleForVoice(int voice) {
+        // reuse the loaded character animation on the results screen
+        return voice == playerVoice ? playerIdle : opponentIdle;
     }
 
     public void pause() {

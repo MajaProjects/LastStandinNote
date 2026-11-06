@@ -14,6 +14,9 @@ public final class NoteJudge {
     private final int[] scores = new int[2];
     // track consecutive hits separately for each side
     private final int[] combos = new int[2];
+    // keep the best combo even after a bad hit or a miss resets the current one
+    private final int[] maxCombos = new int[2];
+    private final String[] headRatings;
     // keep combo reactions independent from the head judgement timer
     private final long[] comboProgressTimesMs = {-1, -1};
     private final String[] lastJudgements = {"", ""};
@@ -49,6 +52,7 @@ public final class NoteJudge {
         java.util.Arrays.fill(sustainReleaseTimesMs, -1);
         this.sustainDifferencesMs = new long[notes.size()];
         this.hitWindowMs = hitWindowMs;
+        headRatings = new String[notes.size()];
         badHits = new boolean[notes.size()];
         badHitTimesMs = new long[notes.size()];
         // choose the bot's result once for each note
@@ -527,6 +531,56 @@ public final class NoteJudge {
         // return the current combo for the requested side
         return combos[voice - 1];
     }
+
+    public record Statistics(
+            int totalNotes,
+            int hitNotes,
+            int sick,
+            int good,
+            int bad,
+            int shit,
+            int miss,
+            int maxCombo,
+            int score
+    ) {}
+
+    public Statistics getStatisticsForVoice(int voice) {
+        if (voice < 1 || voice > 2) {
+            throw new IllegalArgumentException("Note voice must be 1 or 2");
+        }
+
+        int total = 0;
+        int hits = 0;
+        int sick = 0;
+        int good = 0;
+        int bad = 0;
+        int shit = 0;
+        int misses = 0;
+
+        for (int i = 0; i < notes.size(); i++) {
+            if (notes.get(i).voice() != voice) {
+                continue;
+            }
+
+            total++;
+            if (missedNotes[i]) {
+                // a dropped sustain is one miss, regardless of its head rating
+                misses++;
+            } else if (hitNotes[i]) {
+                // count completed notes once, without counting sustain pieces
+                hits++;
+                switch (headRatings[i]) {
+                    case "SICK" -> sick++;
+                    case "GOOD" -> good++;
+                    case "BAD" -> bad++;
+                    case "SHIT" -> shit++;
+                }
+            }
+        }
+
+        return new Statistics(total, hits, sick, good, bad, shit, misses,
+                maxCombos[voice - 1], scores[voice - 1]);
+    }
     private void registerHeadJudgement(
             int noteIndex,
             long timingDifferenceMs,
@@ -534,6 +588,7 @@ public final class NoteJudge {
     ) {
         int side = notes.get(noteIndex).voice() - 1;
         String rating = getRating(timingDifferenceMs);
+        headRatings[noteIndex] = rating;
 
         lastJudgements[side] = rating;
         judgementTimesMs[side] = songTimeMs;
@@ -552,6 +607,7 @@ public final class NoteJudge {
         // bad heads already broke the combo when they were pressed
         if (!badHits[noteIndex]) {
             combos[side]++;
+            maxCombos[side] = Math.max(maxCombos[side], combos[side]);
             comboProgressTimesMs[side] = songTimeMs;
         }
     }
