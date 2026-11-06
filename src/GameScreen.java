@@ -11,7 +11,9 @@ public class GameScreen implements Screen, AutoCloseable {
     private final SongChart chart;
     // check player input against the song's notes
     private final NoteJudge noteJudge;
-    private final MusicPlayer music;
+    private final SongPlayer music;
+    private final boolean[] processedVocalHeads;
+    private final boolean[] processedVocalMisses;
     // keep a newly loaded song frozen until its countdown finishes
     private boolean paused = true;
     private boolean started;
@@ -112,6 +114,8 @@ public class GameScreen implements Screen, AutoCloseable {
 
         // load the chart selected for this song and difficulty
         chart = SongChart.load(chartPath);
+        processedVocalHeads = new boolean[chart.notes().size()];
+        processedVocalMisses = new boolean[chart.notes().size()];
         // allow a 160 ms difference on either side of the note
         noteJudge = new NoteJudge(chart.notes(), 160);
 
@@ -165,7 +169,13 @@ public class GameScreen implements Screen, AutoCloseable {
 
         opponentLabel = twoPlayers ? "PLAYER TWO" : "BOT";
 
-        music = new MusicPlayer(songFolder + "instrumental.wav");
+        try {
+            music = SongPlayer.load(songFolder);
+        } catch (RuntimeException error) {
+            comboSound.close();
+            missSound.close();
+            throw error;
+        }
 
         System.out.println(
                 "Loaded " + chart.name()
@@ -248,6 +258,8 @@ public class GameScreen implements Screen, AutoCloseable {
                 heldKeys[voice - 1][lane] = pressedKeys.contains(code);
             }
         }
+
+        syncVocalState(pausedSongTimeMs);
 
         // a countdown can either start a new track or resume a paused one
         if (started) {
@@ -345,6 +357,42 @@ public class GameScreen implements Screen, AutoCloseable {
         if (newMisses > 0) {
             missSound.play();
         }
+        syncVocalState(songTimeMs);
+    }
+
+    private void syncVocalState(long songTimeMs) {
+        boolean[] newHits = new boolean[2];
+        boolean[] newMisses = new boolean[2];
+        boolean[] heldSustains = new boolean[2];
+        boolean[] releasedSustains = new boolean[2];
+        for (int i = 0; i < chart.notes().size(); i++) {
+            Note note = chart.notes().get(i);
+            int side = note.voice() - 1;
+            if (noteJudge.getHeadHitTimeMs(i) >= 0 && !processedVocalHeads[i]) {
+                processedVocalHeads[i] = true;
+                newHits[side] = true;
+            }
+            if (noteJudge.isMissed(i) && !processedVocalMisses[i]) {
+                processedVocalMisses[i] = true;
+                newMisses[side] = true;
+            }
+            if (noteJudge.isSustainActive(i)) {
+                if (heldKeys[side][note.lane()]) {
+                    heldSustains[side] = true;
+                } else {
+                    releasedSustains[side] = true;
+                }
+            }
+        }
+
+        for (int side = 0; side < 2; side++) {
+            // recorded stems share their simultaneous notes, so a valid hold keeps its voice audible
+            if (heldSustains[side] || newHits[side]) {
+                music.setVoiceAudible(side + 1, true, songTimeMs);
+            } else if (newMisses[side] || releasedSustains[side]) {
+                music.setVoiceAudible(side + 1, false, songTimeMs);
+            }
+        }
     }
     private void updateHumanSustains(long songTimeMs) {
         boolean judgeVoiceOne = twoPlayers || playerVoice == 1;
@@ -437,6 +485,7 @@ public class GameScreen implements Screen, AutoCloseable {
 
         // record the start of a release or resume the held sustain
         updateHumanSustains(songTimeMs);
+        syncVocalState(songTimeMs);
     }
 
     public void releaseKeys() {

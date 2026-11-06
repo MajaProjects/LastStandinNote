@@ -17,6 +17,7 @@ public final class NoteJudge {
     // keep the best combo even after a bad hit or a miss resets the current one
     private final int[] maxCombos = new int[2];
     private final String[] headRatings;
+    private final long[] headHitTimesMs;
     // keep combo reactions independent from the head judgement timer
     private final long[] comboProgressTimesMs = {-1, -1};
     private final String[] lastJudgements = {"", ""};
@@ -53,6 +54,8 @@ public final class NoteJudge {
         this.sustainDifferencesMs = new long[notes.size()];
         this.hitWindowMs = hitWindowMs;
         headRatings = new String[notes.size()];
+        headHitTimesMs = new long[notes.size()];
+        java.util.Arrays.fill(headHitTimesMs, -1);
         badHits = new boolean[notes.size()];
         badHitTimesMs = new long[notes.size()];
         // choose the bot's result once for each note
@@ -532,6 +535,10 @@ public final class NoteJudge {
         return combos[voice - 1];
     }
 
+    public long getHeadHitTimeMs(int index) {
+        return headHitTimesMs[index];
+    }
+
     public record Statistics(
             int totalNotes,
             int hitNotes,
@@ -589,6 +596,7 @@ public final class NoteJudge {
         int side = notes.get(noteIndex).voice() - 1;
         String rating = getRating(timingDifferenceMs);
         headRatings[noteIndex] = rating;
+        headHitTimesMs[noteIndex] = songTimeMs;
 
         lastJudgements[side] = rating;
         judgementTimesMs[side] = songTimeMs;

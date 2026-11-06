@@ -7,6 +7,7 @@ import java.util.Set;
 public class GamePanel extends JPanel {
 
     private Screen pantallaActual;
+    private SwingWorker<GameScreen, Void> songLoader;
     // track physical keys even while the gameplay screen is paused
     private final Set<Integer> pressedGameplayKeys = new HashSet<>();
     private final Set<Integer> pressedActionKeys = new HashSet<>();
@@ -111,6 +112,16 @@ public class GamePanel extends JPanel {
     }
 
     private void goBack() {
+        if (pantallaActual instanceof LoadingScreen loading) {
+            // let a completed background load release its own audio safely
+            loading.abandon();
+            pantallaActual = loading.getReturnScreen();
+            menuMusic.playLoop();
+            menuBack.play();
+            repaint();
+            return;
+        }
+
         if (pantallaActual instanceof ResultsScreen results) {
             returnToSongs(results.getGame());
             return;
@@ -214,7 +225,9 @@ public class GamePanel extends JPanel {
         pressedGameplayKeys.clear();
         pressedActionKeys.clear();
 
-        if (pantallaActual instanceof GameScreen
+        if (pantallaActual instanceof LoadingScreen loading) {
+            loading.pauseAfterLoad();
+        } else if (pantallaActual instanceof GameScreen
                 || pantallaActual instanceof CountdownScreen) {
             togglePause();
         } else if (pantallaActual instanceof PauseScreen pause) {
@@ -222,19 +235,14 @@ public class GamePanel extends JPanel {
         }
     }
 
-    private GameScreen createSelectedGame(CharacterSelectScreen characters) {
+    private SongRequest prepareSongRequest(CharacterSelectScreen characters) {
         String folder = previousSongScreen.getSelectedSongFolder();
         Difficulty difficulty = previousSongScreen.getDifficulty();
         String name = difficulty.name().toLowerCase(java.util.Locale.ROOT);
         String chartPath = folder + "chart_" + name + ".txt";
-        String musicPath = folder + "instrumental.wav";
 
-        if (GamePanel.class.getResource(chartPath) == null
-                || GamePanel.class.getResource(musicPath) == null) {
-            throw new IllegalStateException("Missing song files:\n" + chartPath + "\n" + musicPath);
-        }
-
-        return new GameScreen(
+        // capture menu choices on the event thread before starting background work
+        return new SongRequest(
                 folder, chartPath,
                 characters.getSelectedCharacter(), characters.getOtherCharacter(),
                 previousModeScreen.getSelectedMode().equals("DOS JUGADORES"),
@@ -242,14 +250,87 @@ public class GamePanel extends JPanel {
         );
     }
 
+    private record SongRequest(String folder, String chartPath, String playerCharacter,
+                               String opponentCharacter, boolean twoPlayers, Difficulty difficulty) {
+        GameScreen createGame() {
+            String musicPath = folder + "instrumental.wav";
+            if (GamePanel.class.getResource(chartPath) == null
+                    || GamePanel.class.getResource(musicPath) == null) {
+                throw new IllegalStateException("Missing song files:\n" + chartPath + "\n" + musicPath);
+            }
+            return new GameScreen(folder, chartPath, playerCharacter, opponentCharacter,
+                    twoPlayers, difficulty);
+        }
+    }
+
+    private void beginSongLoad(CharacterSelectScreen characters, Screen returnScreen) {
+        SongRequest request = prepareSongRequest(characters);
+        LoadingScreen loading = new LoadingScreen(returnScreen);
+        pantallaActual = loading;
+        menuMusic.stop();
+
+        songLoader = new SwingWorker<>() {
+            @Override
+            protected GameScreen doInBackground() {
+                if (loading.isAbandoned()) {
+                    return null;
+                }
+                GameScreen game = request.createGame();
+                if (loading.isAbandoned()) {
+                    game.close();
+                    return null;
+                }
+                return game;
+            }
+
+            @Override
+            protected void done() {
+                GameScreen game = null;
+                try {
+                    game = get();
+                    if (loading.isAbandoned() || pantallaActual != loading) {
+                        if (game != null) {
+                            game.close();
+                        }
+                        return;
+                    }
+                    if (game == null) {
+                        pantallaActual = returnScreen;
+                        menuMusic.playLoop();
+                        return;
+                    }
+                    pantallaActual = loading.shouldPauseAfterLoad()
+                            ? new PauseScreen(game) : new CountdownScreen(game);
+                    menuConfirm.play();
+                } catch (Exception error) {
+                    if (game != null) {
+                        game.close();
+                    }
+                    if (!loading.isAbandoned() && pantallaActual == loading) {
+                        pantallaActual = returnScreen;
+                        menuMusic.playLoop();
+                        Throwable cause = error.getCause() == null ? error : error.getCause();
+                        JOptionPane.showMessageDialog(GamePanel.this,
+                                "Could not load song:\n" + cause.getMessage());
+                    }
+                } finally {
+                    if (songLoader == this) {
+                        songLoader = null;
+                    }
+                    repaint();
+                }
+            }
+        };
+        songLoader.execute();
+        repaint();
+    }
+
     private void restartGame(GameScreen previousGame) {
         // release the previous audio channels before loading the song again
         previousGame.close();
 
         try {
-            GameScreen game = createSelectedGame(previousCharacterScreen);
-            pantallaActual = new CountdownScreen(game);
-            menuConfirm.play();
+            beginSongLoad(previousCharacterScreen, previousSongScreen);
         } catch (RuntimeException error) {
             pantallaActual = previousSongScreen;
             menuMusic.playLoop();
@@ -448,10 +529,8 @@ public class GamePanel extends JPanel {
 
         if (pantallaActual instanceof CharacterSelectScreen characters) {
             try {
-                GameScreen game = createSelectedGame(characters);
                 previousCharacterScreen = characters;
-                menuMusic.stop();
-                pantallaActual = new CountdownScreen(game);
+                beginSongLoad(characters, characters);
             } catch (RuntimeException error) {
                 JOptionPane.showMessageDialog(
                         this, "Could not start song:\n" + error.getMessage()

@@ -1,0 +1,4 @@
+# original exported voices; no pitch shifting or resynthesis
+master_gain;0.950
+voice1_offset_ms;0.000000000
+voice2_offset_ms;0.000000000
