@@ -4,22 +4,41 @@ import java.util.function.LongSupplier;
 
 public final class CountdownScreen implements Screen {
 
-    // show each cue for 600 ms while the song remains frozen
-    private static final long STEP_NANOS = 600_000_000L;
+    // match the supplied recording at twice its original tempo, without changing pitch
+    private static final long[] CUE_TIMES_MS = {0, 540, 1085, 1640};
+    private static final long SILENT_DURATION_MS = 2582;
     private static final String[] CUES = {"3", "2", "1", "GO"};
 
     private final GameScreen game;
     private final BitmapFont font = new BitmapFont("/images/font/font.txt");
     private final LongSupplier clock;
     private final long startNanos;
+    private final MusicPlayer sound;
+    private final boolean ownsSound;
+    private boolean stopped;
 
     public CountdownScreen(GameScreen game) {
-        this(game, System::nanoTime);
+        this(game, new MusicPlayer("/audio/countdown.wav", AudioSettings.Channel.EFFECTS), true);
+    }
+
+    public CountdownScreen(GameScreen game, MusicPlayer sound) {
+        this(game, sound, false);
+    }
+
+    private CountdownScreen(GameScreen game, MusicPlayer sound, boolean ownsSound) {
+        this.game = game;
+        this.sound = sound;
+        this.ownsSound = ownsSound;
+        clock = System::nanoTime;
+        startNanos = clock.getAsLong();
+        sound.play();
     }
 
     CountdownScreen(GameScreen game, LongSupplier clock) {
         this.game = game;
         this.clock = clock;
+        sound = null;
+        ownsSound = false;
         startNanos = clock.getAsLong();
     }
 
@@ -28,20 +47,40 @@ public final class CountdownScreen implements Screen {
     }
 
     private long getElapsedNanos() {
-        // use elapsed wall time only while the audio clock is stopped
+        if (sound != null) {
+            // use the recording's own position so sound and animation cannot drift apart
+            return sound.getPositionMs() * 1_000_000L;
+        }
         return Math.max(0, clock.getAsLong() - startNanos);
     }
 
     public boolean isFinished() {
-        return getElapsedNanos() >= STEP_NANOS * CUES.length;
+        return !stopped && (sound == null ? getElapsedNanos() >= SILENT_DURATION_MS * 1_000_000L
+                : sound.isFinished());
+    }
+
+    public void stop() {
+        if (stopped) {
+            return;
+        }
+        stopped = true;
+        if (sound != null) {
+            sound.stop();
+            if (ownsSound) {
+                sound.close();
+            }
+        }
     }
 
     @Override
     public void render(Graphics2D g, int width, int height) {
         game.render(g, width, height);
-        long elapsed = getElapsedNanos();
-        int step = (int) Math.min(elapsed / STEP_NANOS, CUES.length - 1);
-        double progress = Math.min((elapsed % STEP_NANOS) / 180_000_000.0, 1.0);
+        long elapsedMs = getElapsedNanos() / 1_000_000L;
+        int step = 0;
+        while (step + 1 < CUES.length && elapsedMs >= CUE_TIMES_MS[step + 1]) {
+            step++;
+        }
+        double progress = Math.min((elapsedMs - CUE_TIMES_MS[step]) / 180.0, 1.0);
         double pulse = 1.0 + 0.18 * (1.0 - progress);
 
         Graphics2D overlay = (Graphics2D) g.create();

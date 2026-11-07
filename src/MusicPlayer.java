@@ -5,6 +5,7 @@ import java.net.URL;
 public final class MusicPlayer implements AutoCloseable {
 
     private final Clip clip;
+    private final AudioSettings.Channel volumeChannel;
     private boolean paused;
     private int pausedFrame;
     private long pausedPositionMs;
@@ -13,6 +14,11 @@ public final class MusicPlayer implements AutoCloseable {
     private final Runnable volumeListener = this::applyVolume;
 
     public MusicPlayer(String path) {
+        this(path, AudioSettings.Channel.MUSIC);
+    }
+
+    public MusicPlayer(String path, AudioSettings.Channel volumeChannel) {
+        this.volumeChannel = volumeChannel;
         URL resource = MusicPlayer.class.getResource(path);
 
         if (resource == null) {
@@ -45,7 +51,7 @@ public final class MusicPlayer implements AutoCloseable {
 
     private synchronized void applyVolume() {
         if (!closed) {
-            AudioVolume.apply(clip, AudioSettings.getVolume(AudioSettings.Channel.MUSIC));
+            AudioVolume.apply(clip, AudioSettings.getVolume(volumeChannel));
         }
     }
 
@@ -69,6 +75,10 @@ public final class MusicPlayer implements AutoCloseable {
     public long getPositionMs() {
         // use the audio position as the clock for gameplay
         return paused ? pausedPositionMs : clip.getMicrosecondPosition() / 1000;
+    }
+
+    public long getDurationMs() {
+        return clip.getMicrosecondLength() / 1000;
     }
 
     public boolean isFinished() {

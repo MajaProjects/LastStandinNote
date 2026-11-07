@@ -17,6 +17,11 @@ public class GamePanel extends JPanel {
     private CharacterSelectScreen previousCharacterScreen;
     // keep the chosen difficulty while moving between screens
     private Difficulty selectedDifficulty = Difficulty.ADMIN;
+    private final GameHud gameHud = new GameHud();
+    private final Timer animationTimer;
+    private final MusicPlayer countdownSound = new MusicPlayer(
+            "/audio/countdown.wav", AudioSettings.Channel.EFFECTS
+    );
     // load the interface sounds once
     private final AudioPlayer menuMove = new AudioPlayer(
             "/audio/menu_move.wav"
@@ -78,7 +83,7 @@ public class GamePanel extends JPanel {
                 });
 
         // only the active song advances; countdowns use their own clock
-        Timer animationTimer = new Timer(16, event -> {
+        animationTimer = new Timer(16, event -> {
             updateCurrentScreen();
             repaint();
         });
@@ -112,6 +117,10 @@ public class GamePanel extends JPanel {
     }
 
     private void goBack() {
+        if (pantallaActual instanceof ExitConfirmScreen confirmation) {
+            cancelExit(confirmation);
+            return;
+        }
         if (pantallaActual instanceof OptionsScreen options) {
             pantallaActual = options.getPreviousMenu();
             menuBack.play();
@@ -141,8 +150,7 @@ public class GamePanel extends JPanel {
         }
 
         if (pantallaActual instanceof CountdownScreen countdown) {
-            pantallaActual = new PauseScreen(countdown.getGame());
-            repaint();
+            showExitConfirmation(false);
             return;
         }
 
@@ -152,9 +160,8 @@ public class GamePanel extends JPanel {
         }
 
         if (pantallaActual instanceof GameScreen game) {
-            game.close();
-            pantallaActual = previousCharacterScreen;
-            menuMusic.playLoop();
+            showExitConfirmation(false);
+            return;
         } else if (pantallaActual instanceof CharacterSelectScreen) {
             pantallaActual = previousSongScreen;
         } else if (pantallaActual instanceof SongSelectScreen) {
@@ -175,6 +182,7 @@ public class GamePanel extends JPanel {
 
     private void togglePause() {
         if (pantallaActual instanceof CountdownScreen countdown) {
+            countdown.stop();
             pantallaActual = new PauseScreen(countdown.getGame());
             repaint();
         } else if (pantallaActual instanceof GameScreen game) {
@@ -192,8 +200,14 @@ public class GamePanel extends JPanel {
         pause.requestResume(missingKeys);
 
         if (missingKeys.isEmpty()) {
-            pantallaActual = new CountdownScreen(game);
-            menuConfirm.play();
+            countdownSound.stop();
+            // continue at the saved song position without replaying the intro countdown
+            if (game.resume(pressedGameplayKeys)) {
+                pantallaActual = game;
+                menuConfirm.play();
+            } else if (game.isGameOver()) {
+                pantallaActual = new GameOverScreen(game);
+            }
         }
 
         repaint();
@@ -218,6 +232,7 @@ public class GamePanel extends JPanel {
 
             if (countdown.isFinished()
                     && countdown.getGame().resume(pressedGameplayKeys)) {
+                countdown.stop();
                 pantallaActual = countdown.getGame();
             }
         }
@@ -231,6 +246,7 @@ public class GamePanel extends JPanel {
         }
 
         // releasing a required hold returns to pause without judging a miss
+        countdown.stop();
         PauseScreen pause = new PauseScreen(countdown.getGame());
         pause.requestResume(missingKeys);
         pantallaActual = pause;
@@ -316,7 +332,7 @@ public class GamePanel extends JPanel {
                         return;
                     }
                     pantallaActual = loading.shouldPauseAfterLoad()
-                            ? new PauseScreen(game) : new CountdownScreen(game);
+                            ? new PauseScreen(game) : new CountdownScreen(game, countdownSound);
                     menuConfirm.play();
                 } catch (Exception error) {
                     if (game != null) {
@@ -366,6 +382,86 @@ public class GamePanel extends JPanel {
         repaint();
     }
 
+    public void requestApplicationExit() {
+        showExitConfirmation(true);
+    }
+
+    private GameScreen getActiveGame(Screen screen) {
+        if (screen instanceof GameScreen game) return game;
+        if (screen instanceof CountdownScreen countdown) return countdown.getGame();
+        if (screen instanceof PauseScreen pause) return pause.getGame();
+        if (screen instanceof ResultsScreen results) return results.getGame();
+        if (screen instanceof GameOverScreen ended) return ended.getGame();
+        return null;
+    }
+
+    private void showExitConfirmation(boolean applicationExit) {
+        if (pantallaActual instanceof ExitConfirmScreen) {
+            return;
+        }
+        if (pantallaActual instanceof LoadingScreen loading) {
+            // abandon the background load safely so cancelling exit cannot strand a loading screen
+            loading.abandon();
+            pantallaActual = loading.getReturnScreen();
+            menuMusic.playLoop();
+        }
+        Screen previous = pantallaActual;
+        GameScreen game = getActiveGame(previous);
+        if (previous instanceof CountdownScreen countdown) {
+            countdown.stop();
+        } else if (previous instanceof GameScreen) {
+            game.pause();
+            if (game.isGameOver()) {
+                pantallaActual = new GameOverScreen(game);
+                if (!applicationExit) {
+                    repaint();
+                    return;
+                }
+                previous = pantallaActual;
+            }
+        } else if (previous instanceof PauseScreen pause) {
+            pause.cancelResume();
+        }
+        pantallaActual = new ExitConfirmScreen(previous, game, applicationExit);
+        menuBack.play();
+        repaint();
+    }
+
+    private void cancelExit(ExitConfirmScreen confirmation) {
+        Screen previous = confirmation.getPreviousScreen();
+        pantallaActual = previous;
+        if (previous instanceof GameScreen || previous instanceof CountdownScreen) {
+            // resume through the held-key check without replaying the intro countdown
+            PauseScreen pause = new PauseScreen(confirmation.getGame());
+            pantallaActual = pause;
+            requestResume(pause);
+        } else {
+            menuBack.play();
+            repaint();
+        }
+    }
+
+    private void confirmExit(ExitConfirmScreen confirmation) {
+        if (!confirmation.isApplicationExit()) {
+            returnToSongs(confirmation.getGame());
+            return;
+        }
+        animationTimer.stop();
+        if (confirmation.getGame() != null) {
+            confirmation.getGame().close();
+        }
+        countdownSound.close();
+        titleMusic.close();
+        menuMusic.close();
+        menuMove.close();
+        menuConfirm.close();
+        menuBack.close();
+        Window window = SwingUtilities.getWindowAncestor(this);
+        if (window != null) {
+            window.dispose();
+        }
+    }
+
     private void bindMenuNavigation(
             String actionName,
             int keyCode,
@@ -384,6 +480,8 @@ public class GamePanel extends JPanel {
                     menu.moveSelection(direction);
                 } else if (pantallaActual instanceof OptionsScreen options) {
                     options.moveSelection(direction);
+                } else if (pantallaActual instanceof ExitConfirmScreen confirmation) {
+                    confirmation.moveSelection(direction);
                 } else if (pantallaActual instanceof ModeSelectScreen modes) {
                     modes.moveSelection(direction);
                 } else if (pantallaActual instanceof SongSelectScreen songs) {
@@ -417,8 +515,14 @@ public class GamePanel extends JPanel {
         getActionMap().put(actionName, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
+                if (pantallaActual instanceof ExitConfirmScreen confirmation) {
+                    confirmation.moveSelection(direction);
+                    menuMove.play();
+                    repaint();
+                    return;
+                }
                 if (pantallaActual instanceof OptionsScreen options) {
-                    options.changeVolume(direction);
+                    options.changeSelectedValue(direction);
                     menuMove.play();
                     repaint();
                     return;
@@ -494,6 +598,21 @@ public class GamePanel extends JPanel {
     }
 
     private void activateSelection() {
+        if (pantallaActual instanceof ExitConfirmScreen confirmation) {
+            if (confirmation.isExitSelected()) {
+                confirmExit(confirmation);
+            } else {
+                cancelExit(confirmation);
+            }
+            return;
+        }
+        if (pantallaActual instanceof OptionsScreen options) {
+            if (options.toggleSelected()) {
+                menuConfirm.play();
+                repaint();
+            }
+            return;
+        }
         if (pantallaActual instanceof MenuScreen menu
                 && (menu.getSelectedOption().equals("OPCIONES")
                 || menu.getSelectedOption().equals("OPTIONS"))) {
@@ -524,7 +643,7 @@ public class GamePanel extends JPanel {
             switch (pause.getSelectedOption()) {
                 case "RESUME" -> requestResume(pause);
                 case "RESTART" -> restartGame(pause.getGame());
-                case "SONG SELECT" -> returnToSongs(pause.getGame());
+                case "SONG SELECT" -> showExitConfirmation(false);
             }
             return;
         }
@@ -593,14 +712,7 @@ public class GamePanel extends JPanel {
 
         if (pantallaActual instanceof MenuScreen menu
                 && menu.getSelectedOption().equals("SALIR")) {
-            // close the window through its normal closing behavior
-            Window window = SwingUtilities.getWindowAncestor(this);
-
-            if (window != null) {
-                window.dispatchEvent(
-                        new WindowEvent(window, WindowEvent.WINDOW_CLOSING)
-                );
-            }
+            requestApplicationExit();
         }
     }
 
@@ -618,6 +730,10 @@ public class GamePanel extends JPanel {
             );
 
             pantallaActual.render(g2, getWidth(), getHeight());
+            gameHud.recordPaint();
+            if (DisplaySettings.isShowFps()) {
+                gameHud.drawFps(g2, getWidth());
+            }
         } finally {
             g2.dispose();
         }

@@ -8,6 +8,8 @@ public class BitmapFont {
 
     private final BufferedImage atlas;
     private final Map<Integer, Glyph> glyphs = new HashMap<>();
+    private final Map<Glyph, Integer> inkBottoms = new HashMap<>();
+    private int numberBaseline;
 
     private int lineHeight;
     private int spaceWidth;
@@ -114,7 +116,21 @@ public class BitmapFont {
                         "Región de carácter inválida en: " + configPath
                 );
             }
+            // cache the last visible row rather than using differently padded rectangles
+            int bottom = glyph.height();
+            search:
+            for (int row = glyph.height() - 1; row >= 0; row--) {
+                for (int column = 0; column < glyph.width(); column++) {
+                    if ((atlas.getRGB(glyph.x() + column, glyph.y() + row) >>> 24) != 0) {
+                        bottom = row + 1;
+                        break search;
+                    }
+                }
+            }
+            inkBottoms.put(glyph, bottom);
         }
+        Glyph reference = glyphs.get((int) 'A');
+        numberBaseline = reference == null ? lineHeight : inkBottoms.get(reference);
     }
 
     private static void requireFields(String[] fields, int expected) {
@@ -163,6 +179,15 @@ public class BitmapFont {
     }
 
     public void draw(Graphics2D g, String text, int x, int y, int scale) {
+        drawInternal(g, text, x, y, scale, false);
+    }
+
+    public void drawAligned(Graphics2D g, String text, int x, int y, int scale) {
+        drawInternal(g, text, x, y, scale, true);
+    }
+
+    private void drawInternal(Graphics2D g, String text, int x, int y, int scale,
+                              boolean alignNumbers) {
         if (scale <= 0) {
             throw new IllegalArgumentException("La escala debe ser positiva");
         }
@@ -184,13 +209,17 @@ public class BitmapFont {
             }
 
             Glyph glyph = getGlyph(code);
+            int top = cursorY;
+            if (alignNumbers && (Character.isDigit(code) || code == '%')) {
+                top += (numberBaseline - inkBottoms.get(glyph)) * scale;
+            }
 
             g.drawImage(
                     atlas,
                     cursorX,
-                    cursorY,
+                    top,
                     cursorX + glyph.width() * scale,
-                    cursorY + glyph.height() * scale,
+                    top + glyph.height() * scale,
                     glyph.x(),
                     glyph.y(),
                     glyph.x() + glyph.width(),

@@ -623,8 +623,17 @@ public class GameScreen implements Screen, AutoCloseable {
         drawLabel(g, chart.name(), width / 2, 20);
 
         // place each controller label below the character it belongs to
-        drawLabel(g, "PLAYER ONE", playerX, height - 60);
-        drawLabel(g, opponentLabel, opponentX, height - 60);
+        boolean showStats = DisplaySettings.isShowGameStats();
+        if (showStats) {
+            // reserve the existing footer below the note field for optional statistics
+            g.setColor(new Color(12, 12, 20, 235));
+            g.fillRect(0, height - 64, width, 64);
+            GameHud.drawText(g, font, "PLAYER ONE", playerX, height - 63, 0.7, width / 2 - 24);
+            GameHud.drawText(g, font, opponentLabel, opponentX, height - 63, 0.7, width / 2 - 24);
+        } else {
+            drawLabel(g, "PLAYER ONE", playerX, height - 60);
+            drawLabel(g, opponentLabel, opponentX, height - 60);
+        }
 
         // share the audio clock and held inputs with the note renderer
         noteRenderer.render(
@@ -645,7 +654,11 @@ public class GameScreen implements Screen, AutoCloseable {
         // show temporary combo alerts for human players
         drawComboAlert(g, 1, width / 4, 105, songTimeMs);
         drawComboAlert(g, 2, width * 3 / 4, 105, songTimeMs);
-        drawHealthBar(g, width, height - 20);
+        drawHealthBar(g, width, showStats ? height - 16 : height - 20);
+        if (showStats) {
+            GameHud.drawStats(g, font, noteJudge, 1, leftX, height - 38, width / 2 - 28);
+            GameHud.drawStats(g, font, noteJudge, 2, rightX, height - 38, width / 2 - 28);
+        }
     }
 
     private void drawHealthBar(Graphics2D g, int panelWidth, int top) {
