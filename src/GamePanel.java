@@ -19,8 +19,7 @@ public class GamePanel extends JPanel {
     private Difficulty selectedDifficulty = Difficulty.ADMIN;
     private final GameHud gameHud = new GameHud();
     private final Timer animationTimer;
-    private final Timer renderTimer;
-    private final FramePacer framePacer = new FramePacer();
+    private final FramePacer framePacer = new FramePacer(this::onFrameReady);
     private boolean frameQueued;
     private boolean shuttingDown;
     private final MusicPlayer countdownSound = new MusicPlayer(
@@ -121,8 +120,6 @@ public class GamePanel extends JPanel {
                 requestFrame();
             }
         });
-        renderTimer = new Timer(0, event -> requestFrame());
-        renderTimer.setRepeats(false);
         animationTimer.start();
         requestFrame();
     }
@@ -488,7 +485,7 @@ public class GamePanel extends JPanel {
         }
         shuttingDown = true;
         animationTimer.stop();
-        renderTimer.stop();
+        framePacer.close();
         if (confirmation.getGame() != null) {
             confirmation.getGame().close();
         }
@@ -784,21 +781,25 @@ public class GamePanel extends JPanel {
     }
 
     private void requestFrame() {
-        if (shuttingDown) {
+        if (shuttingDown || frameQueued) {
             return;
         }
         // keep menus responsive even when gameplay is deliberately limited to a very low rate
         int limit = pantallaActual instanceof GameScreen ? DisplaySettings.getFpsLimit() : 60;
+        framePacer.request(limit);
+    }
+
+    private void onFrameReady() {
+        if (shuttingDown || frameQueued) {
+            return;
+        }
+        int limit = pantallaActual instanceof GameScreen ? DisplaySettings.getFpsLimit() : 60;
         long delay = framePacer.delayNanos(limit, System.nanoTime());
         if (delay == 0) {
-            renderTimer.stop();
-            if (!frameQueued) {
-                frameQueued = true;
-                super.repaint();
-            }
+            frameQueued = true;
+            super.repaint();
         } else {
-            renderTimer.setInitialDelay((int) Math.max(1, (delay + 999_999L) / 1_000_000L));
-            renderTimer.restart();
+            framePacer.request(limit);
         }
     }
 }
