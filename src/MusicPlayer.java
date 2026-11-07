@@ -9,6 +9,8 @@ public final class MusicPlayer implements AutoCloseable {
     private int pausedFrame;
     private long pausedPositionMs;
     private boolean playingOnce;
+    private boolean closed;
+    private final Runnable volumeListener = this::applyVolume;
 
     public MusicPlayer(String path) {
         URL resource = MusicPlayer.class.getResource(path);
@@ -38,6 +40,13 @@ public final class MusicPlayer implements AutoCloseable {
         }
 
         clip = loadedClip;
+        AudioSettings.addListener(volumeListener);
+    }
+
+    private synchronized void applyVolume() {
+        if (!closed) {
+            AudioVolume.apply(clip, AudioSettings.getVolume(AudioSettings.Channel.MUSIC));
+        }
     }
 
     public void playLoop() {
@@ -103,10 +112,13 @@ public final class MusicPlayer implements AutoCloseable {
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
+        closed = true;
+        AudioSettings.removeListener(volumeListener);
         // release the audio channel when this player is discarded
         clip.close();
         paused = false;
         playingOnce = false;
     }
 }
+

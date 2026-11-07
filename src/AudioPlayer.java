@@ -7,6 +7,7 @@ public final class AudioPlayer implements AutoCloseable {
     private final Clip[] clips = new Clip[4];
     private int nextClip = 0;
     private boolean closed;
+    private final Runnable volumeListener = this::applyVolume;
 
     public AudioPlayer(String path) {
         URL resource = AudioPlayer.class.getResource(path);
@@ -35,6 +36,15 @@ public final class AudioPlayer implements AutoCloseable {
                     "Could not load audio: " + path,
                     error
             );
+        }
+        AudioSettings.addListener(volumeListener);
+    }
+
+    private synchronized void applyVolume() {
+        if (!closed) {
+            for (Clip clip : clips) {
+                AudioVolume.apply(clip, AudioSettings.getVolume(AudioSettings.Channel.EFFECTS));
+            }
         }
     }
 
@@ -68,6 +78,7 @@ public final class AudioPlayer implements AutoCloseable {
     @Override
     public synchronized void close() {
         closed = true;
+        AudioSettings.removeListener(volumeListener);
         // release every audio channel that was opened
         for (Clip clip : clips) {
             if (clip != null) {
@@ -76,4 +87,5 @@ public final class AudioPlayer implements AutoCloseable {
         }
     }
 }
+
 

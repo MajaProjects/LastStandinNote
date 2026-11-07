@@ -5,8 +5,9 @@ import java.util.concurrent.locks.LockSupport;
 public final class SongPlayer implements AutoCloseable {
 
     private static final int FRAME_BYTES = 4;
-    private static final int BLOCK_FRAMES = 256;
-    private static final int MAX_QUEUED_FRAMES = 512;
+    private static final int BLOCK_FRAMES = 1024;
+    // keep about 35 ms ready instead of relying on one millisecond thread wakeups
+    private static final int MAX_QUEUED_FRAMES = 1536;
     private final Object lock = new Object();
     private final PcmTrack instrumental;
     private final PcmTrack[] voices;
@@ -59,7 +60,7 @@ public final class SongPlayer implements AutoCloseable {
         try {
             AudioFormat format = new AudioFormat(PcmTrack.SAMPLE_RATE, 16, 2, true, false);
             output = AudioSystem.getSourceDataLine(format);
-            output.open(format, 1024 * FRAME_BYTES);
+            output.open(format, 4096 * FRAME_BYTES);
             return new SongPlayer(instrumental, voices, offsets, gain, output, true);
         } catch (LineUnavailableException | IllegalArgumentException error) {
             if (output != null) {
@@ -114,6 +115,8 @@ public final class SongPlayer implements AutoCloseable {
             }
             started = true;
             paused = false;
+            // prepare audible frames before the device starts consuming them
+            pump();
             line.start();
             lock.notifyAll();
         }
@@ -164,6 +167,8 @@ public final class SongPlayer implements AutoCloseable {
             writeFrame = baseSongFrame;
             paused = false;
             if (baseSongFrame < instrumental.frameCount()) {
+                // resume from the saved frame with the same protection against underruns
+                pump();
                 line.start();
                 lock.notifyAll();
             }
@@ -207,27 +212,39 @@ public final class SongPlayer implements AutoCloseable {
             if (closed || paused || !started) {
                 return;
             }
-            int available = line.available();
-            int queued = Math.max(0, (line.getBufferSize() - available) / FRAME_BYTES);
-            int frames = Math.min(BLOCK_FRAMES, Math.min(available / FRAME_BYTES,
-                    MAX_QUEUED_FRAMES - queued));
-            frames = (int) Math.min(frames, instrumental.frameCount() - writeFrame);
-            if (frames <= 0) {
-                return;
+            // refill the target queue in this wakeup, even after a longer scheduler pause
+            int maxBlocks = (MAX_QUEUED_FRAMES + BLOCK_FRAMES - 1) / BLOCK_FRAMES;
+            for (int blockIndex = 0; blockIndex < maxBlocks; blockIndex++) {
+                int available = line.available();
+                int queued = Math.max(0, (line.getBufferSize() - available) / FRAME_BYTES);
+                int frames = Math.min(BLOCK_FRAMES, Math.min(available / FRAME_BYTES,
+                        MAX_QUEUED_FRAMES - queued));
+                frames = (int) Math.min(frames, instrumental.frameCount() - writeFrame);
+                if (frames <= 0) {
+                    return;
+                }
+                renderFrames(writeFrame, block, frames);
+                int requested = frames * FRAME_BYTES;
+                // write only the space reported free so the Swing thread is not held up
+                int written = line.write(block, 0, requested);
+                writeFrame += written / FRAME_BYTES;
+                if (written < requested) {
+                    return;
+                }
             }
-            renderFrames(writeFrame, block, frames);
-            int written = line.write(block, 0, frames * FRAME_BYTES);
-            writeFrame += written / FRAME_BYTES;
         }
     }
 
     void renderFrames(long firstFrame, byte[] output, int frames) {
+        // read each channel once per block while all tracks keep the same audio clock
+        double musicGain = AudioSettings.getVolume(AudioSettings.Channel.MUSIC) / 100.0;
+        double vocalGain = AudioSettings.getVolume(AudioSettings.Channel.VOCALS) / 100.0;
         for (int frame = 0; frame < frames; frame++) {
             long songFrame = firstFrame + frame;
-            double firstGain = gates[0].gainAt(songFrame);
-            double secondGain = gates[1].gainAt(songFrame);
+            double firstGain = gates[0].gainAt(songFrame) * vocalGain;
+            double secondGain = gates[1].gainAt(songFrame) * vocalGain;
             for (int channel = 0; channel < 2; channel++) {
-                double value = instrumental.sample(songFrame, channel);
+                double value = instrumental.sample(songFrame, channel) * musicGain;
                 if (voices[0] != null) {
                     value += voices[0].sample(songFrame - voiceOffsets[0], channel) * firstGain;
                 }

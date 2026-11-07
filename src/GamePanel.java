@@ -112,6 +112,12 @@ public class GamePanel extends JPanel {
     }
 
     private void goBack() {
+        if (pantallaActual instanceof OptionsScreen options) {
+            pantallaActual = options.getPreviousMenu();
+            menuBack.play();
+            repaint();
+            return;
+        }
         if (pantallaActual instanceof GameOverScreen gameOver) {
             if (!gameOver.isMenuReady()) {
                 return;
@@ -376,6 +382,8 @@ public class GamePanel extends JPanel {
                 // move the selection in the active menu
                 if (pantallaActual instanceof MenuScreen menu) {
                     menu.moveSelection(direction);
+                } else if (pantallaActual instanceof OptionsScreen options) {
+                    options.moveSelection(direction);
                 } else if (pantallaActual instanceof ModeSelectScreen modes) {
                     modes.moveSelection(direction);
                 } else if (pantallaActual instanceof SongSelectScreen songs) {
@@ -409,6 +417,12 @@ public class GamePanel extends JPanel {
         getActionMap().put(actionName, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
+                if (pantallaActual instanceof OptionsScreen options) {
+                    options.changeVolume(direction);
+                    menuMove.play();
+                    repaint();
+                    return;
+                }
                 if (pantallaActual instanceof GameOverScreen gameOver) {
                     gameOver.moveSelection(direction);
                     menuMove.play();
@@ -480,6 +494,14 @@ public class GamePanel extends JPanel {
     }
 
     private void activateSelection() {
+        if (pantallaActual instanceof MenuScreen menu
+                && (menu.getSelectedOption().equals("OPCIONES")
+                || menu.getSelectedOption().equals("OPTIONS"))) {
+            pantallaActual = new OptionsScreen(menu);
+            menuConfirm.play();
+            repaint();
+            return;
+        }
         if (pantallaActual instanceof GameOverScreen gameOver) {
             if (!gameOver.isMenuReady()) {
                 return;
@@ -601,3 +623,4 @@ public class GamePanel extends JPanel {
         }
     }
 }
+
