@@ -9,7 +9,7 @@ public final class ResultsScreen implements Screen {
     private static final long COUNT_DURATION_NANOS = 800_000_000L;
     private static final String[] ROW_LABELS = {
             "TOTAL NOTES", "HIT NOTES", "SICK", "GOOD", "BAD", "SHIT", "MISS",
-            "MAX COMBO", "RAW SCORE", "PERFORMANCE"
+            "MAX COMBO", "RAW SCORE", "ACCURACY"
     };
 
     private final GameScreen game;
@@ -19,6 +19,8 @@ public final class ResultsScreen implements Screen {
     private final String resultText;
     private final String controllerText;
     private final int winningVoice;
+    private final boolean twoPlayers;
+    private final int playerVoice;
     private final NoteJudge.Statistics[] statistics = new NoteJudge.Statistics[2];
     private final double[] performances = new double[2];
     private final SpriteAnimation[] characters = new SpriteAnimation[2];
@@ -36,11 +38,14 @@ public final class ResultsScreen implements Screen {
         this.game = game;
         this.clock = clock;
         songName = game.getSongName();
-        winningVoice = game.getWinningVoice();
+        twoPlayers = game.isTwoPlayers();
+        playerVoice = game.getPlayerVoice();
+        winningVoice = twoPlayers ? game.getWinningVoice() : 0;
 
         // snapshot statistics once so the display cannot change the final score
         for (int side = 0; side < 2; side++) {
             int voice = side + 1;
+            if (!twoPlayers && voice != playerVoice) continue;
             statistics[side] = game.getStatisticsForVoice(voice);
             performances[side] = game.getPerformanceForVoice(voice);
             characters[side] = game.getIdleForVoice(voice);
@@ -48,8 +53,13 @@ public final class ResultsScreen implements Screen {
             controllerNames[side] = game.getControllerForVoice(voice);
         }
 
-        resultText = winningVoice == 0 ? "DRAW" : characterNames[winningVoice - 1] + " WINS";
-        controllerText = winningVoice == 0 ? "TIED PERFORMANCE" : controllerNames[winningVoice - 1];
+        if (twoPlayers) {
+            resultText = winningVoice == 0 ? "DRAW" : characterNames[winningVoice - 1] + " WINS";
+            controllerText = winningVoice == 0 ? "TIED RESULT" : controllerNames[winningVoice - 1];
+        } else {
+            resultText = characterNames[playerVoice - 1];
+            controllerText = controllerNames[playerVoice - 1];
+        }
         startNanos = clock.getAsLong();
     }
 
@@ -102,15 +112,20 @@ public final class ResultsScreen implements Screen {
             menu.drawRoundRect(left, top, panelWidth, panelHeight, 18, 18);
 
             drawText(menu, "RESULTS", width / 2, top + 14, 2.0, true, panelWidth - 50);
-            int totalNotes = statistics[0].totalNotes() + statistics[1].totalNotes();
+            int totalNotes = twoPlayers
+                    ? statistics[0].totalNotes() + statistics[1].totalNotes()
+                    : statistics[playerVoice - 1].totalNotes();
             drawText(menu, songName + " - " + totalNotes + " NOTES", width / 2,
                     top + 88, 1.0, true, panelWidth - 50);
 
-            // the left section celebrates the winner while the table compares both sides
+            // show the selected character in solo play and the winner in shared play
             int winnerCenter = left + 128;
             drawText(menu, resultText, winnerCenter, top + 152, 0.85, true, 230);
             drawText(menu, controllerText, winnerCenter, top + 187, 0.65, true, 230);
-            if (winningVoice == 0) {
+            if (!twoPlayers) {
+                drawCharacter(menu, characters[playerVoice - 1], animationMs,
+                        winnerCenter, top + 414, 200, 190);
+            } else if (winningVoice == 0) {
                 // show both characters in their usual order when neither side wins
                 drawCharacter(menu, characters[0], animationMs, left + 78, top + 414, 100, 165);
                 drawCharacter(menu, characters[1], animationMs, left + 183, top + 414, 100, 165);
@@ -128,10 +143,17 @@ public final class ResultsScreen implements Screen {
                     tableLeft + tableWidth * 80 / 100
             };
 
+            for (int row = 0; row < ROW_LABELS.length; row++) {
+                drawText(menu, ROW_LABELS[row], tableLeft, top + 192 + row * 23,
+                        0.72, false, 185);
+            }
             for (int side = 0; side < 2; side++) {
-                int center = valueCenters[side];
-                drawText(menu, characterNames[side], center, top + 137, 0.8, true, 175);
-                drawText(menu, controllerNames[side], center, top + 166, 0.55, true, 175);
+                if (!twoPlayers && side != playerVoice - 1) continue;
+                int center = twoPlayers ? valueCenters[side] : tableLeft + tableWidth * 72 / 100;
+                drawText(menu, twoPlayers ? characterNames[side] : "YOUR STATS",
+                        center, top + 137, 0.8, true, 175);
+                drawText(menu, twoPlayers ? controllerNames[side] : "SINGLE PLAYER",
+                        center, top + 166, 0.55, true, 175);
 
                 NoteJudge.Statistics stats = statistics[side];
                 int[] values = {
@@ -140,10 +162,7 @@ public final class ResultsScreen implements Screen {
                 };
                 for (int row = 0; row < ROW_LABELS.length; row++) {
                     int y = top + 192 + row * 23;
-                    if (side == 0) {
-                        drawText(menu, ROW_LABELS[row], tableLeft, y, 0.72, false, 185);
-                    }
-                    // retain raw points while making the fair comparison visible in results
+                    // keep exact raw points separate from the judgement-based accuracy
                     String value = row == values.length
                             ? formatPerformance(performances[side] * progress)
                             : String.valueOf(getAnimatedValue(values[row], progress));
@@ -183,6 +202,7 @@ public final class ResultsScreen implements Screen {
 
     private void drawText(Graphics2D g, String text, int x, int y, double preferredScale,
                           boolean centered, int maxWidth) {
+        text = GameText.display(text);
         // the atlas has no decimal point, so reserve a small gap and draw that mark below
         int points = (int) text.chars().filter(character -> character == '.').count();
         int textWidth = font.getTextWidth(text.replace(".", ""), 1) + points * 6;
@@ -194,7 +214,7 @@ public final class ResultsScreen implements Screen {
             int cursor = centered ? -textWidth / 2 : 0;
             String[] parts = text.split("\\.", -1);
             for (int i = 0; i < parts.length; i++) {
-                font.draw(copy, parts[i], cursor, 0, 1);
+                font.drawAligned(copy, parts[i], cursor, 0, 1);
                 cursor += font.getTextWidth(parts[i], 1);
                 if (i + 1 < parts.length) {
                     copy.setColor(new Color(195, 65, 245));

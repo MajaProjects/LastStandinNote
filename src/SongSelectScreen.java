@@ -116,7 +116,7 @@ public class SongSelectScreen implements Screen {
         g.drawImage(background, 0, 0, width, height, null);
 
         double seconds = (System.nanoTime() - animationStart) / 1_000_000_000.0;
-        font.drawPulsingCentered(g, "SELECT A SONG", width / 2, 75, 2, 1.0, seconds);
+        font.drawPulsingCentered(g, GameText.display("SELECT A SONG"), width / 2, 75, 2, 1.0, seconds);
 
         for (int i = 0; i < songs.size(); i++) {
             boolean selected = i == selectedSong;
@@ -145,7 +145,7 @@ public class SongSelectScreen implements Screen {
         g.drawRoundRect(rowX, rowY, rowWidth, rowHeight, 12, 12);
 
         // show the selected difficulty
-        font.draw(g, "DIFFICULTY", rowX + 45, rowY + 12, 1);
+        font.draw(g, GameText.display("DIFFICULTY"), rowX + 45, rowY + 12, 1);
         font.draw(g, difficulty.name(), rowX + 280, rowY + 12, 1);
 
         // fill one, two or three segments for the chosen difficulty

@@ -37,7 +37,7 @@ public class TitleScreen implements Screen {
         );
 
         // show the key used to open the main menu
-        String prompt = "PULSA ENTER";
+        String prompt = GameText.display("PULSA ENTER");
         int promptX = (width - font.getTextWidth(prompt, 1)) / 2;
 
         font.draw(g, prompt, promptX, height * 3 / 4, 1);

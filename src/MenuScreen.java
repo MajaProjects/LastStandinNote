@@ -48,7 +48,7 @@ public class MenuScreen implements Screen {
 
         font.drawPulsingCentered(
                 g,
-                "MENU PRINCIPAL",
+                GameText.display("MENU PRINCIPAL"),
                 width / 2,
                 65,
                 2,
@@ -58,7 +58,8 @@ public class MenuScreen implements Screen {
 
         // shift the selected option to the left
         for (int i = 0; i < options.length; i++) {
-            int optionX = (width - font.getTextWidth(options[i], 1)) / 2;
+            String label = GameText.display(options[i]);
+            int optionX = (width - font.getTextWidth(label, 1)) / 2;
             int optionY = 210 + i * 65;
 
             if (i == selectedOption) {
@@ -67,7 +68,7 @@ public class MenuScreen implements Screen {
 
             drawOption(
                     g,
-                    options[i],
+                    label,
                     optionX,
                     optionY,
                     i == selectedOption
@@ -75,7 +76,7 @@ public class MenuScreen implements Screen {
         }
 
         // place the selection marker beside the active option
-        String selectedText = options[selectedOption];
+        String selectedText = GameText.display(options[selectedOption]);
 
         int optionX = (width - font.getTextWidth(selectedText, 1)) / 2;
         optionX -= selectionOffset;

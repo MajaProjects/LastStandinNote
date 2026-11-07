@@ -75,7 +75,7 @@ public class CharacterSelectScreen implements Screen {
 
         font.drawPulsingCentered(
                 g,
-                "PICK A CHARACTER",
+                GameText.display("PICK A CHARACTER"),
                 width / 2,
                 60,
                 2,

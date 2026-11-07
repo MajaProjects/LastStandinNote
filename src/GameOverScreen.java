@@ -22,8 +22,14 @@ public final class GameOverScreen implements Screen {
         boolean both = game.isDefeated(1) && game.isDefeated(2);
         int loser = game.isDefeated(1) ? 1 : 2;
         int winner = loser == 1 ? 2 : 1;
-        outcome = both ? "DRAW" : game.getCharacterForVoice(winner).toUpperCase(Locale.ROOT) + " WINS";
-        defeatedController = both ? "BOTH CHARACTERS LOST" : game.getControllerForVoice(loser) + " LOST";
+        if (game.isTwoPlayers()) {
+            outcome = both ? "DRAW" : game.getCharacterForVoice(winner).toUpperCase(Locale.ROOT) + " WINS";
+            defeatedController = both ? "BOTH CHARACTERS LOST" : game.getControllerForVoice(loser) + " LOST";
+        } else {
+            // solo defeat offers another attempt without declaring the bot a winner
+            outcome = game.getCharacterForVoice(game.getPlayerVoice()).toUpperCase(Locale.ROOT);
+            defeatedController = game.getControllerForVoice(game.getPlayerVoice());
+        }
         // finish every death frame and briefly hold the final pose before the menu
         long duration = 0;
         for (int voice = 1; voice <= 2; voice++) {
@@ -123,6 +129,7 @@ public final class GameOverScreen implements Screen {
     }
 
     private void drawText(Graphics2D g, String text, int x, int y, double preferred, int maxWidth) {
+        text = GameText.display(text);
         int textWidth = font.getTextWidth(text, 1);
         double scale = Math.min(preferred, maxWidth / (double) Math.max(1, textWidth));
         Graphics2D copy = (Graphics2D) g.create();

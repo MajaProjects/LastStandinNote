@@ -228,6 +228,14 @@ public class GameScreen implements Screen, AutoCloseable {
         return chart.name();
     }
 
+    public boolean isTwoPlayers() {
+        return twoPlayers;
+    }
+
+    public int getPlayerVoice() {
+        return playerVoice;
+    }
+
     public int getWinningVoice() {
         // final results compare each side against its own complete chart
         return noteJudge.getLeadingVoice(true);
@@ -838,6 +846,7 @@ public class GameScreen implements Screen, AutoCloseable {
             int centerX,
             int y
     ) {
+        text = GameText.display(text);
         int x = centerX - font.getTextWidth(text, 1) / 2;
         font.draw(g, text, x, y, 1);
     }

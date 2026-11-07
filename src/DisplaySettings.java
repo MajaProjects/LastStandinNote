@@ -19,6 +19,54 @@ public final class DisplaySettings {
 
     private DisplaySettings() {}
 
+    public record Snapshot(int resolution, boolean fullscreen, int fpsMode, int customPosition,
+                           boolean showFps, boolean showGameStats) {
+        public Snapshot {
+            if (resolution < 0 || resolution >= RESOLUTIONS.length || fpsMode < 0 || fpsMode > 4
+                    || customPosition < 0 || customPosition > 261) {
+                throw new IllegalArgumentException("Invalid display settings");
+            }
+        }
+
+        public String resolutionLabel() {
+            return RESOLUTIONS[resolution][0] + " X " + RESOLUTIONS[resolution][1];
+        }
+
+        public String fpsModeLabel() {
+            return fpsMode == 4 ? "CUSTOM" : FPS_PRESETS[fpsMode] + " FPS";
+        }
+
+        public String customLabel() {
+            return customPosition == 261 ? "UNLIMITED" : Math.max(1, customPosition) + " FPS";
+        }
+    }
+
+    public static Snapshot snapshot() {
+        return new Snapshot(resolution, fullscreen, fpsMode, customPosition, showFps, showGameStats);
+    }
+
+    static int resolutionCount() {
+        return RESOLUTIONS.length;
+    }
+
+    public static void apply(Snapshot settings) {
+        boolean windowChanged = resolution != settings.resolution() || fullscreen != settings.fullscreen();
+        resolution = settings.resolution();
+        fullscreen = settings.fullscreen();
+        fpsMode = settings.fpsMode();
+        customPosition = settings.customPosition();
+        showFps = settings.showFps();
+        showGameStats = settings.showGameStats();
+        preferences.putInt("resolution", resolution);
+        preferences.putBoolean("fullscreen", fullscreen);
+        preferences.putInt("fps_mode", fpsMode);
+        preferences.putInt("custom_fps", customPosition);
+        preferences.putBoolean("show_fps", showFps);
+        preferences.putBoolean("show_game_stats", showGameStats);
+        // notify the native window once, after the entire confirmed state is installed
+        if (windowChanged) notifyDisplayListeners();
+    }
+
     public static boolean isShowFps() {
         return showFps;
     }

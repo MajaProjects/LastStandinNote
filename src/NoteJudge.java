@@ -598,7 +598,7 @@ public final class NoteJudge {
                 if (hitNotes[i] && !missedNotes[i]) {
                     earnedWeight += switch (headRatings[i]) {
                         case "SICK" -> 1.0;
-                        case "GOOD" -> 0.9;
+                        case "GOOD" -> 1.0;
                         case "BAD" -> 0.5;
                         case "SHIT" -> 0.25;
                         default -> 0.0;
@@ -618,7 +618,18 @@ public final class NoteJudge {
         // live comparisons exclude future notes and unfinished holds on both sides
         double difference = getPerformanceForVoice(1, finalResult)
                 - getPerformanceForVoice(2, finalResult);
-        return Math.abs(difference) < 0.000000001 ? 0 : difference > 0 ? 1 : 2;
+        if (Math.abs(difference) >= 0.000000001) {
+            return difference > 0 ? 1 : 2;
+        }
+        if (!finalResult) {
+            return 0;
+        }
+        // equal accuracy is settled by points per note, keeping unequal charts comparable
+        int[] totals = new int[2];
+        for (Note note : notes) totals[note.voice() - 1]++;
+        long first = (long) scores[0] * Math.max(1, totals[1]);
+        long second = (long) scores[1] * Math.max(1, totals[0]);
+        return first == second ? 0 : first > second ? 1 : 2;
     }
 
     public int getComboForVoice(int voice) {

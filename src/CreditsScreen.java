@@ -95,6 +95,7 @@ public final class CreditsScreen implements Screen {
 
     private void drawText(Graphics2D g, String text, int centerX, int top,
                           double preferred, int maxWidth) {
+        text = GameText.display(text);
         // preserve exact author names even when punctuation is absent from the bitmap atlas
         int width = 0;
         int run = 0;

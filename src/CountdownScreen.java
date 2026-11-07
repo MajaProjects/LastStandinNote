@@ -126,6 +126,7 @@ public final class CountdownScreen implements Screen {
     }
 
     private void drawCentered(Graphics2D g, String text, int centerX, int y, int scale) {
+        text = GameText.display(text);
         int x = centerX - font.getTextWidth(text, scale) / 2;
         font.draw(g, text, x, y, scale);
     }

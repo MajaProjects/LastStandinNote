@@ -44,7 +44,7 @@ public class ModeSelectScreen implements Screen {
         // animate the heading using the shared font method
         font.drawPulsingCentered(
                 g,
-                "SELECCIONA EL MODO",
+                GameText.display("SELECCIONA EL MODO"),
                 width / 2,
                 75,
                 1,
@@ -54,7 +54,8 @@ public class ModeSelectScreen implements Screen {
 
         // highlight the selected mode with an offset and a marker
         for (int i = 0; i < modes.length; i++) {
-            int x = (width - font.getTextWidth(modes[i], 1)) / 2;
+            String label = GameText.display(modes[i]);
+            int x = (width - font.getTextWidth(label, 1)) / 2;
             int y = 230 + i * 90;
 
             if (i == selectedMode) {
@@ -64,10 +65,10 @@ public class ModeSelectScreen implements Screen {
                 font.draw(g, "*", markerX, y, 1);
             }
 
-            font.draw(g, modes[i], x, y, 1);
+            font.draw(g, label, x, y, 1);
         }
 
-        String hint = "ESC PARA VOLVER";
+        String hint = GameText.display("ESC PARA VOLVER");
         int hintX = (width - font.getTextWidth(hint, 1)) / 2;
 
         font.draw(g, hint, hintX, height - 65, 1);

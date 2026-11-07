@@ -11,17 +11,19 @@ public final class OptionsScreen implements Screen {
     );
     private final String[] labels = {
             "RESOLUTION", "MUSIC VOLUME", "VOCAL VOLUME", "EFFECTS VOLUME",
-            "WINDOW MODE", "FPS LIMIT", "SHOW FPS", "SHOW GAME STATS"
+            "WINDOW MODE", "LANGUAGE", "FPS LIMIT", "SHOW FPS", "SHOW GAME STATS"
     };
     private static final int RESOLUTION = 0;
     private static final int FIRST_VOLUME = 1;
     private static final int WINDOW_MODE = 4;
-    private static final int FPS_LIMIT = 5;
-    private static final int SHOW_FPS = 6;
-    private static final int SHOW_STATS = 7;
-    private static final int CONFIRM = 8;
+    private static final int LANGUAGE = 5;
+    private static final int FPS_LIMIT = 6;
+    private static final int SHOW_FPS = 7;
+    private static final int SHOW_STATS = 8;
+    private static final int CONFIRM = 9;
     private static final int VISIBLE_ROWS = 5;
     private final AudioSettings.Channel[] channels = AudioSettings.Channel.values();
+    private final SettingsDraft draft = new SettingsDraft();
     private int selectedOption;
     private boolean editingCustom;
     private boolean draggingCustom;
@@ -46,19 +48,23 @@ public final class OptionsScreen implements Screen {
         }
         if (selectedOption == CONFIRM) return;
         if (selectedOption == WINDOW_MODE) {
-            DisplaySettings.setFullscreen(direction > 0);
+            draft.setFullscreen(direction > 0);
             return;
         }
         if (selectedOption == RESOLUTION) {
-            DisplaySettings.cycleResolution(direction);
+            draft.cycleResolution(direction);
+            return;
+        }
+        if (selectedOption == LANGUAGE) {
+            draft.cycleLanguage(direction);
             return;
         }
         if (selectedOption == FPS_LIMIT) {
-            if (editingCustom && DisplaySettings.getFpsMode() == 4) {
-                DisplaySettings.setCustomPosition(DisplaySettings.getCustomPosition()
+            if (editingCustom && draft.display().fpsMode() == 4) {
+                draft.setCustomPosition(draft.display().customPosition()
                         + Integer.signum(direction));
             } else {
-                DisplaySettings.cycleFpsMode(direction);
+                draft.cycleFpsMode(direction);
             }
             return;
         }
@@ -68,22 +74,26 @@ public final class OptionsScreen implements Screen {
         }
         // change only the selected channel in five percent steps
         AudioSettings.Channel channel = channels[selectedOption - FIRST_VOLUME];
-        AudioSettings.setVolume(channel, AudioSettings.getVolume(channel)
+        draft.setVolume(channel, draft.getVolume(channel)
                 + Integer.signum(direction) * 5);
     }
 
     public boolean toggleSelected() {
         if (selectedOption == CONFIRM) return false;
         if (selectedOption == WINDOW_MODE) {
-            DisplaySettings.setFullscreen(!DisplaySettings.isFullscreen());
+            draft.setFullscreen(!draft.display().fullscreen());
             return true;
         }
         if (selectedOption == RESOLUTION) {
-            DisplaySettings.cycleResolution(1);
+            draft.cycleResolution(1);
+            return true;
+        }
+        if (selectedOption == LANGUAGE) {
+            draft.cycleLanguage(1);
             return true;
         }
         if (selectedOption == FPS_LIMIT) {
-            if (DisplaySettings.getFpsMode() == 4) {
+            if (draft.display().fpsMode() == 4) {
                 editingCustom = !editingCustom;
             }
             return true;
@@ -107,13 +117,24 @@ public final class OptionsScreen implements Screen {
         return true;
     }
 
+    public boolean hasUnsavedChanges() {
+        return draft.hasChanges();
+    }
+
+    public void toggleFullscreen() {
+        draft.setFullscreen(!draft.display().fullscreen());
+    }
+
+    public void discardChanges() {
+        draft.discard();
+        editingCustom = false;
+        draggingCustom = false;
+    }
+
     public void confirmSettings() {
-        try {
-            // ensure both audio and display preferences have reached persistent storage
-            java.util.prefs.Preferences.userRoot().node("laststandinnote").flush();
-        } catch (java.util.prefs.BackingStoreException error) {
-            throw new IllegalStateException("Could not save settings", error);
-        }
+        draft.apply();
+        editingCustom = false;
+        draggingCustom = false;
     }
 
     public boolean cancelCustomEdit() {
@@ -126,7 +147,7 @@ public final class OptionsScreen implements Screen {
     }
 
     public boolean beginCustomDrag(int x, int y, int width) {
-        if (DisplaySettings.getFpsMode() != 4 || y < 372 || y > 416
+        if (draft.display().fpsMode() != 4 || y < 372 || y > 416
                 || x < 294 || x > width - 244) {
             return false;
         }
@@ -141,7 +162,7 @@ public final class OptionsScreen implements Screen {
             return false;
         }
         int barWidth = Math.max(1, width - 550);
-        DisplaySettings.setCustomPosition((int) Math.round((x - 300) * 261.0 / barWidth));
+        draft.setCustomPosition((int) Math.round((x - 300) * 261.0 / barWidth));
         return true;
     }
 
@@ -150,14 +171,14 @@ public final class OptionsScreen implements Screen {
     }
 
     private boolean selectedToggle() {
-        return selectedOption == SHOW_FPS ? DisplaySettings.isShowFps() : DisplaySettings.isShowGameStats();
+        return selectedOption == SHOW_FPS ? draft.display().showFps() : draft.display().showGameStats();
     }
 
     private void setSelectedToggle(boolean enabled) {
         if (selectedOption == SHOW_FPS) {
-            DisplaySettings.setShowFps(enabled);
+            draft.setShowFps(enabled);
         } else {
-            DisplaySettings.setShowGameStats(enabled);
+            draft.setShowGameStats(enabled);
         }
     }
 
@@ -182,26 +203,30 @@ public final class OptionsScreen implements Screen {
             g.fillRoundRect(left, top, rowWidth, 40, 10, 10);
             g.setColor(selected ? new Color(200, 115, 255) : new Color(85, 65, 105));
             g.drawRoundRect(left, top, rowWidth, 40, 10, 10);
-            font.draw(g, labels[row], left + 24, top + 3, 1);
+            font.draw(g, GameText.display(labels[row]), left + 24, top + 3, 1);
 
             if (row == WINDOW_MODE || row == RESOLUTION) {
-                drawCentered(g, row == WINDOW_MODE ? (DisplaySettings.isFullscreen() ? "FULLSCREEN" : "WINDOWED")
-                        : DisplaySettings.getResolutionLabel(), width - 180, top + 7, 0.85);
+                GameHud.drawText(g, font, row == WINDOW_MODE ? (draft.display().fullscreen() ? "FULLSCREEN" : "WINDOWED")
+                        : draft.display().resolutionLabel(), width - 180, top + 7, 0.85, 176);
                 continue;
             }
 
+            if (row == LANGUAGE) {
+                GameHud.drawText(g, font, draft.language().displayName(), width - 180, top + 7, 0.85, 176);
+                continue;
+            }
             if (row == FPS_LIMIT) {
-                drawCentered(g, DisplaySettings.getFpsModeLabel(), width - 180, top + 7, 0.85);
+                GameHud.drawText(g, font, draft.display().fpsModeLabel(), width - 180, top + 7, 0.85, 176);
                 continue;
             }
 
             if (row == SHOW_FPS || row == SHOW_STATS) {
-                boolean enabled = row == SHOW_FPS ? DisplaySettings.isShowFps()
-                        : DisplaySettings.isShowGameStats();
+                boolean enabled = row == SHOW_FPS ? draft.display().showFps()
+                        : draft.display().showGameStats();
                 drawCentered(g, enabled ? "ON" : "OFF", width - 126, top + 3, 1.0);
                 continue;
             }
-            int volume = AudioSettings.getVolume(channels[row - FIRST_VOLUME]);
+            int volume = draft.getVolume(channels[row - FIRST_VOLUME]);
 
             g.setColor(new Color(35, 30, 45));
             g.fillRect(barLeft, top + 14, barWidth, 12);
@@ -224,9 +249,9 @@ public final class OptionsScreen implements Screen {
         g.setColor(new Color(190, 110, 240));
         g.drawRoundRect(left, 428, rowWidth, 40, 10, 10);
         drawCentered(g, "CONFIRM AND BACK", width / 2, 433, 0.85);
-        if (DisplaySettings.getFpsMode() == 4) {
+        if (draft.display().fpsMode() == 4) {
             int sliderWidth = width - 550;
-            int position = DisplaySettings.getCustomPosition();
+            int position = draft.display().customPosition();
             g.setColor(editingCustom ? new Color(65, 35, 85) : new Color(18, 18, 28));
             g.fillRoundRect(left, 374, rowWidth, 40, 8, 8);
             GameHud.drawText(g, font, "CUSTOM FPS", left + 100, 381, 0.65, 170);
@@ -238,23 +263,26 @@ public final class OptionsScreen implements Screen {
             g.fillRect(297 + sliderWidth * position / 261, 384, 6, 18);
             GameHud.drawText(g, font, "0", 300, 400, 0.32, 30);
             GameHud.drawText(g, font, "260", 300 + sliderWidth - 10, 400, 0.32, 35);
-            GameHud.drawText(g, font, DisplaySettings.getCustomLabel(), width - 150, 381, 0.65, 170);
+            GameHud.drawText(g, font, draft.display().customLabel(), width - 150, 381, 0.65, 170);
         }
         String hint = isConfirmSelected() ? "ENTER OR CLICK TO CONFIRM AND RETURN"
                 : selectedOption == WINDOW_MODE ? "LEFT WINDOWED   RIGHT FULLSCREEN   F11 TOGGLE"
-                : selectedOption == RESOLUTION ? (DisplaySettings.isFullscreen()
+                : selectedOption == RESOLUTION ? (draft.display().fullscreen()
                 ? "FULLSCREEN USES DESKTOP RESOLUTION   F11 WINDOWED"
-                : "LEFT RIGHT SELECT RESOLUTION   ENTER NEXT") : selectedOption == FPS_LIMIT
-                ? (DisplaySettings.getFpsMode() == 4
+                : "LEFT RIGHT SELECT RESOLUTION   ENTER NEXT")
+                : selectedOption == LANGUAGE ? "LEFT RIGHT SELECT LANGUAGE   ENTER NEXT" : selectedOption == FPS_LIMIT
+                ? (draft.display().fpsMode() == 4
                 ? (editingCustom ? "LEFT RIGHT ADJUST OR DRAG BAR   ENTER FINISH"
                 : "LEFT RIGHT PRESET   ENTER EDIT CUSTOM FPS") : "LEFT RIGHT CHOOSE FPS PRESET")
                 : "UP DOWN SELECT   LEFT RIGHT ADJUST   ENTER TOGGLE";
         drawCentered(g, hint, width / 2, height - 58, 0.5);
-        drawCentered(g, editingCustom ? "ESC FINISH EDIT   SETTINGS SAVE AUTOMATICALLY"
-                : "ESC BACK   SETTINGS SAVE AUTOMATICALLY", width / 2, height - 34, 0.5);
+        drawCentered(g, editingCustom ? "ESC FINISH EDIT   CONFIRM TO APPLY"
+                : hasUnsavedChanges() ? "ESC BACK   UNSAVED CHANGES - CONFIRM TO APPLY"
+                : "ESC BACK   NO UNSAVED CHANGES", width / 2, height - 34, 0.5);
     }
 
     private void drawCentered(Graphics2D g, String text, int x, int y, double scale) {
+        text = GameText.display(text);
         Graphics2D copy = (Graphics2D) g.create();
         try {
             copy.translate(x, y);

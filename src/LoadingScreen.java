@@ -55,6 +55,7 @@ public final class LoadingScreen implements Screen {
     }
 
     private void drawCentered(Graphics2D g, String text, int x, int y, int scale) {
+        text = GameText.display(text);
         font.draw(g, text, x - font.getTextWidth(text, scale) / 2, y, scale);
     }
 }

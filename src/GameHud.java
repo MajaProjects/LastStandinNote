@@ -65,6 +65,7 @@ public final class GameHud {
 
     public static void drawText(Graphics2D g, BitmapFont font, String text,
                                 int centerX, int top, double preferred, int maxWidth) {
+        text = GameText.display(text);
         // draw the missing decimal point without changing the existing font atlas
         int dots = (int) text.chars().filter(character -> character == '.').count();
         int width = font.getTextWidth(text.replace(".", ""), 1) + dots * 6;

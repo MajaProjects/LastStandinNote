@@ -1,7 +1,7 @@
 # LASTSTANDINNOTE - PROJECT CREDITS
 # category;creator;work;game use;license;source URL;license URL;changes
 # source review: 2026-11-07. project roles supplied by the team.
-# character sprites and bitmap lettering were drawn by Manuela Diaz Gutierrez.
+# character sprites and bitmap lettering were drawn by Manuela Gutierrez Diaz.
 # source URLs and license links remain in this file when the game is bundled.
 # Jeremy Gooch also requests his website: https://jeremygooch.blogspot.com/
 # Sci Fi Level offers multiple license choices. this project records CC BY 3.0.

@@ -62,8 +62,7 @@ public class GamePanel extends JPanel {
         bindSinglePress("openMenu", KeyEvent.VK_ENTER, this::activateSelection);
         bindSinglePress("backToTitle", KeyEvent.VK_ESCAPE, this::goBack);
         bindSinglePress("pauseGame", KeyEvent.VK_P, this::togglePause);
-        bindSinglePress("toggleFullscreen", KeyEvent.VK_F11,
-                () -> DisplaySettings.setFullscreen(!DisplaySettings.isFullscreen()));
+        bindSinglePress("toggleFullscreen", KeyEvent.VK_F11, this::toggleFullscreen);
 
         // navigate menus and song selections vertically
         bindMenuNavigation("menuUp", KeyEvent.VK_UP, -1);
@@ -96,8 +95,13 @@ public class GamePanel extends JPanel {
             public void mousePressed(MouseEvent event) {
                 ScreenViewport viewport = ScreenViewport.fit(getWidth(), getHeight());
                 Point logical = viewport.toLogical(event.getX(), event.getY());
-                if (pantallaActual instanceof OptionsScreen options
-                        && viewport.contains(event.getX(), event.getY())) {
+                if (!viewport.contains(event.getX(), event.getY())) return;
+                if (pantallaActual instanceof SaveChangesScreen saving
+                        && saving.selectAt(logical.x, logical.y, ScreenViewport.WIDTH, ScreenViewport.HEIGHT)) {
+                    activateSelection();
+                    return;
+                }
+                if (pantallaActual instanceof OptionsScreen options) {
                     if (options.selectConfirmAt(logical.x, logical.y, ScreenViewport.WIDTH)) {
                         activateSelection();
                     } else if (options.beginCustomDrag(logical.x, logical.y, ScreenViewport.WIDTH)) {
@@ -165,6 +169,16 @@ public class GamePanel extends JPanel {
     }
 
     private void goBack() {
+        if (pantallaActual instanceof TitleScreen) {
+            requestApplicationExit();
+            return;
+        }
+        if (pantallaActual instanceof SaveChangesScreen saving) {
+            pantallaActual = saving.getOptions();
+            menuBack.play();
+            requestFrame();
+            return;
+        }
         if (pantallaActual instanceof ExitConfirmScreen confirmation) {
             cancelExit(confirmation);
             return;
@@ -180,9 +194,7 @@ public class GamePanel extends JPanel {
                 requestFrame();
                 return;
             }
-            pantallaActual = options.getPreviousMenu();
-            menuBack.play();
-            requestFrame();
+            requestOptionsExit(options, false);
             return;
         }
         if (pantallaActual instanceof GameOverScreen gameOver) {
@@ -405,8 +417,7 @@ public class GamePanel extends JPanel {
                         pantallaActual = returnScreen;
                         menuMusic.playLoop();
                         Throwable cause = error.getCause() == null ? error : error.getCause();
-                        JOptionPane.showMessageDialog(GamePanel.this,
-                                "Could not load song:\n" + cause.getMessage());
+                        showError("COULD NOT LOAD SONG", cause);
                     }
                 } finally {
                     if (songLoader == this) {
@@ -429,9 +440,7 @@ public class GamePanel extends JPanel {
         } catch (RuntimeException error) {
             pantallaActual = previousSongScreen;
             menuMusic.playLoop();
-            JOptionPane.showMessageDialog(
-                    this, "Could not restart song:\n" + error.getMessage()
-            );
+            showError("COULD NOT RESTART SONG", error);
         }
 
         requestFrame();
@@ -445,8 +454,64 @@ public class GamePanel extends JPanel {
         requestFrame();
     }
 
+    private void showError(String context, Throwable error) {
+        String title = GameText.display(context);
+        String detail = GameText.display(error.getMessage());
+        String message = detail.isBlank() || title.equalsIgnoreCase(detail) ? title : title + "\n" + detail;
+        JOptionPane.showMessageDialog(this, message, GameText.display("ERROR"), JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void toggleFullscreen() {
+        if (pantallaActual instanceof OptionsScreen options) {
+            options.toggleFullscreen();
+        } else if (!(pantallaActual instanceof SaveChangesScreen)
+                && !(pantallaActual instanceof ExitConfirmScreen)) {
+            DisplaySettings.setFullscreen(!DisplaySettings.isFullscreen());
+        }
+        requestFrame();
+    }
+
+    private void requestOptionsExit(OptionsScreen options, boolean applicationExit) {
+        options.endCustomDrag();
+        if (options.hasUnsavedChanges()) {
+            pantallaActual = new SaveChangesScreen(options, applicationExit);
+            menuBack.play();
+            requestFrame();
+        } else if (applicationExit) {
+            showExitConfirmation(true);
+        } else {
+            finishOptionsExit(options, false, false);
+        }
+    }
+
+    private void finishOptionsExit(OptionsScreen options, boolean applicationExit, boolean saved) {
+        if (applicationExit) {
+            closeApplication(null);
+            return;
+        }
+        pantallaActual = options.getPreviousMenu();
+        if (saved) menuConfirm.play();
+        else menuBack.play();
+        requestFrame();
+    }
+
+    private void saveAndLeaveOptions(OptionsScreen options, boolean applicationExit) {
+        try {
+            options.confirmSettings();
+            finishOptionsExit(options, applicationExit, true);
+        } catch (IllegalStateException error) {
+            showError("COULD NOT SAVE SETTINGS", error);
+        }
+    }
+
     public void requestApplicationExit() {
-        showExitConfirmation(true);
+        if (pantallaActual instanceof OptionsScreen options) {
+            requestOptionsExit(options, true);
+        } else if (pantallaActual instanceof SaveChangesScreen saving) {
+            if (!saving.isApplicationExit()) requestOptionsExit(saving.getOptions(), true);
+        } else {
+            showExitConfirmation(true);
+        }
     }
 
     private GameScreen getActiveGame(Screen screen) {
@@ -509,12 +574,16 @@ public class GamePanel extends JPanel {
             returnToSongs(confirmation.getGame());
             return;
         }
+        closeApplication(confirmation.getGame());
+    }
+
+    private void closeApplication(GameScreen game) {
         shuttingDown = true;
         animationTimer.stop();
         framePacer.close();
         if (windowController != null) windowController.close();
-        if (confirmation.getGame() != null) {
-            confirmation.getGame().close();
+        if (game != null) {
+            game.close();
         }
         countdownSound.close();
         screenAudio.close();
@@ -545,6 +614,8 @@ public class GamePanel extends JPanel {
                 // move the selection in the active menu
                 if (pantallaActual instanceof MenuScreen menu) {
                     menu.moveSelection(direction);
+                } else if (pantallaActual instanceof SaveChangesScreen saving) {
+                    saving.moveSelection(direction);
                 } else if (pantallaActual instanceof CreditsScreen credits) {
                     credits.movePage(direction);
                 } else if (pantallaActual instanceof OptionsScreen options) {
@@ -584,6 +655,12 @@ public class GamePanel extends JPanel {
         getActionMap().put(actionName, new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
+                if (pantallaActual instanceof SaveChangesScreen saving) {
+                    saving.moveSelection(direction);
+                    menuMove.play();
+                    requestFrame();
+                    return;
+                }
                 if (pantallaActual instanceof ExitConfirmScreen confirmation) {
                     confirmation.moveSelection(direction);
                     menuMove.play();
@@ -672,6 +749,22 @@ public class GamePanel extends JPanel {
     }
 
     private void activateSelection() {
+        if (pantallaActual instanceof SaveChangesScreen saving) {
+            OptionsScreen options = saving.getOptions();
+            switch (saving.getSelectedChoice()) {
+                case SAVE -> saveAndLeaveOptions(options, saving.isApplicationExit());
+                case DISCARD -> {
+                    options.discardChanges();
+                    finishOptionsExit(options, saving.isApplicationExit(), false);
+                }
+                case KEEP_EDITING -> {
+                    pantallaActual = options;
+                    menuBack.play();
+                    requestFrame();
+                }
+            }
+            return;
+        }
         if (pantallaActual instanceof CreditsScreen) {
             goBack();
             return;
@@ -686,8 +779,7 @@ public class GamePanel extends JPanel {
                 requestFrame();
             } catch (IllegalArgumentException | IllegalStateException error) {
                 // keep the menu usable and identify a missing or invalid credits resource
-                JOptionPane.showMessageDialog(this,
-                        "Could not open credits:\n" + error.getMessage());
+                showError("COULD NOT OPEN CREDITS", error);
             }
             return;
         }
@@ -701,14 +793,7 @@ public class GamePanel extends JPanel {
         }
         if (pantallaActual instanceof OptionsScreen options) {
             if (options.isConfirmSelected()) {
-                try {
-                    options.confirmSettings();
-                    pantallaActual = options.getPreviousMenu();
-                    menuConfirm.play();
-                    requestFrame();
-                } catch (IllegalStateException error) {
-                    JOptionPane.showMessageDialog(this, error.getMessage());
-                }
+                saveAndLeaveOptions(options, false);
                 return;
             }
             if (options.toggleSelected()) {
@@ -805,9 +890,7 @@ public class GamePanel extends JPanel {
                 previousCharacterScreen = characters;
                 beginSongLoad(characters, characters, false);
             } catch (RuntimeException error) {
-                JOptionPane.showMessageDialog(
-                        this, "Could not start song:\n" + error.getMessage()
-                );
+                showError("COULD NOT START SONG", error);
             }
 
             requestFrame();

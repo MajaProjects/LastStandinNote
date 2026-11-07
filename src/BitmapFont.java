@@ -145,6 +145,7 @@ public class BitmapFont {
 
     private Glyph getGlyph(int code) {
         Glyph glyph = glyphs.get(code);
+        if (glyph == null) glyph = glyphs.get(baseCode(code));
 
         if (glyph == null) {
             throw new IllegalArgumentException(
@@ -163,13 +164,15 @@ public class BitmapFont {
         int width = 0;
         int maxWidth = 0;
 
-        // measure each line using the configuredimport java.awt.Graphics2D;
+        // measure each line using the configured glyph advances
         for (int code : text.toUpperCase(Locale.ROOT).codePoints().toArray()) {
             if (code == '\n') {
                 maxWidth = Math.max(maxWidth, width);
                 width = 0;
             } else if (code == ' ') {
                 width += spaceWidth;
+            } else if (!glyphs.containsKey(code) && punctuationAdvance(code) > 0) {
+                width += punctuationAdvance(code);
             } else {
                 width += getGlyph(code).advance();
             }
@@ -208,28 +211,80 @@ public class BitmapFont {
                 continue;
             }
 
+            if (!glyphs.containsKey(code) && punctuationAdvance(code) > 0) {
+                drawPunctuation(g, code, cursorX, cursorY, scale);
+                cursorX += punctuationAdvance(code) * scale;
+                continue;
+            }
             Glyph glyph = getGlyph(code);
             int top = cursorY;
             if (alignNumbers && (Character.isDigit(code) || code == '%')) {
                 top += (numberBaseline - inkBottoms.get(glyph)) * scale;
             }
 
-            g.drawImage(
-                    atlas,
-                    cursorX,
-                    top,
-                    cursorX + glyph.width() * scale,
-                    top + glyph.height() * scale,
-                    glyph.x(),
-                    glyph.y(),
-                    glyph.x() + glyph.width(),
-                    glyph.y() + glyph.height(),
-                    null
-            );
+            boolean synthesized = !glyphs.containsKey(code);
+            boolean inverted = synthesized && (code == '¿' || code == '¡');
+            int right = cursorX + glyph.width() * scale;
+            int bottom = top + glyph.height() * scale;
+            g.drawImage(atlas,
+                    inverted ? right : cursorX, inverted ? bottom : top,
+                    inverted ? cursorX : right, inverted ? top : bottom,
+                    glyph.x(), glyph.y(), glyph.x() + glyph.width(), glyph.y() + glyph.height(), null);
+            if (synthesized && !inverted && baseCode(code) != code) {
+                drawAccent(g, code, cursorX + glyph.width() * scale / 2, top, scale);
+            }
 
             cursorX += glyph.advance() * scale;
         }
     }
+    private static int punctuationAdvance(int code) {
+        return switch (code) { case '.', ',', ':' -> 6; case '_' -> 14; default -> 0; };
+    }
+
+    private static void drawPunctuation(Graphics2D g, int code, int x, int y, int scale) {
+        Graphics2D mark = (Graphics2D) g.create();
+        try {
+            mark.setColor(new java.awt.Color(195, 65, 245));
+            if (code == '_') {
+                mark.fillRect(x + scale, y + 29 * scale, 12 * scale, 3 * scale);
+            } else {
+                mark.fillRect(x + scale, y + 27 * scale, 3 * scale, 3 * scale);
+                if (code == ':') mark.fillRect(x + scale, y + 13 * scale, 3 * scale, 3 * scale);
+                if (code == ',') mark.fillRect(x, y + 30 * scale, 3 * scale, 3 * scale);
+            }
+        } finally {
+            mark.dispose();
+        }
+    }
+
+    private static int baseCode(int code) {
+        return switch (code) {
+            case 'Á' -> 'A'; case 'É' -> 'E'; case 'Í' -> 'I'; case 'Ó' -> 'O';
+            case 'Ú', 'Ü' -> 'U'; case 'Ñ' -> 'N'; case '¿' -> '?'; case '¡' -> '!';
+            default -> code;
+        };
+    }
+
+    private static void drawAccent(Graphics2D g, int code, int center, int top, int scale) {
+        // compose missing spanish marks without changing the original bitmap glyphs or their baseline
+        Graphics2D mark = (Graphics2D) g.create();
+        try {
+            mark.setColor(new java.awt.Color(195, 65, 245));
+            if (code == 'Ü') {
+                mark.fillRect(center - 3 * scale, top - 2 * scale, 2 * scale, scale);
+                mark.fillRect(center + 2 * scale, top - 2 * scale, 2 * scale, scale);
+            } else if (code == 'Ñ') {
+                mark.fillRect(center - 2 * scale, top - 2 * scale, 3 * scale, scale);
+                mark.fillRect(center, top - scale, 3 * scale, scale);
+            } else {
+                mark.fillRect(center - scale, top - scale, 2 * scale, scale);
+                mark.fillRect(center, top - 2 * scale, 2 * scale, scale);
+            }
+        } finally {
+            mark.dispose();
+        }
+    }
+
     public void drawPulsingCentered(
             Graphics2D g,
             String text,
