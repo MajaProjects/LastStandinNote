@@ -1,4 +1,5 @@
 import java.util.prefs.Preferences;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class DisplaySettings {
 
@@ -10,6 +11,11 @@ public final class DisplaySettings {
     private static volatile int fpsMode = Math.max(0, Math.min(4, preferences.getInt("fps_mode", 1)));
     private static volatile int customPosition = Math.max(0, Math.min(261,
             preferences.getInt("custom_fps", 60)));
+    private static final int[][] RESOLUTIONS = {{960, 540}, {1280, 720}, {1920, 1080}};
+    private static volatile int resolution = Math.max(0, Math.min(2,
+            preferences.getInt("resolution", 0)));
+    private static volatile boolean fullscreen = preferences.getBoolean("fullscreen", false);
+    private static final CopyOnWriteArrayList<Runnable> displayListeners = new CopyOnWriteArrayList<>();
 
     private DisplaySettings() {}
 
@@ -63,5 +69,35 @@ public final class DisplaySettings {
         }
         // zero is the internal unlimited sentinel; the slider's zero end stays drawable
         return customPosition == 261 ? 0 : Math.max(1, customPosition);
+    }
+
+    public static boolean isFullscreen() { return fullscreen; }
+    public static int getWindowWidth() { return RESOLUTIONS[resolution][0]; }
+    public static int getWindowHeight() { return RESOLUTIONS[resolution][1]; }
+    public static String getResolutionLabel() {
+        return getWindowWidth() + " X " + getWindowHeight();
+    }
+
+    public static void setFullscreen(boolean enabled) {
+        if (fullscreen != enabled) {
+            fullscreen = enabled;
+            preferences.putBoolean("fullscreen", enabled);
+            notifyDisplayListeners();
+        }
+    }
+
+    public static void cycleResolution(int direction) {
+        if (direction != 0) {
+            resolution = Math.floorMod(resolution + Integer.signum(direction), RESOLUTIONS.length);
+            preferences.putInt("resolution", resolution);
+            notifyDisplayListeners();
+        }
+    }
+
+    static void addDisplayListener(Runnable listener) { displayListeners.add(listener); }
+    static void removeDisplayListener(Runnable listener) { displayListeners.remove(listener); }
+
+    private static void notifyDisplayListeners() {
+        for (Runnable listener : displayListeners) listener.run();
     }
 }

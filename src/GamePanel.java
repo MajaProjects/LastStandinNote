@@ -22,6 +22,10 @@ public class GamePanel extends JPanel {
     private final FramePacer framePacer = new FramePacer(this::onFrameReady);
     private boolean frameQueued;
     private boolean shuttingDown;
+    private boolean displayChanging;
+    private WindowController windowController;
+    // keep pause, defeat, retry and result cues ready before gameplay starts
+    private final ScreenAudio screenAudio = new ScreenAudio();
     private final MusicPlayer countdownSound = new MusicPlayer(
             "/audio/countdown.wav", AudioSettings.Channel.EFFECTS
     );
@@ -58,6 +62,8 @@ public class GamePanel extends JPanel {
         bindSinglePress("openMenu", KeyEvent.VK_ENTER, this::activateSelection);
         bindSinglePress("backToTitle", KeyEvent.VK_ESCAPE, this::goBack);
         bindSinglePress("pauseGame", KeyEvent.VK_P, this::togglePause);
+        bindSinglePress("toggleFullscreen", KeyEvent.VK_F11,
+                () -> DisplaySettings.setFullscreen(!DisplaySettings.isFullscreen()));
 
         // navigate menus and song selections vertically
         bindMenuNavigation("menuUp", KeyEvent.VK_UP, -1);
@@ -88,16 +94,24 @@ public class GamePanel extends JPanel {
         MouseAdapter sliderMouse = new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent event) {
+                ScreenViewport viewport = ScreenViewport.fit(getWidth(), getHeight());
+                Point logical = viewport.toLogical(event.getX(), event.getY());
                 if (pantallaActual instanceof OptionsScreen options
-                        && options.beginCustomDrag(event.getX(), event.getY(), getWidth())) {
-                    requestFrame();
+                        && viewport.contains(event.getX(), event.getY())) {
+                    if (options.selectConfirmAt(logical.x, logical.y, ScreenViewport.WIDTH)) {
+                        activateSelection();
+                    } else if (options.beginCustomDrag(logical.x, logical.y, ScreenViewport.WIDTH)) {
+                        requestFrame();
+                    }
                 }
             }
 
             @Override
             public void mouseDragged(MouseEvent event) {
+                Point logical = ScreenViewport.fit(getWidth(), getHeight())
+                        .toLogical(event.getX(), event.getY());
                 if (pantallaActual instanceof OptionsScreen options
-                        && options.dragCustom(event.getX(), getWidth())) {
+                        && options.dragCustom(logical.x, ScreenViewport.WIDTH)) {
                     requestFrame();
                 }
             }
@@ -116,6 +130,7 @@ public class GamePanel extends JPanel {
         animationTimer = new Timer(16, event -> {
             Screen previous = pantallaActual;
             updateCurrentScreen();
+            screenAudio.update(pantallaActual);
             if (pantallaActual != previous) {
                 requestFrame();
             }
@@ -291,6 +306,7 @@ public class GamePanel extends JPanel {
     }
 
     private void onFocusLost() {
+        if (displayChanging) return;
         pressedGameplayKeys.clear();
         pressedActionKeys.clear();
 
@@ -332,11 +348,16 @@ public class GamePanel extends JPanel {
         }
     }
 
-    private void beginSongLoad(CharacterSelectScreen characters, Screen returnScreen) {
+    private void beginSongLoad(CharacterSelectScreen characters, Screen returnScreen, boolean retry) {
         SongRequest request = prepareSongRequest(characters);
         LoadingScreen loading = new LoadingScreen(returnScreen);
         pantallaActual = loading;
         menuMusic.stop();
+        if (retry) {
+            screenAudio.playRetry();
+        } else {
+            menuConfirm.play();
+        }
 
         songLoader = new SwingWorker<>() {
             @Override
@@ -370,7 +391,6 @@ public class GamePanel extends JPanel {
                     }
                     pantallaActual = loading.shouldPauseAfterLoad()
                             ? new PauseScreen(game) : new CountdownScreen(game, countdownSound);
-                    menuConfirm.play();
                 } catch (Exception error) {
                     if (game != null) {
                         game.close();
@@ -399,7 +419,7 @@ public class GamePanel extends JPanel {
         previousGame.close();
 
         try {
-            beginSongLoad(previousCharacterScreen, previousSongScreen);
+            beginSongLoad(previousCharacterScreen, previousSongScreen, true);
         } catch (RuntimeException error) {
             pantallaActual = previousSongScreen;
             menuMusic.playLoop();
@@ -486,10 +506,12 @@ public class GamePanel extends JPanel {
         shuttingDown = true;
         animationTimer.stop();
         framePacer.close();
+        if (windowController != null) windowController.close();
         if (confirmation.getGame() != null) {
             confirmation.getGame().close();
         }
         countdownSound.close();
+        screenAudio.close();
         titleMusic.close();
         menuMusic.close();
         menuMove.close();
@@ -645,6 +667,17 @@ public class GamePanel extends JPanel {
             return;
         }
         if (pantallaActual instanceof OptionsScreen options) {
+            if (options.isConfirmSelected()) {
+                try {
+                    options.confirmSettings();
+                    pantallaActual = options.getPreviousMenu();
+                    menuConfirm.play();
+                    requestFrame();
+                } catch (IllegalStateException error) {
+                    JOptionPane.showMessageDialog(this, error.getMessage());
+                }
+                return;
+            }
             if (options.toggleSelected()) {
                 menuConfirm.play();
                 requestFrame();
@@ -737,7 +770,7 @@ public class GamePanel extends JPanel {
         if (pantallaActual instanceof CharacterSelectScreen characters) {
             try {
                 previousCharacterScreen = characters;
-                beginSongLoad(characters, characters);
+                beginSongLoad(characters, characters, false);
             } catch (RuntimeException error) {
                 JOptionPane.showMessageDialog(
                         this, "Could not start song:\n" + error.getMessage()
@@ -768,11 +801,13 @@ public class GamePanel extends JPanel {
                     RenderingHints.KEY_INTERPOLATION,
                     RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR
             );
-
-            pantallaActual.render(g2, getWidth(), getHeight());
+            ScreenViewport viewport = ScreenViewport.fit(getWidth(), getHeight());
+            g2.translate(viewport.left(), viewport.top());
+            g2.scale(viewport.scale(), viewport.scale());
+            pantallaActual.render(g2, ScreenViewport.WIDTH, ScreenViewport.HEIGHT);
             gameHud.recordPaint();
             if (DisplaySettings.isShowFps()) {
-                gameHud.drawFps(g2, getWidth());
+                gameHud.drawFps(g2, ScreenViewport.WIDTH);
             }
         } finally {
             g2.dispose();
@@ -781,12 +816,38 @@ public class GamePanel extends JPanel {
     }
 
     private void requestFrame() {
-        if (shuttingDown || frameQueued) {
+        if (shuttingDown) {
+            return;
+        }
+        // transitions must update their sounds even while a repaint is already queued
+        screenAudio.update(pantallaActual);
+        if (frameQueued) {
             return;
         }
         // keep menus responsive even when gameplay is deliberately limited to a very low rate
         int limit = pantallaActual instanceof GameScreen ? DisplaySettings.getFpsLimit() : 60;
         framePacer.request(limit);
+    }
+
+    public void setWindowController(WindowController controller) {
+        windowController = controller;
+    }
+
+    public void prepareDisplayChange() {
+        displayChanging = true;
+        pressedGameplayKeys.clear();
+        if (pantallaActual instanceof GameScreen || pantallaActual instanceof CountdownScreen) {
+            // keep held notes safe when changing the native window temporarily removes focus
+            togglePause();
+        } else if (pantallaActual instanceof PauseScreen pause) {
+            pause.cancelResume();
+        }
+    }
+
+    public void finishDisplayChange() {
+        displayChanging = false;
+        frameQueued = false;
+        requestFrame();
     }
 
     private void onFrameReady() {

@@ -71,6 +71,11 @@ public class GameScreen implements Screen, AutoCloseable {
     private final AudioPlayer missSound = new AudioPlayer(
             "/audio/miss_sound_16bit.wav"
     );
+    // alternate the supplied miss recordings for human errors
+    private final AudioPlayer secondMissSound = new AudioPlayer(
+            "/audio/miss_sound_2.wav"
+    );
+    private boolean useSecondMissSound;
     // remember the most recent direction and input time for each side
     private final int[] lastDirections = {-1, -1};
     private final long[] lastDirectionTimesMs = {-1, -1};
@@ -181,6 +186,7 @@ public class GameScreen implements Screen, AutoCloseable {
         } catch (RuntimeException error) {
             comboSound.close();
             missSound.close();
+            secondMissSound.close();
             throw error;
         }
 
@@ -364,7 +370,7 @@ public class GameScreen implements Screen, AutoCloseable {
         );
 
         if (newMisses > 0) {
-            missSound.play();
+            playMissSound();
         }
         if (!twoPlayers) {
             // update human misses first so a broken combo immediately eases the bot
@@ -382,6 +388,12 @@ public class GameScreen implements Screen, AutoCloseable {
         }
         syncVocalState(songTimeMs);
         health.update(noteJudge, songTimeMs);
+    }
+
+    private void playMissSound() {
+        AudioPlayer sound = useSecondMissSound ? secondMissSound : missSound;
+        sound.play();
+        useSecondMissSound = !useSecondMissSound;
     }
 
     private void syncVocalState(long songTimeMs) {
@@ -437,7 +449,7 @@ public class GameScreen implements Screen, AutoCloseable {
 
         // play the miss sound if a human missed a sustained note
         if (results[2] > 0 || results[3] > 0) {
-            missSound.play();
+            playMissSound();
         }
 
         for (int side = 0; side < 2; side++) {
@@ -836,5 +848,6 @@ public class GameScreen implements Screen, AutoCloseable {
         music.close();
         comboSound.close();
         missSound.close();
+        secondMissSound.close();
     }
 }

@@ -21,9 +21,8 @@ public class Main {
 
             ventana.setContentPane(panel);
             ventana.setResizable(false);
-            ventana.pack();
-            ventana.setLocationRelativeTo(null);
-            ventana.setVisible(true);
+            WindowController display = new WindowController(ventana, panel);
+            display.showWindow();
         });
     }
 }
