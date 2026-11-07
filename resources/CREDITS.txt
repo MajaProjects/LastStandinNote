@@ -35,7 +35,7 @@
 # https://creativecommons.org/publicdomain/zero/1.0/
 #
 PROJECT TEAM;Jacobo Parada Urriago;Programming and music;;;;;
-PROJECT TEAM;Manuela Diaz Gutierrez;Sprite artwork, lettering and programming;;;;;
+PROJECT TEAM;Manuela Gutierrez Diaz;Sprite artwork, lettering and programming;;;;;
 MUSIC;neko_4444;Melody Start Menu 2 loop;Title screen;CC0 1.0;https://freesound.org/people/neko_4444/sounds/741603/;https://creativecommons.org/publicdomain/zero/1.0/;Converted to WAV PCM 16-bit when needed
 MUSIC;joshuaempyre;Arcade Music Loop.wav;Menu music;CC BY 4.0;https://freesound.org/people/joshuaempyre/sounds/251461/;https://creativecommons.org/licenses/by/4.0/;Converted to WAV PCM 16-bit, complete recording restored
 MUSIC;neko_4444;Selection MENU 2;Pause music;CC0 1.0;https://freesound.org/people/neko_4444/sounds/744188/;https://creativecommons.org/publicdomain/zero/1.0/;Converted to WAV PCM 16-bit when needed
