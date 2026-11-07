@@ -19,6 +19,10 @@ public class GamePanel extends JPanel {
     private Difficulty selectedDifficulty = Difficulty.ADMIN;
     private final GameHud gameHud = new GameHud();
     private final Timer animationTimer;
+    private final Timer renderTimer;
+    private final FramePacer framePacer = new FramePacer();
+    private boolean frameQueued;
+    private boolean shuttingDown;
     private final MusicPlayer countdownSound = new MusicPlayer(
             "/audio/countdown.wav", AudioSettings.Channel.EFFECTS
     );
@@ -82,13 +86,45 @@ public class GamePanel extends JPanel {
                     }
                 });
 
-        // only the active song advances; countdowns use their own clock
-        animationTimer = new Timer(16, event -> {
-            updateCurrentScreen();
-            repaint();
-        });
+        MouseAdapter sliderMouse = new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent event) {
+                if (pantallaActual instanceof OptionsScreen options
+                        && options.beginCustomDrag(event.getX(), event.getY(), getWidth())) {
+                    requestFrame();
+                }
+            }
 
+            @Override
+            public void mouseDragged(MouseEvent event) {
+                if (pantallaActual instanceof OptionsScreen options
+                        && options.dragCustom(event.getX(), getWidth())) {
+                    requestFrame();
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent event) {
+                if (pantallaActual instanceof OptionsScreen options) {
+                    options.endCustomDrag();
+                }
+            }
+        };
+        addMouseListener(sliderMouse);
+        addMouseMotionListener(sliderMouse);
+
+        // judging and audio state update independently from the selected drawing limit
+        animationTimer = new Timer(16, event -> {
+            Screen previous = pantallaActual;
+            updateCurrentScreen();
+            if (pantallaActual != previous) {
+                requestFrame();
+            }
+        });
+        renderTimer = new Timer(0, event -> requestFrame());
+        renderTimer.setRepeats(false);
         animationTimer.start();
+        requestFrame();
     }
 
     private void bindSinglePress(String actionName, int keyCode, Runnable action) {
@@ -122,9 +158,13 @@ public class GamePanel extends JPanel {
             return;
         }
         if (pantallaActual instanceof OptionsScreen options) {
+            if (options.cancelCustomEdit()) {
+                requestFrame();
+                return;
+            }
             pantallaActual = options.getPreviousMenu();
             menuBack.play();
-            repaint();
+            requestFrame();
             return;
         }
         if (pantallaActual instanceof GameOverScreen gameOver) {
@@ -140,7 +180,7 @@ public class GamePanel extends JPanel {
             pantallaActual = loading.getReturnScreen();
             menuMusic.playLoop();
             menuBack.play();
-            repaint();
+            requestFrame();
             return;
         }
 
@@ -177,18 +217,18 @@ public class GamePanel extends JPanel {
         }
 
         menuBack.play();
-        repaint();
+        requestFrame();
     }
 
     private void togglePause() {
         if (pantallaActual instanceof CountdownScreen countdown) {
             countdown.stop();
             pantallaActual = new PauseScreen(countdown.getGame());
-            repaint();
+            requestFrame();
         } else if (pantallaActual instanceof GameScreen game) {
             game.pause();
             pantallaActual = game.isGameOver() ? new GameOverScreen(game) : new PauseScreen(game);
-            repaint();
+            requestFrame();
         } else if (pantallaActual instanceof PauseScreen pause) {
             requestResume(pause);
         }
@@ -210,7 +250,7 @@ public class GamePanel extends JPanel {
             }
         }
 
-        repaint();
+        requestFrame();
     }
 
     private void updateCurrentScreen() {
@@ -349,12 +389,12 @@ public class GamePanel extends JPanel {
                     if (songLoader == this) {
                         songLoader = null;
                     }
-                    repaint();
+                    requestFrame();
                 }
             }
         };
         songLoader.execute();
-        repaint();
+        requestFrame();
     }
 
     private void restartGame(GameScreen previousGame) {
@@ -371,7 +411,7 @@ public class GamePanel extends JPanel {
             );
         }
 
-        repaint();
+        requestFrame();
     }
 
     private void returnToSongs(GameScreen game) {
@@ -379,7 +419,7 @@ public class GamePanel extends JPanel {
         pantallaActual = previousSongScreen;
         menuMusic.playLoop();
         menuBack.play();
-        repaint();
+        requestFrame();
     }
 
     public void requestApplicationExit() {
@@ -414,7 +454,7 @@ public class GamePanel extends JPanel {
             if (game.isGameOver()) {
                 pantallaActual = new GameOverScreen(game);
                 if (!applicationExit) {
-                    repaint();
+                    requestFrame();
                     return;
                 }
                 previous = pantallaActual;
@@ -424,7 +464,7 @@ public class GamePanel extends JPanel {
         }
         pantallaActual = new ExitConfirmScreen(previous, game, applicationExit);
         menuBack.play();
-        repaint();
+        requestFrame();
     }
 
     private void cancelExit(ExitConfirmScreen confirmation) {
@@ -437,7 +477,7 @@ public class GamePanel extends JPanel {
             requestResume(pause);
         } else {
             menuBack.play();
-            repaint();
+            requestFrame();
         }
     }
 
@@ -446,7 +486,9 @@ public class GamePanel extends JPanel {
             returnToSongs(confirmation.getGame());
             return;
         }
+        shuttingDown = true;
         animationTimer.stop();
+        renderTimer.stop();
         if (confirmation.getGame() != null) {
             confirmation.getGame().close();
         }
@@ -497,7 +539,7 @@ public class GamePanel extends JPanel {
                 }
 
                 menuMove.play();
-                repaint();
+                requestFrame();
             }
         });
     }
@@ -518,25 +560,24 @@ public class GamePanel extends JPanel {
                 if (pantallaActual instanceof ExitConfirmScreen confirmation) {
                     confirmation.moveSelection(direction);
                     menuMove.play();
-                    repaint();
+                    requestFrame();
                     return;
                 }
                 if (pantallaActual instanceof OptionsScreen options) {
                     options.changeSelectedValue(direction);
-                    menuMove.play();
-                    repaint();
+                    requestFrame();
                     return;
                 }
                 if (pantallaActual instanceof GameOverScreen gameOver) {
                     gameOver.moveSelection(direction);
                     menuMove.play();
-                    repaint();
+                    requestFrame();
                     return;
                 }
                 if (pantallaActual instanceof ResultsScreen results) {
                     results.moveSelection(direction);
                     menuMove.play();
-                    repaint();
+                    requestFrame();
                     return;
                 }
 
@@ -544,7 +585,7 @@ public class GamePanel extends JPanel {
                     // move between characters
                     characters.moveSelection(direction);
                     menuMove.play();
-                    repaint();
+                    requestFrame();
                     return;
                 }
 
@@ -554,7 +595,7 @@ public class GamePanel extends JPanel {
                     selectedDifficulty = songs.getDifficulty();
 
                     menuMove.play();
-                    repaint();
+                    requestFrame();
                 }
             }
         });
@@ -591,7 +632,7 @@ public class GamePanel extends JPanel {
                         checkCountdownKeys(countdown);
                     }
 
-                    repaint();
+                    requestFrame();
                 }
             });
         }
@@ -609,7 +650,7 @@ public class GamePanel extends JPanel {
         if (pantallaActual instanceof OptionsScreen options) {
             if (options.toggleSelected()) {
                 menuConfirm.play();
-                repaint();
+                requestFrame();
             }
             return;
         }
@@ -618,7 +659,7 @@ public class GamePanel extends JPanel {
                 || menu.getSelectedOption().equals("OPTIONS"))) {
             pantallaActual = new OptionsScreen(menu);
             menuConfirm.play();
-            repaint();
+            requestFrame();
             return;
         }
         if (pantallaActual instanceof GameOverScreen gameOver) {
@@ -655,7 +696,7 @@ public class GamePanel extends JPanel {
             menuMusic.playLoop();
 
             menuConfirm.play();
-            repaint();
+            requestFrame();
             return;
         }
 
@@ -664,7 +705,7 @@ public class GamePanel extends JPanel {
             pantallaActual = new ModeSelectScreen();
 
             menuConfirm.play();
-            repaint();
+            requestFrame();
             return;
         }
 
@@ -674,7 +715,7 @@ public class GamePanel extends JPanel {
             pantallaActual = new SongSelectScreen(selectedDifficulty);
 
             menuConfirm.play();
-            repaint();
+            requestFrame();
             return;
         }
 
@@ -692,7 +733,7 @@ public class GamePanel extends JPanel {
             );
 
             menuConfirm.play();
-            repaint();
+            requestFrame();
             return;
         }
 
@@ -706,7 +747,7 @@ public class GamePanel extends JPanel {
                 );
             }
 
-            repaint();
+            requestFrame();
             return;
         }
 
@@ -718,6 +759,8 @@ public class GamePanel extends JPanel {
 
     @Override
     protected void paintComponent(Graphics g) {
+        frameQueued = false;
+        framePacer.recordPaint(System.nanoTime());
         super.paintComponent(g);
 
         Graphics2D g2 = (Graphics2D) g.create();
@@ -736,6 +779,26 @@ public class GamePanel extends JPanel {
             }
         } finally {
             g2.dispose();
+        }
+        requestFrame();
+    }
+
+    private void requestFrame() {
+        if (shuttingDown) {
+            return;
+        }
+        // keep menus responsive even when gameplay is deliberately limited to a very low rate
+        int limit = pantallaActual instanceof GameScreen ? DisplaySettings.getFpsLimit() : 60;
+        long delay = framePacer.delayNanos(limit, System.nanoTime());
+        if (delay == 0) {
+            renderTimer.stop();
+            if (!frameQueued) {
+                frameQueued = true;
+                super.repaint();
+            }
+        } else {
+            renderTimer.setInitialDelay((int) Math.max(1, (delay + 999_999L) / 1_000_000L));
+            renderTimer.restart();
         }
     }
 }
