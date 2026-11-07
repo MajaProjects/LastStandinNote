@@ -9,6 +9,7 @@ public final class HealthState {
     private final int playerVoice;
     private final boolean twoPlayers;
     private final double[] noteWeights = {1.0, 1.0};
+    private final double botNoteWeight;
     // one shared balance: windows owns the left portion and tux owns the right
     private double tuxHealth = MAX_HEALTH / 2.0;
 
@@ -22,11 +23,14 @@ public final class HealthState {
         this.twoPlayers = twoPlayers;
         countedHeads = new boolean[notes.size()];
         countedMisses = new boolean[notes.size()];
+        int[] totals = new int[2];
+        for (Note note : this.notes) {
+            totals[note.voice() - 1]++;
+        }
+        int botSide = playerVoice == 1 ? 1 : 0;
+        botNoteWeight = totals[botSide] == 0 ? 0.0
+                : totals[playerVoice - 1] / (double) totals[botSide];
         if (twoPlayers) {
-            int[] totals = new int[2];
-            for (Note note : this.notes) {
-                totals[note.voice() - 1]++;
-            }
             int smallerChart = Math.min(totals[0], totals[1]);
             for (int side = 0; side < 2; side++) {
                 // give both charts the same total influence on shared health
@@ -37,16 +41,21 @@ public final class HealthState {
     }
 
     public void update(NoteJudge judge) {
+        update(judge, -1);
+    }
+
+    public void update(NoteJudge judge, long songTimeMs) {
         if (isGameOver()) {
             return;
         }
         double movement = 0;
+        double botMovement = 0;
+        long humanAge = judge.getJudgementAgeMs(playerVoice, songTimeMs);
+        boolean applyPressure = !twoPlayers && songTimeMs >= 0
+                && judge.getBotChallengeLevel() > 0 && humanAge >= 0 && humanAge <= 1500;
         for (int i = 0; i < notes.size(); i++) {
             int voice = notes.get(i).voice();
-            if (!twoPlayers && voice != playerVoice) {
-                // the bot's turn must not drain the human player's life
-                continue;
-            }
+            boolean bot = !twoPlayers && voice != playerVoice;
             int direction = voice == 2 ? 1 : -1;
             if (!countedHeads[i] && judge.getHeadHitTimeMs(i) >= 0) {
                 countedHeads[i] = true;
@@ -58,15 +67,37 @@ public final class HealthState {
                     case "SHIT" -> -5;
                     default -> 0;
                 };
-                movement += direction * change * noteWeights[voice - 1];
+                if (bot) {
+                    // consume old events even while pressure is off, preventing catch-up damage
+                    if (applyPressure) {
+                        double pressure = change * botNoteWeight * (1 + judge.getBotChallengeLevel());
+                        botMovement += direction * Math.max(-6.0, Math.min(6.0, pressure));
+                    }
+                } else {
+                    movement += direction * change * noteWeights[voice - 1];
+                }
             }
             if (!countedMisses[i] && judge.isMissed(i)) {
                 countedMisses[i] = true;
-                movement += direction * -8 * noteWeights[voice - 1];
+                if (bot) {
+                    if (applyPressure) {
+                        botMovement -= direction * Math.min(6.0, 8 * botNoteWeight);
+                    }
+                } else {
+                    movement += direction * -8 * noteWeights[voice - 1];
+                }
             }
         }
         // combine events from this update before clamping the shared balance
         tuxHealth = Math.max(0, Math.min(MAX_HEALTH, tuxHealth + movement));
+        if (!twoPlayers && !isDefeated(playerVoice)) {
+            double humanLife = playerVoice == 2 ? tuxHealth : MAX_HEALTH - tuxHealth;
+            double pressure = playerVoice == 2 ? botMovement : -botMovement;
+            // bot recovery can take the lead, but cannot kill a player during a resting turn
+            pressure = Math.max(pressure, -Math.max(0, humanLife - 30));
+            humanLife = Math.max(0, Math.min(MAX_HEALTH, humanLife + pressure));
+            tuxHealth = playerVoice == 2 ? humanLife : MAX_HEALTH - humanLife;
+        }
         // snap tiny rounding residues at the ends so fractional weights cannot prevent defeat
         if (tuxHealth < 0.000000001) {
             tuxHealth = 0;

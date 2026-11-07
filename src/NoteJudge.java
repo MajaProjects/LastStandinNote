@@ -27,6 +27,9 @@ public final class NoteJudge {
     // store one timing choice for each note
     private final int[] botTimingOffsets;
     private final boolean[] botMisses;
+    private final boolean[] botPreparedNotes;
+    private final Random adaptiveRandom = new Random();
+    private int botChallengeLevel;
     // remember bad hits so the renderer can show their dark sprites
     private final boolean[] badHits;
     private final long[] badHitTimesMs;
@@ -61,6 +64,7 @@ public final class NoteJudge {
         // choose the bot's result once for each note
         botTimingOffsets = new int[notes.size()];
         botMisses = new boolean[notes.size()];
+        botPreparedNotes = new boolean[notes.size()];
 
         Random random = new Random();
 
@@ -440,6 +444,54 @@ public final class NoteJudge {
         return Math.max(0, songTimeMs - judgementTime);
     }
 
+    public void updateBotChallenge(int humanVoice) {
+        Statistics statistics = getStatisticsForVoice(humanVoice);
+        int comboStep = Math.max(6, Math.min(20, (statistics.totalNotes() + 9) / 10));
+        int combo = combos[humanVoice - 1];
+        String latest = lastJudgements[humanVoice - 1];
+        if (statistics.hitNotes() + statistics.miss() < comboStep
+                || combo < comboStep || latest.equals("MISS")
+                || latest.equals("BAD") || latest.equals("SHIT")) {
+            botChallengeLevel = 0;
+            return;
+        }
+        double performance = getPerformanceForVoice(humanVoice, false);
+        // challenge strong play while keeping the original bot for struggling players
+        botChallengeLevel = performance >= 94 && combo >= comboStep * 3 ? 3
+                : performance >= 88 && combo >= comboStep * 2 ? 2
+                : performance >= 80 ? 1 : 0;
+    }
+
+    public int getBotChallengeLevel() {
+        return botChallengeLevel;
+    }
+
+    private void prepareBotNote(int index, long songTimeMs) {
+        Note note = notes.get(index);
+        if (botPreparedNotes[index] || hitNotes[index] || missedNotes[index]
+                || activeSustains[index] || songTimeMs < note.timeMs() - hitWindowMs) {
+            return;
+        }
+        botPreparedNotes[index] = true;
+        // freeze each choice before its earliest adaptive press; never alter an active hold
+        if (botChallengeLevel == 0 || songTimeMs > note.timeMs() - 45) {
+            return;
+        }
+        int chance = adaptiveRandom.nextInt(1000);
+        int misses = botChallengeLevel == 1 ? 20 : botChallengeLevel == 2 ? 10 : 5;
+        botMisses[index] = chance < misses;
+        if (botMisses[index]) {
+            return;
+        }
+        int sickCutoff = botChallengeLevel == 1 ? 870 : botChallengeLevel == 2 ? 930 : 965;
+        int goodCutoff = botChallengeLevel == 3 ? 1000 : 990;
+        int sickLimit = botChallengeLevel == 1 ? 40 : botChallengeLevel == 2 ? 32 : 24;
+        int difference = chance < sickCutoff ? adaptiveRandom.nextInt(sickLimit + 1)
+                : chance < goodCutoff ? 46 + adaptiveRandom.nextInt(35)
+                : 91 + adaptiveRandom.nextInt(30);
+        botTimingOffsets[index] = adaptiveRandom.nextBoolean() ? difference : -difference;
+    }
+
     public boolean[] updateBot(int voice, long songTimeMs) {
         boolean[] botKeys = new boolean[4];
         int side = voice - 1;
@@ -451,6 +503,8 @@ public final class NoteJudge {
             if (note.voice() != voice) {
                 continue;
             }
+
+            prepareBotNote(i, songTimeMs);
 
             if (botMisses[i]) {
                 // judge the miss after the note's timing window has passed
@@ -535,17 +589,28 @@ public final class NoteJudge {
             throw new IllegalArgumentException("Note voice must be 1 or 2");
         }
         int opportunities = 0;
+        double earnedWeight = 0;
         for (int i = 0; i < notes.size(); i++) {
             if (notes.get(i).voice() == voice
                     && (finalResult || hitNotes[i] || missedNotes[i])) {
                 opportunities++;
+                // a completed sustain counts once; a dropped hold earns no percentage
+                if (hitNotes[i] && !missedNotes[i]) {
+                    earnedWeight += switch (headRatings[i]) {
+                        case "SICK" -> 1.0;
+                        case "GOOD" -> 0.9;
+                        case "BAD" -> 0.5;
+                        case "SHIT" -> 0.25;
+                        default -> 0.0;
+                    };
+                }
             }
         }
         if (opportunities == 0) {
             return 0.0;
         }
-        // compare earned points with this side's own maximum, including miss penalties
-        double percentage = scores[voice - 1] * 100.0 / (500.0 * opportunities);
+        // percentage reflects judgement quality independently from continuous raw points
+        double percentage = earnedWeight * 100.0 / opportunities;
         return Math.max(0.0, Math.min(100.0, percentage));
     }
 

@@ -350,24 +350,6 @@ public class GameScreen implements Screen, AutoCloseable {
         // read the audio position once for this update
         long songTimeMs = getSongTimeMs();
 
-        if (!twoPlayers) {
-            // the bot controls the side not selected by the player
-            int botVoice = playerVoice == 1 ? 2 : 1;
-            boolean[] botKeys = noteJudge.updateBot(botVoice, songTimeMs);
-
-            for (int lane = 0; lane < botKeys.length; lane++) {
-                int side = botVoice - 1;
-
-                // remember when the bot starts or releases a direction
-                if (botKeys[lane] != heldKeys[side][lane]) {
-                    lastDirections[side] = lane;
-                    lastDirectionTimesMs[side] = songTimeMs;
-                }
-
-                heldKeys[side][lane] = botKeys[lane];
-            }
-        }
-
         // update sustained notes controlled by human players
         updateHumanSustains(songTimeMs);
 
@@ -384,8 +366,22 @@ public class GameScreen implements Screen, AutoCloseable {
         if (newMisses > 0) {
             missSound.play();
         }
+        if (!twoPlayers) {
+            // update human misses first so a broken combo immediately eases the bot
+            noteJudge.updateBotChallenge(playerVoice);
+            int botVoice = playerVoice == 1 ? 2 : 1;
+            boolean[] botKeys = noteJudge.updateBot(botVoice, songTimeMs);
+            for (int lane = 0; lane < botKeys.length; lane++) {
+                int side = botVoice - 1;
+                if (botKeys[lane] != heldKeys[side][lane]) {
+                    lastDirections[side] = lane;
+                    lastDirectionTimesMs[side] = songTimeMs;
+                }
+                heldKeys[side][lane] = botKeys[lane];
+            }
+        }
         syncVocalState(songTimeMs);
-        health.update(noteJudge);
+        health.update(noteJudge, songTimeMs);
     }
 
     private void syncVocalState(long songTimeMs) {
@@ -514,7 +510,7 @@ public class GameScreen implements Screen, AutoCloseable {
         // record the start of a release or resume the held sustain
         updateHumanSustains(songTimeMs);
         syncVocalState(songTimeMs);
-        health.update(noteJudge);
+        health.update(noteJudge, songTimeMs);
     }
 
     public void releaseKeys() {

@@ -145,7 +145,7 @@ public final class ResultsScreen implements Screen {
                     }
                     // retain raw points while making the fair comparison visible in results
                     String value = row == values.length
-                            ? Math.round(performances[side] * progress) + "%"
+                            ? formatPerformance(performances[side] * progress)
                             : String.valueOf(getAnimatedValue(values[row], progress));
                     drawText(menu, value, center, y, 0.8, true, 170);
                 }
@@ -183,15 +183,36 @@ public final class ResultsScreen implements Screen {
 
     private void drawText(Graphics2D g, String text, int x, int y, double preferredScale,
                           boolean centered, int maxWidth) {
-        int textWidth = font.getTextWidth(text, 1);
+        // the atlas has no decimal point, so reserve a small gap and draw that mark below
+        int points = (int) text.chars().filter(character -> character == '.').count();
+        int textWidth = font.getTextWidth(text.replace(".", ""), 1) + points * 6;
         double scale = Math.min(preferredScale, maxWidth / (double) Math.max(1, textWidth));
         Graphics2D copy = (Graphics2D) g.create();
         try {
             copy.translate(x, y);
             copy.scale(scale, scale);
-            font.draw(copy, text, centered ? -textWidth / 2 : 0, 0, 1);
+            int cursor = centered ? -textWidth / 2 : 0;
+            String[] parts = text.split("\\.", -1);
+            for (int i = 0; i < parts.length; i++) {
+                font.draw(copy, parts[i], cursor, 0, 1);
+                cursor += font.getTextWidth(parts[i], 1);
+                if (i + 1 < parts.length) {
+                    copy.setColor(new Color(195, 65, 245));
+                    copy.fillRect(cursor + 1, 27, 3, 3);
+                    cursor += 6;
+                }
+            }
         } finally {
             copy.dispose();
         }
+    }
+
+    private static String formatPerformance(double percentage) {
+        // reserve 100 percent for an exact full result rather than rounded near-perfection
+        double displayed = Math.round(percentage * 10.0) / 10.0;
+        if (percentage < 100.0 - 0.000000001) {
+            displayed = Math.min(displayed, 99.9);
+        }
+        return String.format(Locale.ROOT, "%.1f%%", displayed);
     }
 }
