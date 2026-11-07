@@ -23,6 +23,7 @@ public final class GameText {
         add("SELECT A SONG", "ELIGE UNA CANCIÓN"); add("DIFFICULTY", "DIFICULTAD");
         add("PICK A CHARACTER", "ELIGE UN PERSONAJE"); add("PLAYER ONE", "JUGADOR UNO");
         add("PLAYER TWO", "JUGADOR DOS"); add("LOADING SONG", "CARGANDO CANCIÓN");
+        add("Ñ OR ;", "Ñ O ;");
         add("PLEASE WAIT", "ESPERA UN MOMENTO"); add("ESC TO CANCEL", "ESC PARA CANCELAR");
         add("PAUSED", "PAUSA"); add("RESUME", "CONTINUAR"); add("RESTART", "REINICIAR");
         add("SONG SELECT", "ELEGIR CANCIÓN"); add("UP DOWN ENTER", "ARRIBA ABAJO ENTER");

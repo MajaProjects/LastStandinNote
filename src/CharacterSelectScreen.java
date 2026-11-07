@@ -165,6 +165,7 @@ public class CharacterSelectScreen implements Screen {
 
             // center the letter inside its key box
             String key = String.valueOf(keys.charAt(i));
+            if (keys.equals("JKLÑ") && i == 3) key = "Ñ ;";
 
             int textX =
                     x + (keyWidth - font.getTextWidth(key, 1)) / 2;

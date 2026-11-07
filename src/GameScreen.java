@@ -5,6 +5,7 @@ import java.awt.event.KeyEvent;
 import java.awt.Point;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
 
 
 public class GameScreen implements Screen, AutoCloseable {
@@ -53,6 +54,8 @@ public class GameScreen implements Screen, AutoCloseable {
 
     // store the four held lanes for each side of the stage
     private final boolean[][] heldKeys = new boolean[2][4];
+    // keep physical aliases separate so releasing one cannot release the other
+    private final Set<Integer> pressedControlKeys = new HashSet<>();
 
     private final NoteRenderer noteRenderer;
 
@@ -288,6 +291,8 @@ public class GameScreen implements Screen, AutoCloseable {
         }
 
         // restore physical inputs without judging keys pressed in the menu
+        pressedControlKeys.clear();
+        pressedControlKeys.addAll(pressedKeys);
         for (int voice = 1; voice <= 2; voice++) {
             String keys = getKeysForVoice(voice);
             if (keys == null) {
@@ -295,8 +300,7 @@ public class GameScreen implements Screen, AutoCloseable {
             }
 
             for (int lane = 0; lane < 4; lane++) {
-                int code = KeyEvent.getExtendedKeyCodeForChar(keys.charAt(lane));
-                heldKeys[voice - 1][lane] = pressedKeys.contains(code);
+                heldKeys[voice - 1][lane] = isLaneHeld(pressedKeys, voice, lane);
             }
         }
 
@@ -331,13 +335,15 @@ public class GameScreen implements Screen, AutoCloseable {
             }
 
             for (int lane = 0; lane < 4; lane++) {
-                char key = keys.charAt(lane);
-                int code = KeyEvent.getExtendedKeyCodeForChar(key);
-                if (required[voice - 1][lane] && !pressedKeys.contains(code)) {
+                if (required[voice - 1][lane] && !isLaneHeld(pressedKeys, voice, lane)) {
                     if (missing.length() > 0) {
                         missing.append(' ');
                     }
-                    missing.append(key);
+                    if (twoPlayers && voice == 2 && lane == 3) {
+                        missing.append(GameText.display("Ñ OR ;"));
+                    } else {
+                        missing.append(keys.charAt(lane));
+                    }
                 }
             }
         }
@@ -350,6 +356,19 @@ public class GameScreen implements Screen, AutoCloseable {
             return voice == 1 ? "ASDF" : "JKLÑ";
         }
         return voice == playerVoice ? "DFJK" : null;
+    }
+
+    private boolean matchesLaneKey(int voice, int lane, int keyCode) {
+        String keys = getKeysForVoice(voice);
+        return keys != null && (keyCode == KeyEvent.getExtendedKeyCodeForChar(keys.charAt(lane))
+                || twoPlayers && voice == 2 && lane == 3 && keyCode == KeyEvent.VK_SEMICOLON);
+    }
+
+    private boolean isLaneHeld(Set<Integer> pressedKeys, int voice, int lane) {
+        for (int keyCode : pressedKeys) {
+            if (matchesLaneKey(voice, lane, keyCode)) return true;
+        }
+        return false;
     }
 
     private long getSongTimeMs() {
@@ -475,6 +494,7 @@ public class GameScreen implements Screen, AutoCloseable {
     }
 
     public void setKeyPressed(int keyCode, boolean pressed) {
+        if (paused || health.isGameOver()) return;
         for (int voice = 1; voice <= 2; voice++) {
             String keys = getKeysForVoice(voice);
             if (keys == null) {
@@ -482,9 +502,10 @@ public class GameScreen implements Screen, AutoCloseable {
             }
 
             for (int lane = 0; lane < 4; lane++) {
-                int code = KeyEvent.getExtendedKeyCodeForChar(keys.charAt(lane));
-                if (keyCode == code) {
-                    setLanePressed(voice, lane, pressed);
+                if (matchesLaneKey(voice, lane, keyCode)) {
+                    if (pressed) pressedControlKeys.add(keyCode);
+                    else pressedControlKeys.remove(keyCode);
+                    setLanePressed(voice, lane, isLaneHeld(pressedControlKeys, voice, lane));
                     return;
                 }
             }
@@ -534,6 +555,7 @@ public class GameScreen implements Screen, AutoCloseable {
     }
 
     public void releaseKeys() {
+        pressedControlKeys.clear();
         // clear all held lanes when the game loses window focus
         for (boolean[] sideKeys : heldKeys) {
             for (int lane = 0; lane < sideKeys.length; lane++) {

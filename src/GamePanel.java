@@ -81,6 +81,7 @@ public class GamePanel extends JPanel {
         bindGameplayKey(KeyEvent.VK_K);
         bindGameplayKey(KeyEvent.VK_L);
         bindGameplayKey(KeyEvent.getExtendedKeyCodeForChar('Ñ'));
+        bindGameplayKey(KeyEvent.VK_SEMICOLON);
 
         // losing focus pauses the song before keys can become stuck
         KeyboardFocusManager.getCurrentKeyboardFocusManager()

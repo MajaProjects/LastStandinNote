@@ -238,7 +238,7 @@ public class BitmapFont {
         }
     }
     private static int punctuationAdvance(int code) {
-        return switch (code) { case '.', ',', ':' -> 6; case '_' -> 14; default -> 0; };
+        return switch (code) { case '.', ',', ':', ';' -> 6; case '_' -> 14; default -> 0; };
     }
 
     private static void drawPunctuation(Graphics2D g, int code, int x, int y, int scale) {
@@ -249,8 +249,8 @@ public class BitmapFont {
                 mark.fillRect(x + scale, y + 29 * scale, 12 * scale, 3 * scale);
             } else {
                 mark.fillRect(x + scale, y + 27 * scale, 3 * scale, 3 * scale);
-                if (code == ':') mark.fillRect(x + scale, y + 13 * scale, 3 * scale, 3 * scale);
-                if (code == ',') mark.fillRect(x, y + 30 * scale, 3 * scale, 3 * scale);
+                if (code == ':' || code == ';') mark.fillRect(x + scale, y + 13 * scale, 3 * scale, 3 * scale);
+                if (code == ',' || code == ';') mark.fillRect(x, y + 30 * scale, 3 * scale, 3 * scale);
             }
         } finally {
             mark.dispose();
