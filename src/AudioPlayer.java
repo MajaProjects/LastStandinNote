@@ -4,7 +4,7 @@ import java.net.URL;
 
 public final class AudioPlayer implements AutoCloseable {
 
-    private final Clip[] clips = new Clip[4];
+    private final Clip[] clips;
     private int nextClip = 0;
     private boolean closed;
     private final Runnable volumeListener = this::applyVolume;
@@ -16,28 +16,33 @@ public final class AudioPlayer implements AutoCloseable {
             throw new IllegalArgumentException("Audio file not found: " + path);
         }
 
+        Clip[] loaded = new Clip[4];
+        int count = 0;
         // read the sound once and share its data between playback channels
         try (AudioInputStream stream = AudioSystem.getAudioInputStream(resource)) {
             AudioFormat format = stream.getFormat();
             byte[] audioData = stream.readAllBytes();
 
-            for (int i = 0; i < clips.length; i++) {
-                clips[i] = AudioSystem.getClip();
-                clips[i].open(format, audioData, 0, audioData.length);
+            for (int i = 0; i < loaded.length; i++) {
+                Clip clip = AudioOutput.openClip(format, audioData);
+                if (clip == null) break;
+                loaded[count++] = clip;
             }
         } catch (UnsupportedAudioFileException
                  | IOException
-                 | LineUnavailableException
                  | IllegalArgumentException error) {
             // release any channels opened before the failure
-            close();
+            for (Clip clip : loaded) {
+                if (clip != null) clip.close();
+            }
 
             throw new IllegalStateException(
                     "Could not load audio: " + path,
                     error
             );
         }
-        AudioSettings.addListener(volumeListener);
+        clips = java.util.Arrays.copyOf(loaded, count);
+        if (clips.length > 0) AudioSettings.addListener(volumeListener);
     }
 
     private synchronized void applyVolume() {
@@ -49,7 +54,7 @@ public final class AudioPlayer implements AutoCloseable {
     }
 
     public synchronized void play() {
-        if (closed) {
+        if (closed || clips.length == 0) {
             return;
         }
 

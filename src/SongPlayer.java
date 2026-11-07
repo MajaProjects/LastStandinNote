@@ -1,6 +1,7 @@
 import javax.sound.sampled.*;
 import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.LongSupplier;
 
 public final class SongPlayer implements AutoCloseable {
 
@@ -15,6 +16,7 @@ public final class SongPlayer implements AutoCloseable {
     private final double masterGain;
     private final VocalGate[] gates = {new VocalGate(), new VocalGate()};
     private final SourceDataLine line;
+    private final PlaybackClock silentClock;
     private final Thread worker;
     private final byte[] block = new byte[BLOCK_FRAMES * FRAME_BYTES];
     private long baseSongFrame;
@@ -56,18 +58,9 @@ public final class SongPlayer implements AutoCloseable {
             throw new IllegalArgumentException("Both original vocal tracks are required in " + folder + "vocals/");
         }
 
-        SourceDataLine output = null;
-        try {
-            AudioFormat format = new AudioFormat(PcmTrack.SAMPLE_RATE, 16, 2, true, false);
-            output = AudioSystem.getSourceDataLine(format);
-            output.open(format, 4096 * FRAME_BYTES);
-            return new SongPlayer(instrumental, voices, offsets, gain, output, true);
-        } catch (LineUnavailableException | IllegalArgumentException error) {
-            if (output != null) {
-                output.close();
-            }
-            throw new IllegalStateException("Could not open song audio", error);
-        }
+        AudioFormat format = new AudioFormat(PcmTrack.SAMPLE_RATE, 16, 2, true, false);
+        SourceDataLine output = AudioOutput.openSongLine(format, 4096 * FRAME_BYTES);
+        return new SongPlayer(instrumental, voices, offsets, gain, output, true);
     }
 
     static void validateVocalFiles(String folder, boolean expectsVocals) {
@@ -90,12 +83,19 @@ public final class SongPlayer implements AutoCloseable {
 
     SongPlayer(PcmTrack instrumental, PcmTrack[] voices, long[] offsets,
                double masterGain, SourceDataLine line, boolean threaded) {
+        this(instrumental, voices, offsets, masterGain, line, threaded, System::nanoTime);
+    }
+
+    SongPlayer(PcmTrack instrumental, PcmTrack[] voices, long[] offsets,
+               double masterGain, SourceDataLine line, boolean threaded, LongSupplier clock) {
         this.instrumental = instrumental;
         this.voices = voices.clone();
         voiceOffsets = offsets.clone();
         this.masterGain = masterGain;
         this.line = line;
-        worker = threaded ? new Thread(this::run, "song-audio") : null;
+        long durationNanos = (long) Math.ceil(instrumental.frameCount() * 1_000_000_000.0 / PcmTrack.SAMPLE_RATE);
+        silentClock = line == null ? new PlaybackClock(durationNanos, clock) : null;
+        worker = threaded && line != null ? new Thread(this::run, "song-audio") : null;
         if (worker != null) {
             worker.setDaemon(true);
             worker.start();
@@ -105,9 +105,11 @@ public final class SongPlayer implements AutoCloseable {
     public void play() {
         synchronized (lock) {
             checkUsable();
-            line.stop();
-            line.flush();
-            baseLineFrame = line.getLongFramePosition();
+            if (line != null) {
+                line.stop();
+                line.flush();
+                baseLineFrame = line.getLongFramePosition();
+            }
             baseSongFrame = 0;
             writeFrame = 0;
             for (VocalGate gate : gates) {
@@ -116,8 +118,12 @@ public final class SongPlayer implements AutoCloseable {
             started = true;
             paused = false;
             // prepare audible frames before the device starts consuming them
-            pump();
-            line.start();
+            if (line == null) {
+                silentClock.play(false);
+            } else {
+                pump();
+                line.start();
+            }
             lock.notifyAll();
         }
     }
@@ -132,6 +138,12 @@ public final class SongPlayer implements AutoCloseable {
         if (!started || paused || closed) {
             return baseSongFrame;
         }
+        if (line == null) {
+            // advance silent songs with monotonic time while preserving the audio path when available
+            if (silentClock.isFinished()) return instrumental.frameCount();
+            return Math.min(instrumental.frameCount(),
+                    (long) (silentClock.getPositionNanos() * (PcmTrack.SAMPLE_RATE / 1_000_000_000.0)));
+        }
         long played = Math.max(0, line.getLongFramePosition() - baseLineFrame);
         return Math.min(instrumental.frameCount(), baseSongFrame + played);
     }
@@ -142,9 +154,17 @@ public final class SongPlayer implements AutoCloseable {
         }
     }
 
+    public boolean isSilent() { return line == null; }
+
     public void pause() {
         synchronized (lock) {
             if (paused || closed) {
+                return;
+            }
+            if (line == null) {
+                silentClock.pause();
+                baseSongFrame = getSongFrame();
+                paused = true;
                 return;
             }
             line.stop();
@@ -161,6 +181,11 @@ public final class SongPlayer implements AutoCloseable {
         synchronized (lock) {
             checkUsable();
             if (!started || !paused) {
+                return;
+            }
+            if (line == null) {
+                silentClock.resume();
+                paused = false;
                 return;
             }
             baseLineFrame = line.getLongFramePosition();
@@ -209,7 +234,7 @@ public final class SongPlayer implements AutoCloseable {
 
     void pump() {
         synchronized (lock) {
-            if (closed || paused || !started) {
+            if (closed || paused || !started || line == null) {
                 return;
             }
             // refill the target queue in this wakeup, even after a longer scheduler pause
@@ -290,12 +315,18 @@ public final class SongPlayer implements AutoCloseable {
             if (closed) {
                 return;
             }
-            line.stop();
-            baseSongFrame = getSongFrame();
-            line.flush();
+            if (line == null) {
+                silentClock.pause();
+                baseSongFrame = getSongFrame();
+                silentClock.stop();
+            } else {
+                line.stop();
+                baseSongFrame = getSongFrame();
+                line.flush();
+                line.close();
+            }
             closed = true;
             paused = true;
-            line.close();
             lock.notifyAll();
         }
         if (worker != null) {
