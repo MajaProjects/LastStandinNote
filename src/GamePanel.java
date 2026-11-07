@@ -169,6 +169,12 @@ public class GamePanel extends JPanel {
             cancelExit(confirmation);
             return;
         }
+        if (pantallaActual instanceof CreditsScreen credits) {
+            pantallaActual = credits.getPreviousMenu();
+            menuBack.play();
+            requestFrame();
+            return;
+        }
         if (pantallaActual instanceof OptionsScreen options) {
             if (options.cancelCustomEdit()) {
                 requestFrame();
@@ -539,6 +545,8 @@ public class GamePanel extends JPanel {
                 // move the selection in the active menu
                 if (pantallaActual instanceof MenuScreen menu) {
                     menu.moveSelection(direction);
+                } else if (pantallaActual instanceof CreditsScreen credits) {
+                    credits.movePage(direction);
                 } else if (pantallaActual instanceof OptionsScreen options) {
                     options.moveSelection(direction);
                 } else if (pantallaActual instanceof ExitConfirmScreen confirmation) {
@@ -578,6 +586,12 @@ public class GamePanel extends JPanel {
             public void actionPerformed(ActionEvent event) {
                 if (pantallaActual instanceof ExitConfirmScreen confirmation) {
                     confirmation.moveSelection(direction);
+                    menuMove.play();
+                    requestFrame();
+                    return;
+                }
+                if (pantallaActual instanceof CreditsScreen credits) {
+                    credits.movePage(direction);
                     menuMove.play();
                     requestFrame();
                     return;
@@ -658,6 +672,25 @@ public class GamePanel extends JPanel {
     }
 
     private void activateSelection() {
+        if (pantallaActual instanceof CreditsScreen) {
+            goBack();
+            return;
+        }
+        if (pantallaActual instanceof MenuScreen menu
+                && (menu.getSelectedOption().strip().equalsIgnoreCase("CREDITOS")
+                || menu.getSelectedOption().strip().equalsIgnoreCase("CRÉDITOS")
+                || menu.getSelectedOption().strip().equalsIgnoreCase("CREDITS"))) {
+            try {
+                pantallaActual = new CreditsScreen(menu);
+                menuConfirm.play();
+                requestFrame();
+            } catch (IllegalArgumentException | IllegalStateException error) {
+                // keep the menu usable and identify a missing or invalid credits resource
+                JOptionPane.showMessageDialog(this,
+                        "Could not open credits:\n" + error.getMessage());
+            }
+            return;
+        }
         if (pantallaActual instanceof ExitConfirmScreen confirmation) {
             if (confirmation.isExitSelected()) {
                 confirmExit(confirmation);
