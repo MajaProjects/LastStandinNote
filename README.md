@@ -54,11 +54,11 @@ Los dos participantes comparten el teclado. Las teclas están ligadas al persona
 | Personaje | Izquierda | Abajo | Arriba | Derecha |
 | --- | --- | --- | --- | --- |
 | Windows | A | S | D | F |
-| Tux | J | K | L | Ñ |
+| Tux | J | K | L | Ñ o ; |
 
 La partida continúa hasta el final de la canción, incluso si un lado de la barra llega a cero. Los resultados comparan a los dos jugadores. La precisión se calcula respecto a las notas de cada lado, para que tener más notas no otorgue por sí solo la victoria. Si la precisión empata, se comparan los puntos por nota.
 
-Para este modo se necesita un teclado o una distribución de teclado que permita utilizar **Ñ**.
+Para la flecha derecha de Tux puedes usar **Ñ** o **punto y coma (`;`)**, según tu teclado. Ambas teclas controlan la misma columna y sirven también para mantener notas sostenidas y continuar después de una pausa. En un jugador se conserva **D F J K**.
 
 ## Canciones y dificultades
 
@@ -157,6 +157,14 @@ El juego está desarrollado en Java con Swing y utiliza archivos de recursos par
 | `resources/audio/` | Música de menús y efectos de sonido |
 | `resources/songs/` | Canciones, mapas por dificultad y voces |
 | `resources/CREDITS.txt` | Créditos, fuentes y atribuciones de los recursos |
+
+## Licencia
+
+El código Java original de `src/` está publicado bajo **GNU General Public License, versión 3 exclusivamente** (`GPL-3.0-only`). El texto completo está en [LICENSE](LICENSE), y el alcance de la licencia y los avisos de autoría están en [NOTICE.md](NOTICE.md).
+
+Puedes estudiar, modificar y redistribuir el código conforme a GPLv3. Al distribuir versiones modificadas, deben mantenerse los avisos correspondientes y ponerse a disposición el código fuente correspondiente bajo esa licencia.
+
+Las imágenes, sprites, letras, sonidos, música, mapas de notas y demás archivos de `resources/` conservan sus condiciones propias. Elegir GPLv3 para el código no cambia las licencias de esos recursos. Consulta las atribuciones y los datos pendientes en [CREDITS.txt](resources/CREDITS.txt).
 
 ## Equipo y créditos
 
