@@ -20,6 +20,23 @@ You should have received a copy of the GNU General Public License along
 with LastStandinNote. See [LICENSE](LICENSE), or
 <https://www.gnu.org/licenses/gpl-3.0.html>.
 
+## Original project resources
+
+The original character sprites, bitmap lettering, character vocal recordings
+and vocal edits created by the LastStandinNote project team are also licensed
+under GNU General Public License, version 3 only (`GPL-3.0-only`). The GPL
+notice and warranty disclaimer above apply to those original contributions.
+
+For these resources, source means the preferred form for making modifications.
+When distributing exported images or recordings, make the corresponding
+editable source available under GPLv3 as required by that license. Examples
+include layered artwork or audio editing projects when those are the preferred
+forms actually used to edit the work. This notice does not establish that all
+such source files have already been included in this repository.
+
+This grant covers the team's original contributions. It does not relicense
+third-party material incorporated in or distributed alongside those resources.
+
 ## Artwork, music and other resources
 
 ### Project credits
@@ -51,6 +68,7 @@ as separate tracks. Vocal authorship does not transfer authorship of the
 instrumentals to the team.
 
 Requested music credit links:
+
 - Cleyton Kauffman: <https://soundcloud.com/cleytonkauffman>
 - Alexandr Zhelanov: <https://soundcloud.com/alexandr-zhelanov>
 
@@ -61,16 +79,16 @@ and modifications for each entry. Comments identify details supplied by the
 team that could not be independently retrieved.
 The same credit entries are displayed in the game's credits screen.
 
-The code license above does not automatically apply to artwork, sprites,
-bitmap lettering, audio recordings, song charts or other files in
-`resources/`. These materials retain their respective copyrights,
-licenses and attribution requirements.
+The presence of a file in `resources/` does not by itself determine its
+license. The original project resources explicitly identified above use
+GPL-3.0-only. Third-party resources retain their own copyrights, licenses
+and attribution requirements. Other resource types, including song charts,
+are not assigned a new license by this notice.
 
 See [resources/CREDITS.txt](resources/CREDITS.txt) for the recorded authors,
 source links, licenses, modifications and source review notes.
-This notice does not grant additional rights to third-party resources or
-assign a license to original project resources whose license has not been
-chosen by their creators.
+This notice does not grant additional rights to third-party resources.
 
 The GPL text's copyright belongs to the Free Software Foundation; the
-project copyright above concerns LastStandinNote's original source code.
+project copyright above concerns LastStandinNote's original source code
+and the original project resources identified in this notice.

@@ -164,7 +164,9 @@ El código Java original de `src/` está publicado bajo **GNU General Public Lic
 
 Puedes estudiar, modificar y redistribuir el código conforme a GPLv3. Al distribuir versiones modificadas, deben mantenerse los avisos correspondientes y ponerse a disposición el código fuente correspondiente bajo esa licencia.
 
-Las imágenes, sprites, letras, sonidos, música, mapas de notas y demás archivos de `resources/` conservan sus condiciones propias. Elegir GPLv3 para el código no cambia las licencias de esos recursos. Consulta las atribuciones y las condiciones de los recursos en [CREDITS.txt](resources/CREDITS.txt).
+Los sprites de personajes, las letras bitmap y las voces de personajes creados y editados por el equipo también están bajo **GPL-3.0-only**, dentro del alcance descrito en [NOTICE.md](NOTICE.md). Al distribuir versiones exportadas de esos recursos, deben facilitarse sus fuentes editables correspondientes según GPLv3.
+
+Las instrumentales, fondos, iconos y efectos de terceros conservan sus licencias originales. Los demás recursos no reciben una licencia nueva por estar en `resources/`. Consulta las atribuciones y las condiciones de cada recurso en [CREDITS.txt](resources/CREDITS.txt).
 
 ## Equipo y créditos
 
