@@ -164,7 +164,7 @@ El código Java original de `src/` está publicado bajo **GNU General Public Lic
 
 Puedes estudiar, modificar y redistribuir el código conforme a GPLv3. Al distribuir versiones modificadas, deben mantenerse los avisos correspondientes y ponerse a disposición el código fuente correspondiente bajo esa licencia.
 
-Las imágenes, sprites, letras, sonidos, música, mapas de notas y demás archivos de `resources/` conservan sus condiciones propias. Elegir GPLv3 para el código no cambia las licencias de esos recursos. Consulta las atribuciones y los datos pendientes en [CREDITS.txt](resources/CREDITS.txt).
+Las imágenes, sprites, letras, sonidos, música, mapas de notas y demás archivos de `resources/` conservan sus condiciones propias. Elegir GPLv3 para el código no cambia las licencias de esos recursos. Consulta las atribuciones y las condiciones de los recursos en [CREDITS.txt](resources/CREDITS.txt).
 
 ## Equipo y créditos
 
@@ -173,7 +173,13 @@ Las imágenes, sprites, letras, sonidos, música, mapas de notas y demás archiv
 | Jacobo Parada Urriago | Código y música |
 | Manuela Gutierrez Diaz | Sprites, letras y código |
 
-Los autores y fuentes de los recursos externos aparecen en los créditos del juego y en [CREDITS.txt](resources/CREDITS.txt). Ese archivo también identifica las atribuciones que todavía necesitan confirmación antes de la publicación.
+Los autores y fuentes de los recursos externos aparecen en los créditos del juego y en [CREDITS.txt](resources/CREDITS.txt). Las voces de los personajes fueron creadas y editadas por el equipo. Las instrumentales conservan la autoría y las licencias de sus creadores originales:
+
+| Canción | Instrumental original | Autor | Licencia |
+| --- | --- | --- | --- |
+| Puzzle | [Puzzle Menu](https://opengameart.org/content/puzzle-menu) | caret7 | CC BY 4.0 |
+| Buy Something | [Shop Theme](https://opengameart.org/content/shop-theme) | Cleyton Kauffman | CC0 1.0 |
+| Melancholy | [Melancholy RPG](https://opengameart.org/content/melancholy-rpg) | Alexandr Zhelanov | CC BY 3.0 |
 
 ## Descargas y reportes
 

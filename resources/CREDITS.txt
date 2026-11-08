@@ -1,6 +1,8 @@
 # LASTSTANDINNOTE - PROJECT CREDITS
 # category;creator;work;game use;license;source URL;license URL;changes
-# source review: 2026-11-07. project roles supplied by the team.
+# source review: 2026-11-08. project roles supplied by the team.
+# Cleyton Kauffman attribution: https://soundcloud.com/cleytonkauffman
+# Alexandr Zhelanov attribution: https://soundcloud.com/alexandr-zhelanov
 # character sprites and bitmap lettering were drawn by Manuela Gutierrez Diaz.
 # source URLs and license links remain in this file when the game is bundled.
 # Jeremy Gooch also requests his website: https://jeremygooch.blogspot.com/
@@ -17,12 +19,17 @@
 # both Mrthenoronha pages list CC BY-NC 4.0. donation status is not recorded here.
 # the linked source pages retain the original descriptions and donation links.
 # menu background author and license confirmed from the source page screenshot supplied by the team.
+# second miss recording matched to the creator's catalogue using its embedded title,
+# collection, catalogue number 20, 80 bpm / 1 beat tags and 0.75-second duration.
+# original filename: 20_ox-pro-torch-cutting-nozzle_2-ignite-bang_1beat.wav
+# creator catalogue: https://oree.storijapan.net/media/sound-of-work/doc/3_sow-blacksmith-ed1.csv
 #
-# PENDING ATTRIBUTIONS - do not infer creators from collection owners or websites
-# Second miss recording: embedded tags identify Ore.e Refineries and the work below.
-# The Freesound URL for this row is a probable match based on title, date, duration,
-# format and collection. Confirm the original download before assigning its license.
-# Song instrumentals, if sourced elsewhere: original authors not supplied.
+# song instrumentals retain their original authors and licenses.
+# Puzzle Menu and Melancholy RPG were confirmed by exact byte comparison with
+# the original audio embedded in the team's vocal studio project files.
+# Shop Theme was identified from its embedded title and author metadata.
+# original character vocals were created and edited by the project team.
+# no separate license for original project artwork, vocals or charts is assigned here.
 #
 # ADDITIONAL LINKS SUPPLIED - usage in this game not confirmed, not assigned to screens
 # 8Bit Title Screen - Joth - CC0 1.0
@@ -32,8 +39,12 @@
 # https://opengameart.org/content/8-bit-battle-theme-famitracker
 # https://creativecommons.org/publicdomain/zero/1.0/
 #
-PROJECT TEAM;Jacobo Parada Urriago;Programming and music;;;;;
+PROJECT TEAM;Jacobo Parada Urriago;Programming and music contributions;;;;;
 PROJECT TEAM;Manuela Gutierrez Diaz;Sprite artwork, lettering and programming;;;;;
+ORIGINAL VOCALS;LastStandinNote project team;Character vocals and vocal editing;Song vocals;;;;Created and edited by the project team
+SONG INSTRUMENTALS;caret7;Puzzle Menu;Puzzle instrumental;CC BY 4.0;https://opengameart.org/content/puzzle-menu;https://creativecommons.org/licenses/by/4.0/;Converted from OGG to WAV PCM 16-bit at 44100 Hz, original vocals added as separate tracks
+SONG INSTRUMENTALS;Cleyton Kauffman;Shop Theme (Buy Something!);Buy Something instrumental;CC0 1.0;https://opengameart.org/content/shop-theme;https://creativecommons.org/publicdomain/zero/1.0/;Converted to WAV PCM 16-bit at 44100 Hz, original vocals added as separate tracks
+SONG INSTRUMENTALS;Alexandr Zhelanov;Melancholy RPG;Melancholy instrumental;CC BY 3.0;https://opengameart.org/content/melancholy-rpg;https://creativecommons.org/licenses/by/3.0/;Converted from MP3 to WAV PCM 16-bit at 44100 Hz, original vocals added as separate tracks
 MUSIC;neko_4444;Melody Start Menu 2 loop;Title screen;CC0 1.0;https://freesound.org/people/neko_4444/sounds/741603/;https://creativecommons.org/publicdomain/zero/1.0/;Converted to WAV PCM 16-bit when needed
 MUSIC;joshuaempyre;Arcade Music Loop.wav;Menu music;CC BY 4.0;https://freesound.org/people/joshuaempyre/sounds/251461/;https://creativecommons.org/licenses/by/4.0/;Converted to WAV PCM 16-bit, complete recording restored
 MUSIC;neko_4444;Selection MENU 2;Pause music;CC0 1.0;https://freesound.org/people/neko_4444/sounds/744188/;https://creativecommons.org/publicdomain/zero/1.0/;Converted to WAV PCM 16-bit when needed
@@ -47,7 +58,7 @@ SOUND EFFECTS;Packsmithy;Menu confirm, synth;Menu confirmation;CC BY 4.0;https:/
 SOUND EFFECTS;FairSonicStudio;BBRS_SFX_MenuBackPage;Menu back;CC BY 4.0;https://freesound.org/people/FairSonicStudio/sounds/744321/;https://creativecommons.org/licenses/by/4.0/;Converted to WAV PCM 16-bit when needed
 SOUND EFFECTS;jivatma07;level_complete.wav;Level complete;CC BY 3.0;https://freesound.org/people/jivatma07/sounds/122255/;https://creativecommons.org/licenses/by/3.0/;Converted to WAV PCM 16-bit when needed
 SOUND EFFECTS;Mrthenoronha;Hit 2 8 Bit.wav;Combo alert;CC BY-NC 4.0;https://freesound.org/people/Mrthenoronha/sounds/507704/;https://creativecommons.org/licenses/by-nc/4.0/;Converted to WAV PCM 16-bit when needed
-SOUND EFFECTS;Ore.e Refineries;Torch (Ox, Cutting nozzle): Ignite bang;Second miss sound;;https://freesound.org/people/ldezem/sounds/386380/;;Converted to WAV PCM 16-bit, source match inferred from embedded metadata
+SOUND EFFECTS;Ore.e Refineries (ldezem);Torch - Ignite flame bang;Second miss sound;CC0 1.0;https://freesound.org/people/ldezem/sounds/386380/;https://creativecommons.org/publicdomain/zero/1.0/;Converted to WAV PCM 16-bit at 44100 Hz
 ART AND UI;Jeremy Gooch;Sci Fi Level;Gameplay background;CC BY 3.0;https://opengameart.org/content/sci-fi-level;https://creativecommons.org/licenses/by/3.0/;Resized for the game
 ART AND UI;northleafstudio;Free 16x16 Game UI Icons;UI icon resource;Custom permission;https://northleafstudio.itch.io/free-16x16-game-ui-icons;https://northleafstudio.itch.io/free-16x16-game-ui-icons;
 ART AND UI;HorrorPen;Seamless Microscheme Texture;Menu and song selection background;CC BY 3.0;https://opengameart.org/content/seamless-microscheme-texture;https://creativecommons.org/licenses/by/3.0/;Resized for the game
