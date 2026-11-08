@@ -21,6 +21,8 @@ public final class GameText {
         add("SELECT MODE", "ELIGE EL MODO"); add("SINGLE PLAYER", "UN JUGADOR");
         add("TWO PLAYERS", "DOS JUGADORES"); add("ESC TO RETURN", "ESC PARA VOLVER");
         add("SELECT A SONG", "ELIGE UNA CANCIÓN"); add("DIFFICULTY", "DIFICULTAD");
+        add("BEST SCORE", "RÉCORD");
+        add("BEST ACCURACY", "MEJOR PRECISIÓN");
         add("PICK A CHARACTER", "ELIGE UN PERSONAJE"); add("PLAYER ONE", "JUGADOR UNO");
         add("PLAYER TWO", "JUGADOR DOS"); add("LOADING SONG", "CARGANDO CANCIÓN");
         add("Ñ OR ;", "Ñ O ;");

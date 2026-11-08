@@ -291,6 +291,8 @@ public class GamePanel extends JPanel {
                 game.pause();
                 pantallaActual = new GameOverScreen(game);
             } else if (game.isFinished()) {
+                // save human records while the completed song is still active
+                previousSongScreen.saveCompletedScore(game);
                 // finish the last gameplay update before freezing the result
                 game.pause();
                 pantallaActual = new ResultsScreen(game);
