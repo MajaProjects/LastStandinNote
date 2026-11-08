@@ -22,6 +22,27 @@ with LastStandinNote. See [LICENSE](LICENSE), or
 
 ## Artwork, music and other resources
 
+### Project credits
+
+| Creator | Contributions |
+| --- | --- |
+| Manuela Gutierrez Diaz | Character sprites and bitmap lettering |
+| Jacobo Parada Urriago | Music contributions |
+
+### External authors and resource licenses
+
+| Creator | Work and use | License |
+| --- | --- | --- |
+| HorrorPen | [Seamless Microscheme Texture](https://opengameart.org/content/seamless-microscheme-texture), used for the menu and song selection background | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+
+The background was resized for the game.
+
+Third-party backgrounds, interface resources, music and sound effects are
+credited individually in [resources/CREDITS.txt](resources/CREDITS.txt).
+That file records the creator, work, use in the game, source URL, license
+and modifications for each entry, including details still pending confirmation.
+The same credit entries are displayed in the game's credits screen.
+
 The code license above does not automatically apply to artwork, sprites,
 bitmap lettering, audio recordings, song charts or other files in
 `resources/`. These materials retain their respective copyrights,

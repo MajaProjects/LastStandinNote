@@ -16,11 +16,9 @@
 # Mrthenoronha's combo sound description requests a donation of USD 0.50 or more.
 # both Mrthenoronha pages list CC BY-NC 4.0. donation status is not recorded here.
 # the linked source pages retain the original descriptions and donation links.
+# menu background author and license confirmed from the source page screenshot supplied by the team.
 #
 # PENDING ATTRIBUTIONS - do not infer creators from collection owners or websites
-# Seamless Microscheme Texture: creator and license not independently confirmed.
-# source: https://opengameart.org/content/seamless-microscheme-texture
-# "OpenGameArt source" below identifies the host, not the artist.
 # Second miss recording: embedded tags identify Ore.e Refineries and the work below.
 # The Freesound URL for this row is a probable match based on title, date, duration,
 # format and collection. Confirm the original download before assigning its license.
@@ -52,4 +50,4 @@ SOUND EFFECTS;Mrthenoronha;Hit 2 8 Bit.wav;Combo alert;CC BY-NC 4.0;https://free
 SOUND EFFECTS;Ore.e Refineries;Torch (Ox, Cutting nozzle): Ignite bang;Second miss sound;;https://freesound.org/people/ldezem/sounds/386380/;;Converted to WAV PCM 16-bit, source match inferred from embedded metadata
 ART AND UI;Jeremy Gooch;Sci Fi Level;Gameplay background;CC BY 3.0;https://opengameart.org/content/sci-fi-level;https://creativecommons.org/licenses/by/3.0/;Resized for the game
 ART AND UI;northleafstudio;Free 16x16 Game UI Icons;UI icon resource;Custom permission;https://northleafstudio.itch.io/free-16x16-game-ui-icons;https://northleafstudio.itch.io/free-16x16-game-ui-icons;
-ART AND UI;OpenGameArt source;Seamless Microscheme Texture;Menu and song selection background;;https://opengameart.org/content/seamless-microscheme-texture;;
+ART AND UI;HorrorPen;Seamless Microscheme Texture;Menu and song selection background;CC BY 3.0;https://opengameart.org/content/seamless-microscheme-texture;https://creativecommons.org/licenses/by/3.0/;Resized for the game
