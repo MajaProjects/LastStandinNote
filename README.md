@@ -80,8 +80,6 @@ En modo individual, al seleccionar una canción con récord aparece su mejor pun
 
 Cada canción con precisión registrada tiene un cuadrito de color junto al nombre: **P** para 100 %, **S** para más de 95 %, **A** para 90–95 %, **B** para 80–menos de 90 %, **C** para 70–menos de 80 % y **D** para menos de 70 %. USER, ADMIN y ROOT tienen sus propios récords. Las canciones sin récord no muestran nada.
 
-Los registros de la versión inicial de récords no identificaban el modo de juego. Esos datos se conservan aparte, y esta tabla exclusiva de modo individual comienza con las partidas completadas desde la corrección, sin importar valores antiguos que podrían proceder de dos jugadores.
-
 ## Controles generales
 
 | Acción | Control |
