@@ -50,8 +50,8 @@ public class ModeSelectScreen implements Screen {
                 GameText.display("SELECCIONA EL MODO"),
                 width / 2,
                 75,
-                1,
-                1.15,
+                2,
+                1.0,
                 seconds
         );
 
