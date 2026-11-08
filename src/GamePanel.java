@@ -460,9 +460,12 @@ public class GamePanel extends JPanel {
     private void showError(String context, Throwable error) {
         GameLog.record(context, error);
         String title = GameText.display(context);
-        String detail = GameText.display(error.getMessage());
+        String detail = GameText.errorDetail(error);
         String message = detail.isBlank() || title.equalsIgnoreCase(detail) ? title : title + "\n" + detail;
-        JOptionPane.showMessageDialog(this, message, GameText.display("ERROR"), JOptionPane.ERROR_MESSAGE);
+        String button = GameText.display("OK");
+        JOptionPane.showOptionDialog(this, message, GameText.display("ERROR"),
+                JOptionPane.DEFAULT_OPTION, JOptionPane.ERROR_MESSAGE, null,
+                new Object[]{button}, button);
     }
 
     private void toggleFullscreen() {

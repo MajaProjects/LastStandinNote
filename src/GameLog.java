@@ -51,8 +51,10 @@ public final class GameLog {
         Runnable report = () -> {
             try {
                 if (!GraphicsEnvironment.isHeadless()) {
-                    JOptionPane.showMessageDialog(null, failureMessage(logPath), "LastStandinNote " + AppVersion.get(),
-                            JOptionPane.ERROR_MESSAGE);
+                    String button = reportInSpanish() ? "ACEPTAR" : "OK";
+                    JOptionPane.showOptionDialog(null, failureMessage(logPath),
+                            "LastStandinNote " + AppVersion.get(), JOptionPane.DEFAULT_OPTION,
+                            JOptionPane.ERROR_MESSAGE, null, new Object[]{button}, button);
                 }
             } finally {
                 // stop repeated event-thread failures after reporting the original error
@@ -64,20 +66,23 @@ public final class GameLog {
     }
 
     static String failureMessage(Path path) {
-        boolean spanish;
-        try {
-            // respect the language saved in options, even when the system uses another
-            spanish = LanguageSettings.get() == LanguageSettings.Language.SPANISH;
-        } catch (RuntimeException | LinkageError error) {
-            // language preferences may be the cause of a startup failure
-            spanish = Locale.getDefault().getLanguage().equalsIgnoreCase("es");
-        }
+        boolean spanish = reportInSpanish();
         String message = spanish
                 ? "El juego encontró un error y se cerrará.\n"
                 : "The game encountered an error and will close.\n";
         return message + (path == null
                 ? (spanish ? "No se pudo escribir el registro." : "The log could not be written.")
                 : (spanish ? "Adjunta este archivo al reporte:\n" : "Attach this file to your report:\n") + path);
+    }
+
+    private static boolean reportInSpanish() {
+        try {
+            // respect the language saved in options, even when the system uses another
+            return LanguageSettings.get() == LanguageSettings.Language.SPANISH;
+        } catch (RuntimeException | LinkageError error) {
+            // language preferences may be the cause of a startup failure
+            return Locale.getDefault().getLanguage().equalsIgnoreCase("es");
+        }
     }
 
     private static final class ErrorOutput extends OutputStream {

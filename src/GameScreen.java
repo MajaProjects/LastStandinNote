@@ -765,7 +765,7 @@ public class GameScreen implements Screen, AutoCloseable {
             int y,
             long songTimeMs
     ) {
-        String judgement = noteJudge.getVisibleJudgement(voice, songTimeMs);
+        String judgement = GameText.display(noteJudge.getVisibleJudgement(voice, songTimeMs));
 
         // skip drawing when there is no visible judgement
         if (judgement.isEmpty()) {

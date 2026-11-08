@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 public final class GameText {
 
     private static final Map<String, String> spanish = new HashMap<>();
+    private static final Map<String, String> errorPrefixes = new HashMap<>();
     private static final Map<String, String> aliases = Map.ofEntries(
             Map.entry("JUGAR", "PLAY"), Map.entry("OPCIONES", "OPTIONS"),
             Map.entry("CREDITOS", "CREDITS"), Map.entry("SALIR", "QUIT"),
@@ -36,6 +37,8 @@ public final class GameText {
         add("TOTAL NOTES", "NOTAS TOTALES"); add("HIT NOTES", "NOTAS ACERTADAS");
         add("MAX COMBO", "COMBO MÁXIMO"); add("RAW SCORE", "PUNTOS");
         add("ACCURACY", "PRECISIÓN"); add("PERFORMANCE", "PRECISIÓN");
+        add("SICK", "INCREÍBLE"); add("GOOD", "BIEN"); add("BAD", "MAL");
+        add("SHIT", "MUY MAL"); add("MISS", "FALLO");
         add("ARROWS ENTER", "FLECHAS ENTER");
         add("AUDIO AND DISPLAY", "AUDIO Y PANTALLA"); add("RESOLUTION", "RESOLUCIÓN");
         add("MUSIC VOLUME", "VOLUMEN MÚSICA"); add("VOCAL VOLUME", "VOLUMEN VOCES");
@@ -44,6 +47,7 @@ public final class GameText {
         add("AUDIO LATE? DECREASE   AUDIO EARLY? INCREASE   ENTER RESET",
                 "AUDIO TARDE: BAJA   AUDIO ADELANTADO: SUBE   ENTER RESTABLECE");
         add("ORIGINAL ART", "ARTE ORIGINAL"); add("ORIGINAL VOCALS", "VOCES ORIGINALES");
+        add("ORIGINAL CHARTS", "MAPAS DE NOTAS ORIGINALES");
         add("SONG INSTRUMENTALS", "INSTRUMENTALES");
         add("WINDOWED", "VENTANA"); add("FULLSCREEN", "PANTALLA COMPLETA");
         add("LANGUAGE", "IDIOMA"); add("FPS LIMIT", "LÍMITE DE FPS");
@@ -77,7 +81,19 @@ public final class GameText {
         add("PROJECT TEAM", "EQUIPO"); add("MUSIC", "MÚSICA"); add("SOUND EFFECTS", "EFECTOS DE SONIDO");
         add("ART AND UI", "ARTE E INTERFAZ");
         add("Programming and music", "Programación y música");
+        add("Programming and music contributions", "Programación y aportes musicales");
         add("Sprite artwork, lettering and programming", "Sprites, letras y programación");
+        add("Character sprites and bitmap lettering", "Sprites de personajes y letras bitmap");
+        add("Character vocals and vocal editing", "Voces de personajes y edición de voces");
+        add("Song note charts", "Mapas de notas de canciones");
+        add("Original project artwork", "Arte original del proyecto");
+        add("Song vocals", "Voces de las canciones");
+        add("USER, ADMIN and ROOT charts", "Mapas USER, ADMIN y ROOT");
+        add("LastStandinNote project team", "Equipo de LastStandinNote");
+        add("Puzzle instrumental", "Instrumental de Puzzle");
+        add("Buy Something instrumental", "Instrumental de Buy Something");
+        add("Melancholy instrumental", "Instrumental de Melancholy");
+        add("Custom permission", "Permiso del autor");
         add("SOURCES AND LICENSES IN CREDITS.TXT", "FUENTES Y LICENCIAS EN CREDITS.TXT");
         add("ARROWS CHANGE PAGE   ESC OR ENTER BACK", "FLECHAS CAMBIA PÁGINA   ESC O ENTER VOLVER");
         add("Title screen", "Pantalla inicial"); add("Menu music", "Música del menú");
@@ -95,10 +111,61 @@ public final class GameText {
         add("COULD NOT OPEN CREDITS", "NO SE PUDIERON ABRIR LOS CRÉDITOS");
         add("COULD NOT SAVE SETTINGS", "NO SE PUDO GUARDAR LA CONFIGURACIÓN");
         add("Could not save settings", "No se pudo guardar la configuración");
+        add("OK", "ACEPTAR");
+        add("Details in the error log:", "Detalles en el registro de errores:");
+        add("Check the game files and try again.", "Revisa los archivos del juego e inténtalo de nuevo.");
+        add("Check the exact folder, filename and .wav extension.",
+                "Revisa la carpeta, el nombre del archivo y la extensión .wav.");
+        addError("Missing song files:", "Faltan archivos de la canción:");
+        addError("Missing recorded vocal files:", "Faltan archivos de voces grabadas:");
+        addError("Text file not found:", "No se encontró el archivo de texto:");
+        addError("Could not read text file:", "No se pudo leer el archivo de texto:");
+        addError("Audio file not found:", "No se encontró el archivo de audio:");
+        addError("Music file not found:", "No se encontró el archivo de música:");
+        addError("Audio track not found:", "No se encontró la pista de audio:");
+        addError("Could not load audio:", "No se pudo cargar el audio:");
+        addError("Could not load music:", "No se pudo cargar la música:");
+        addError("Could not load audio track:", "No se pudo cargar la pista de audio:");
+        addError("Image not found:", "No se encontró la imagen:");
+        addError("Unsupported image format:", "Formato de imagen no compatible:");
+        addError("Could not read image:", "No se pudo leer la imagen:");
     }
 
     private GameText() { }
     private static void add(String source, String translation) { spanish.put(source, translation); }
+    private static void addError(String source, String translation) {
+        errorPrefixes.put(source, translation);
+    }
+
+    public static String errorDetail(Throwable error) {
+        String message = error == null ? null : error.getMessage();
+        String help = GameLog.getLogPath() == null
+                ? display("Check the game files and try again.")
+                : display("Details in the error log:") + "\n" + GameLog.getLogPath();
+        if (message == null || message.isBlank()) return help;
+        StringBuilder detail = new StringBuilder();
+        for (String line : message.split("\\R")) {
+            String translated = null;
+            for (Map.Entry<String, String> prefix : errorPrefixes.entrySet()) {
+                String original = line.startsWith(prefix.getKey()) ? prefix.getKey()
+                        : line.startsWith(prefix.getValue()) ? prefix.getValue() : null;
+                if (original != null) {
+                    translated = (LanguageSettings.get() == LanguageSettings.Language.SPANISH
+                            ? prefix.getValue() : prefix.getKey()) + line.substring(original.length());
+                    break;
+                }
+            }
+            if (translated == null && line.equals("Check the exact folder, filename and .wav extension.")) {
+                translated = display(line);
+            }
+            if (translated == null && line.startsWith("/")) translated = line;
+            // technical exceptions stay in the log rather than leaking another language into a dialog
+            if (translated == null) return help;
+            if (detail.length() > 0) detail.append('\n');
+            detail.append(translated);
+        }
+        return detail + "\n\n" + help;
+    }
 
     public static String display(String text) {
         if (text == null) return "";
@@ -123,11 +190,6 @@ public final class GameText {
         if (source.endsWith(" NOTES")) {
             Matcher match = noteCount.matcher(source);
             if (match.matches()) return match.group(1) + " NOTAS";
-        }
-        int separator = source.indexOf(" - ");
-        if (separator >= 0) {
-            String prefix = spanish.get(source.substring(0, separator));
-            if (prefix != null) return prefix + source.substring(separator);
         }
         return source;
     }

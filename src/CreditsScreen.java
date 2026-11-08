@@ -72,14 +72,23 @@ public final class CreditsScreen implements Screen {
                 screen.setColor(new Color(110, 65, 145));
                 screen.drawRoundRect(70, top, width - 140, count <= 2 ? 94 : 70, 10, 10);
                 double nameScale = count <= 2 ? 1.0 : 0.75;
-                drawText(screen, entry.author(), width / 2, top + 6,
+                String author = entry.author().equals("LastStandinNote project team")
+                        ? GameText.display(entry.author()) : entry.author();
+                // translate descriptions, but preserve third-party work titles and creator names
+                String work = switch (page.category()) {
+                    case "PROJECT TEAM", "ORIGINAL ART", "ORIGINAL VOCALS", "ORIGINAL CHARTS" ->
+                            GameText.display(entry.title());
+                    default -> entry.title();
+                };
+                drawLiteral(screen, author, width / 2, top + 6,
                         nameScale, width - 190);
-                drawText(screen, entry.title(), width / 2,
+                drawLiteral(screen, work, width / 2,
                         top + (count <= 2 ? 43 : 31), 0.6, width - 190);
                 if (!entry.role().isEmpty() || !entry.license().isEmpty()) {
-                    String details = entry.role() + (entry.role().isEmpty() || entry.license().isEmpty()
-                            ? "" : " - ") + entry.license();
-                    drawText(screen, details, width / 2,
+                    String details = GameText.display(entry.role())
+                            + (entry.role().isEmpty() || entry.license().isEmpty() ? "" : " - ")
+                            + GameText.display(entry.license());
+                    drawLiteral(screen, details, width / 2,
                             top + (count <= 2 ? 68 : 51), 0.43, width - 190);
                 }
             }
@@ -96,7 +105,11 @@ public final class CreditsScreen implements Screen {
 
     private void drawText(Graphics2D g, String text, int centerX, int top,
                           double preferred, int maxWidth) {
-        text = GameText.display(text);
+        drawLiteral(g, GameText.display(text), centerX, top, preferred, maxWidth);
+    }
+
+    private void drawLiteral(Graphics2D g, String text, int centerX, int top,
+                             double preferred, int maxWidth) {
         // preserve exact author names even when punctuation is absent from the bitmap atlas
         int width = 0;
         int run = 0;
