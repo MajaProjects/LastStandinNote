@@ -1,219 +1,216 @@
 # LastStandinNote
 
-Videojuego de ritmo inspirado en *Friday Night Funkin’*, con estética pixel art y un enfrentamiento musical entre **Tux** y **Windows**. Sigue las flechas, acierta al ritmo de la canción y mantén las notas sostenidas mientras Kernel reacciona a lo que sucede en el escenario.
+A rhythm game inspired by *Friday Night Funkin’*, featuring pixel art and a musical showdown between **Tux** and **Windows**. Follow the arrows, hit notes to the beat, and hold sustained notes while Kernel reacts to the performance on stage.
 
-El proyecto está en desarrollo y se encuentra en preparación para su primera versión pública.
+Packaged versions are distributed through [GitHub Releases](https://github.com/MajaProjects/LastStandinNote/releases).
 
-## Cómo se juega
+## How to play
 
-Las notas descienden hacia los receptores de la parte inferior de la pantalla. Presiona la tecla de su columna cuando la cabeza de la nota coincida con el receptor.
+Notes scroll down toward the receptors at the bottom of the screen. Press the key for a column when the note head reaches its receptor.
 
-- **Notas normales:** pulsa la tecla al llegar al receptor.
-- **Notas sostenidas:** pulsa al inicio y mantén la tecla hasta que termine la cola.
-- **Varias columnas:** puedes mantener una nota y tocar otras columnas al mismo tiempo.
+- **Tap notes:** press the key when the head reaches the receptor.
+- **Sustained notes:** press at the start and hold until the tail ends.
+- **Multiple columns:** keep holding one note while playing notes in other columns.
 
-Cada acierto recibe una calificación según la distancia entre la pulsación y el momento de la nota. Los fallos afectan a la vida, interrumpen el combo y tienen una respuesta visual y sonora. Las voces acompañan los aciertos y se silencian al fallar; el instrumental mantiene el ritmo de la canción.
+Each hit receives a judgement based on how close the input is to the note's time. Misses affect health, interrupt the combo, and produce visual and sound feedback. Character vocals follow successful hits and are muted on misses, while the instrumental continues playing.
 
-Las notas y las voces siguen el tiempo del audio. Cambiar el límite de FPS modifica la frecuencia de dibujo, no la velocidad de la canción.
+Notes and vocals follow the audio clock. Changing the FPS limit affects drawing frequency, not song speed.
 
-## Recorrido por los menús
+## Menu flow
 
-1. Pulsa **Enter** en la pantalla inicial.
-2. Elige **Jugar / Play** y selecciona el modo de juego.
-3. Selecciona una canción con **arriba y abajo**.
-4. Cambia la dificultad con **izquierda y derecha**, desde la misma pantalla de canciones.
-5. Elige tu personaje y confirma con **Enter**.
-6. Prepárate durante la cuenta atrás y juega la canción.
+1. Press **Enter** on the title screen.
+2. Choose **Play**, then select a game mode.
+3. Select a song with **up and down**.
+4. Change its difficulty with **left and right** on the song selection screen.
+5. Choose your character and confirm with **Enter**.
+6. Get ready during the countdown and play the song.
 
-En el menú principal también encontrarás **Opciones / Options** y **Créditos / Credits**. Pulsar **Escape** en la pantalla inicial abre la confirmación para salir del juego.
+The main menu also includes **Options** and **Credits**. Pressing **Escape** on the title screen opens the quit confirmation.
 
-## Personajes
+## Characters
 
-| Personaje | Posición en el escenario | Papel |
+| Character | Stage position | Role |
 | --- | --- | --- |
-| Windows | Izquierda | Personaje jugable o rival |
-| Tux | Derecha | Personaje jugable o rival |
-| Kernel | Centro, sobre el monitor | Reacciona a los combos y a su pérdida |
+| Windows | Left | Playable character or opponent |
+| Tux | Right | Playable character or opponent |
+| Kernel | Center, on the monitor | Reacts to combos and combo breaks |
 
-Elegir otro personaje cambia quién controla cada participante, pero Tux conserva el lado derecho y Windows el izquierdo. El monitor central muestra quién lleva la ventaja en la barra de vida; cuando están igualados muestra el enfrentamiento.
+Character selection determines who each participant controls. Tux stays on the right and Windows on the left. The center monitor shows who leads the shared health bar; when both sides are even, it shows the matchup.
 
-## Modos de juego
+## Game modes
 
-### Un jugador
+### Single player
 
-Controlas al personaje que elegiste y el bot juega con el otro. Las teclas son siempre **D F J K**, tanto si eliges Tux como Windows.
+Control your chosen character while the bot plays the other side. The controls are always **D F J K**, whether you choose Tux or Windows.
 
-El bot tiene variaciones de precisión y puede cometer errores. Cuando juegas bien y mantienes un combo, puede aumentar su presión para que la partida siga siendo un reto.
+The bot varies its accuracy and can make mistakes. When you play well and maintain a combo, it can increase its pressure to keep the song challenging.
 
-Si tu vida se agota, aparece la animación de derrota y después la pantalla de fin de partida. Puedes reiniciar o volver a elegir canción. Si completas la canción, los resultados muestran únicamente tus estadísticas y tu personaje, sin declarar un ganador o perdedor.
+If your health runs out, a defeat animation plays before the Game Over screen. You can restart or return to song selection. Completing the song shows only your character and statistics, without declaring a winner or loser.
 
-### Dos jugadores en el mismo computador
+### Two players on one computer
 
-Los dos participantes comparten el teclado. Las teclas están ligadas al personaje:
+Both players share the keyboard. Controls are attached to each character:
 
-| Personaje | Izquierda | Abajo | Arriba | Derecha |
+| Character | Left | Down | Up | Right |
 | --- | --- | --- | --- | --- |
 | Windows | A | S | D | F |
-| Tux | J | K | L | Ñ o ; |
+| Tux | J | K | L | Ñ or ; |
 
-La partida continúa hasta el final de la canción, incluso si un lado de la barra llega a cero. Los resultados comparan a los dos jugadores. La precisión se calcula respecto a las notas de cada lado, para que tener más notas no otorgue por sí solo la victoria. Si la precisión empata, se comparan los puntos por nota.
+The song continues until the end, even if one side of the health bar reaches zero. Results compare both players. Accuracy is calculated relative to each side's notes, so a larger chart does not automatically win. If accuracy is tied, points per note break the tie.
 
-Para la flecha derecha de Tux puedes usar **Ñ** o **punto y coma (`;`)**, según tu teclado. Ambas teclas controlan la misma columna y sirven también para mantener notas sostenidas y continuar después de una pausa. En un jugador se conserva **D F J K**.
+Use either **Ñ** or **semicolon (`;`)** for Tux's right arrow, depending on your keyboard. Both keys control the same column and work for sustained notes and resuming after a pause. Single-player controls remain **D F J K**.
 
-## Canciones y dificultades
+## Songs and difficulties
 
-Las canciones disponibles son **Puzzle**, **Buy something** y **Melancholy**. Cada una tiene tres mapas de notas:
+The available songs are **Puzzle**, **Buy Something**, and **Melancholy**. Each has three note charts:
 
-| Dificultad | Experiencia |
+| Difficulty | Experience |
 | --- | --- |
-| USER | Nivel de entrada, con desplazamiento más lento |
-| ADMIN | Reto intermedio, con su propio mapa de notas |
-| ROOT | Desplazamiento más rápido y efectos que dificultan la lectura |
+| USER | Entry level, with slower scrolling |
+| ADMIN | Intermediate challenge, with its own chart |
+| ROOT | Faster scrolling and effects that make notes harder to read |
 
-En **ROOT**, las notas pueden oscilar lateralmente, aparecer con menor opacidad y acompañarse de sacudidas del escenario. Al acercarse al receptor recuperan su posición y visibilidad para permitir leer el momento de pulsación.
+On **ROOT**, notes can sway sideways, fade, and be accompanied by stage shakes. Their position and visibility recover near the receptor so the timing remains readable.
 
-La dificultad se cambia directamente con izquierda y derecha en la selección de canciones. El indicador de segmentos muestra el nivel elegido.
+Change difficulty directly with left and right on the song selection screen. The segmented indicator shows the selected level.
 
-### Récords locales del modo individual
+### Local single-player records
 
-En modo individual, al seleccionar una canción con récord aparece su mejor puntaje y su mejor precisión para la dificultad elegida. Ambos máximos se guardan por separado entre sesiones: mejorar los puntos no borra una precisión superior conseguida antes. Solo cuentan las partidas completadas por el jugador humano; el bot y las partidas de dos jugadores no se guardan en esta tabla. El modo de dos jugadores conserva su pantalla de resultados, pero no muestra los récords individuales en la selección de canciones.
+Selecting a song with a record shows its best score and best accuracy for the chosen difficulty. These two personal bests are saved independently between sessions: a better score does not overwrite a higher accuracy from another run. Only completed human single-player runs count. Bot and two-player performances are excluded. Two-player mode retains its results screen but does not show solo records in song selection.
 
-Cada canción con precisión registrada tiene un cuadrito de color junto al nombre: **P** para 100 %, **S** para más de 95 %, **A** para 90–95 %, **B** para 80–menos de 90 %, **C** para 70–menos de 80 % y **D** para menos de 70 %. USER, ADMIN y ROOT tienen sus propios récords. Las canciones sin récord no muestran nada.
+A colored badge appears beside songs with recorded accuracy: **P** for exactly 100%, **S** for above 95%, **A** for 90–95%, **B** for 80–below 90%, **C** for 70–below 80%, and **D** for below 70%. USER, ADMIN, and ROOT each have separate records. Unplayed songs show no record or badge.
 
-## Controles generales
+## General controls
 
-| Acción | Control |
+| Action | Control |
 | --- | --- |
-| Moverse por las opciones o canciones | Arriba / abajo |
-| Cambiar dificultad, personaje o valor de una opción | Izquierda / derecha |
-| Confirmar una selección | Enter |
-| Volver al menú anterior | Escape |
-| Pausar o continuar una canción | P |
-| Alternar ventana y pantalla completa | F11 |
-| Abrir la confirmación para abandonar una canción en curso | Escape durante el juego |
-| Cancelar una confirmación de salida | Escape |
+| Move between menu options or songs | Up / down |
+| Change difficulty, character, or option value | Left / right |
+| Confirm a selection | Enter |
+| Return to the previous menu | Escape |
+| Pause or resume a song | P |
+| Toggle fullscreen | F11 |
+| Open the confirmation to leave an active song | Escape during gameplay |
+| Cancel an exit confirmation | Escape |
 
-En un jugador, **D**, **F**, **J** y **K** corresponden, respectivamente, a izquierda, abajo, arriba y derecha.
+In single player, **D**, **F**, **J**, and **K** correspond to left, down, up, and right.
 
-## Calificaciones, precisión y puntuación
+## Judgements, accuracy, and score
 
-La **puntuación** y la **precisión** expresan cosas distintas. La puntuación depende de lo cerca que pulses del momento exacto. La precisión utiliza el peso de la calificación de cada nota:
+**Score** and **accuracy** measure different things. Score depends on how close an input is to the exact note time. Accuracy uses each note's judgement weight:
 
-| Calificación | Diferencia respecto al momento de la nota | Valor para la precisión |
+| Judgement | Distance from the note's time | Accuracy weight |
 | --- | --- | --- |
-| SICK | Hasta 45 ms antes o después | 100 % |
-| GOOD | Más de 45 y hasta 90 ms | 100 % |
-| BAD | Más de 90 y hasta 135 ms | 50 % |
-| SHIT | Más de 135 y hasta 160 ms | 25 % |
-| MISS | Nota fallada o sostenida abandonada antes de tiempo | 0 % |
+| SICK | Up to 45 ms early or late | 100% |
+| GOOD | Over 45 and up to 90 ms | 100% |
+| BAD | Over 90 and up to 135 ms | 50% |
+| SHIT | Over 135 and up to 160 ms | 25% |
+| MISS | Missed note or a sustain released too early | 0% |
 
-**GOOD conserva la precisión completa**, aunque concede menos puntos que un acierto más cercano al momento exacto. Una nota sostenida se cuenta una sola vez al completarse; soltarla antes de tiempo puede convertirla en fallo.
+**GOOD grants full accuracy**, while awarding fewer points than a more precisely timed hit. A sustained note counts once when completed; releasing it too early can turn it into a miss.
 
-El combo registra aciertos consecutivos. **BAD** y **MISS** rompen el combo. Los avisos de combo dependen de la cantidad de notas del lado que juegas y se acompañan de una animación y un sonido cuando los consigue una persona.
+The combo counts consecutive successful notes. **BAD** and **MISS** break it. Combo milestones depend on the number of notes on your side and trigger an animation and sound when reached by a human player.
 
-## Vida y resultados
+## Health and results
 
-La barra inferior es compartida: el lado izquierdo pertenece a Windows y el derecho a Tux. Los aciertos y errores desplazan el equilibrio entre ambos personajes. En dos jugadores, la influencia de las notas se ajusta para compensar las diferencias de cantidad entre los dos mapas.
+The bottom bar is shared: Windows owns its left portion and Tux its right portion. Hits and mistakes shift the balance between them. In two-player mode, note influence is adjusted to compensate for differences in chart size.
 
-Al terminar una canción, los resultados realizan un conteo rápido y muestran:
+When a song ends, the results screen quickly counts up and displays:
 
-- Notas totales y notas acertadas.
-- Cantidad de SICK, GOOD, BAD, SHIT y MISS.
-- Combo máximo, puntuación y precisión final.
-- Opciones para reiniciar o volver a la selección de canciones.
+- Total notes and hit notes.
+- Counts of SICK, GOOD, BAD, SHIT, and MISS.
+- Maximum combo, final score, and accuracy.
+- Options to restart or return to song selection.
 
-En un jugador se muestran los datos del personaje elegido. En dos jugadores aparecen las dos columnas y el resultado del enfrentamiento.
+Single-player results show the selected character's performance. Two-player results show both columns and the match outcome.
 
-## Pausa y salida
+## Pause and exit
 
-Con **P** puedes pausar, continuar, reiniciar o volver a la selección de canciones. La música y las notas se detienen juntas. Continuar conserva la posición de la canción y no repite la cuenta atrás.
+Press **P** to pause, resume, restart, or return to song selection. Music and notes stop together. Resuming preserves the song position and does not replay the opening countdown.
 
-Si la partida se pausó durante una nota sostenida, el juego puede pedir que mantengas las teclas correspondientes antes de continuar. Cambiar a otra ventana también pausa la partida.
+If you paused during a sustained note, the game may ask you to hold the corresponding keys before resuming. Switching to another window also pauses the song.
 
-Abandonar una canción en curso o cerrar el juego abre una confirmación para evitar perder el progreso por una pulsación accidental.
+Leaving an active song or closing the game opens a confirmation to prevent accidental progress loss.
 
-## Opciones
+## Options
 
-| Opción | Qué permite cambiar |
+| Option | Available settings |
 | --- | --- |
-| Resolución | 960 × 540, 1280 × 720 o 1920 × 1080 |
-| Volumen de música | Música de los menús e instrumental |
-| Volumen de voces | Voces de los personajes |
-| Volumen de efectos | Sonidos de interfaz, fallos y avisos |
-| Desfase de audio | De −200 a +200 ms, en pasos de 5 ms |
-| Modo de ventana | Ventana o pantalla completa |
-| Idioma | Español o English |
-| Límite de FPS | 30, 60, 120, 244 o un valor personalizado |
-| Mostrar FPS | Indicador de fotogramas por segundo |
-| Mostrar estadísticas | Puntos, precisión, combo y fallos durante la canción |
+| Resolution | 960 × 540, 1280 × 720, or 1920 × 1080 |
+| Music volume | Menu music and instrumentals |
+| Vocal volume | Character vocals |
+| Effects volume | Interface sounds, misses, and alerts |
+| Audio offset | −200 to +200 ms, in 5 ms steps |
+| Window mode | Windowed or fullscreen |
+| Language | English or Spanish |
+| FPS limit | 30, 60, 120, 244, or a custom value |
+| Show FPS | Frames-per-second counter |
+| Show game stats | Score, accuracy, combo, and misses during gameplay |
 
-La barra de FPS personalizados recorre valores de 0 a 260 y termina en **Sin límite / Unlimited**. Su extremo inferior utiliza un mínimo efectivo de 1 FPS para mantener la pantalla actualizándose.
+The custom FPS slider runs from 0 to 260 and ends with **Unlimited**. Its lowest position uses an effective minimum of 1 FPS so the screen keeps updating.
 
-Los cambios realizados en Opciones quedan pendientes hasta elegir **Confirmar y volver / Confirm and back**. Si intentas salir con cambios pendientes, puedes guardarlos, descartarlos o seguir editando. Lo confirmado se conserva al volver a abrir el juego.
+Option changes remain pending until you choose **Confirm and back**. Leaving with unsaved changes lets you save them, discard them, or keep editing. Confirmed settings are retained when you reopen the game.
 
-En la primera ejecución, el juego utiliza español si el idioma del sistema es español; en los demás casos utiliza inglés. Una elección guardada en Opciones tiene prioridad.
+On first launch, the game uses Spanish if the system language is Spanish; otherwise it uses English. A language saved in Options takes priority.
 
-El idioma modifica los menús, avisos y resultados. Los nombres de canciones, personajes, autores y calificaciones conservan su nombre original.
+The language setting changes menus, prompts, judgements, and results. Song names, character names, and author names retain their original spelling.
 
-## Ajuste del desfase de audio
+## Adjusting audio offset
 
-Si tus pulsaciones llegan tarde respecto a lo que escuchas, prueba valores negativos
-(por ejemplo, −50 ms). Si llegan demasiado pronto, prueba valores positivos.
-El ajuste mueve juntos el tiempo de las flechas, los aciertos, las sostenidas y el bot;
-no cambia la velocidad de reproducción ni modifica los archivos de audio.
-Empieza cerca de cero y confirma el cambio en Opciones antes de probar otra canción.
-Enter sobre esta opción restablece el valor pendiente a cero.
+If your inputs arrive late relative to what you hear, try a negative value, such as −50 ms. If they arrive too early, try a positive value.
 
-## Versión y reportes de errores
+The setting moves arrow timing, judgements, sustains, and bot timing together. It does not change playback speed or modify audio files. Start near zero and confirm the setting in Options before trying another song. Pressing Enter on this option resets the pending value to zero.
 
-La versión aparece en la pantalla inicial y en Créditos. Si ocurre un error no
-controlado, el juego muestra un aviso y se cierra. Los errores se guardan en
-`~/.laststandinnote/log.txt`, dentro de tu carpeta de usuario, con un registro anterior
-limitado para evitar crecimiento indefinido. Adjunta ese archivo al reportar un problema.
+## Version and error reports
 
-## Organización del proyecto
+The version appears on the title screen and in Credits. If an unhandled error occurs, the game displays a message and closes. Errors are saved to `~/.laststandinnote/log.txt` inside your user folder, with a size-limited previous log to prevent indefinite growth. Attach that file when reporting a problem.
 
-El juego está desarrollado en Java con Swing y utiliza archivos de recursos para sus imágenes, sonidos y mapas de notas.
+## Project structure
 
-| Carpeta | Contenido |
+The game is written in Java with Swing and loads its images, audio, and note charts from resource files.
+
+| Folder | Contents |
 | --- | --- |
-| `src/` | Pantallas, reglas del juego, audio y configuración |
-| `resources/images/` | Personajes, escenarios, flechas, interfaz y fuente bitmap |
-| `resources/audio/` | Música de menús y efectos de sonido |
-| `resources/songs/` | Canciones, mapas por dificultad y voces |
-| `resources/CREDITS.txt` | Créditos, fuentes y atribuciones de los recursos |
+| `src/` | Screens, game rules, audio, and settings |
+| `resources/images/` | Characters, stages, arrows, interface, bitmap font, and window icons |
+| `resources/audio/` | Menu music and sound effects |
+| `resources/songs/` | Songs, difficulty charts, and vocals |
+| `resources/CREDITS.txt` | Resource credits, sources, and attribution |
+| `packaging/` | Native launcher icons |
+| `tools/` | Validation and packaging tools |
+| `docs/` | Maintainer documentation |
 
-## Licencia
+## License
 
-El código Java original de `src/` está publicado bajo **GNU General Public License, versión 3 exclusivamente** (`GPL-3.0-only`). El texto completo está en [LICENSE](LICENSE), y el alcance de la licencia y los avisos de autoría están en [NOTICE.md](NOTICE.md).
+The original Java source code in `src/` is released under the **GNU General Public License, version 3 only** (`GPL-3.0-only`). The full text is in [LICENSE](LICENSE); its scope and copyright notices are recorded in [NOTICE.md](NOTICE.md).
 
-Puedes estudiar, modificar y redistribuir el código conforme a GPLv3. Al distribuir versiones modificadas, deben mantenerse los avisos correspondientes y ponerse a disposición el código fuente correspondiente bajo esa licencia.
+You may study, modify, and redistribute the code under GPLv3. Distributing modified versions requires retaining the applicable notices and making the corresponding source code available under that license.
 
-Los sprites de personajes, las letras bitmap, las voces de personajes y los mapas de notas (charts) creados y editados por el equipo se ofrecen bajo **Creative Commons Atribución-CompartirIgual 4.0** (`CC-BY-SA-4.0`). Consulta el texto completo en [LICENSE-ASSETS](LICENSE-ASSETS) y el alcance en [NOTICE.md](NOTICE.md). El código conserva su licencia GPLv3 y las instrumentales mantienen sus licencias originales.
+Character sprites, bitmap lettering, character vocals, and note charts created and edited by the team are available under **Creative Commons Attribution-ShareAlike 4.0** (`CC-BY-SA-4.0`). See [LICENSE-ASSETS](LICENSE-ASSETS) for the full text and [NOTICE.md](NOTICE.md) for its scope. The code retains its GPLv3 license, and instrumentals retain their original licenses.
 
-Las instrumentales, fondos, iconos y efectos de terceros conservan sus licencias originales. Los demás recursos no reciben una licencia nueva por estar en `resources/`. Consulta las atribuciones y las condiciones de cada recurso en [CREDITS.txt](resources/CREDITS.txt).
+Third-party instrumentals, backgrounds, icons, and sound effects retain their own licenses. Being placed in `resources/` does not assign a resource a new license. See the attribution and terms for each resource in [CREDITS.txt](resources/CREDITS.txt).
 
-## Equipo y créditos
+## Team and credits
 
-| Integrante | Aportes |
+| Team member | Contributions |
 | --- | --- |
-| Jacobo Parada Urriago | Código y música |
-| Manuela Gutierrez Diaz | Sprites, letras y código |
+| Jacobo Parada Urriago | Code and music |
+| Manuela Gutierrez Diaz | Sprites, lettering, and code |
 
-Los autores y fuentes de los recursos externos aparecen en los créditos del juego y en [CREDITS.txt](resources/CREDITS.txt). Las voces de los personajes fueron creadas y editadas por el equipo. Las instrumentales conservan la autoría y las licencias de sus creadores originales:
+External authors and sources appear in the in-game credits and [CREDITS.txt](resources/CREDITS.txt). Character vocals were created and edited by the team. Instrumentals retain their original creators' authorship and licenses:
 
-| Canción | Instrumental original | Autor | Licencia |
+| Song | Original instrumental | Author | License |
 | --- | --- | --- | --- |
 | Puzzle | [Puzzle Menu](https://opengameart.org/content/puzzle-menu) | caret7 | CC BY 4.0 |
 | Buy Something | [Shop Theme](https://opengameart.org/content/shop-theme) | Cleyton Kauffman | CC0 1.0 |
 | Melancholy | [Melancholy RPG](https://opengameart.org/content/melancholy-rpg) | Alexandr Zhelanov | CC BY 3.0 |
 
-## Descargas y reportes
+## Downloads and bug reports
 
-Las versiones publicadas estarán disponibles en [Releases de GitHub](https://github.com/MajaProjects/LastStandinNote/releases).
+Published builds are available through [GitHub Releases](https://github.com/MajaProjects/LastStandinNote/releases).
 
-Si encuentras un error, puedes reportarlo en [Issues](https://github.com/MajaProjects/LastStandinNote/issues). Incluye la canción, dificultad, modo, personaje y sistema operativo, junto con los pasos para reproducirlo. Una captura o el mensaje de error ayuda a identificar el problema.
+Report bugs in [Issues](https://github.com/MajaProjects/LastStandinNote/issues). Include the song, difficulty, mode, character, operating system, and steps to reproduce the problem. A screenshot or error message helps identify the cause.
 
-Repositorio principal: [MajaProjects/LastStandinNote](https://github.com/MajaProjects/LastStandinNote).
+Main repository: [MajaProjects/LastStandinNote](https://github.com/MajaProjects/LastStandinNote).
 
-Espejo del proyecto: [Last Standin Note en GitLab](https://gitlab.com/GLUD/gnubies/proyectos-2023-iii/2026-iii/gnubies-martes-8-10am/last-standin-note).
+Project mirror: [Last Standin Note on GitLab](https://gitlab.com/GLUD/gnubies/proyectos-2023-iii/2026-iii/gnubies-martes-8-10am/last-standin-note).
