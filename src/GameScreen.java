@@ -675,7 +675,7 @@ public class GameScreen implements Screen, AutoCloseable {
         }
 
         // keep the title, controls and note field outside the camera transform
-        drawLabel(g, chart.name(), width / 2, 20);
+        drawLiteralLabel(g, chart.name(), width / 2, 20);
 
         // place each controller label below the character it belongs to
         boolean showStats = DisplaySettings.isShowGameStats();
@@ -881,7 +881,10 @@ public class GameScreen implements Screen, AutoCloseable {
             int centerX,
             int y
     ) {
-        text = GameText.display(text);
+        drawLiteralLabel(g, GameText.display(text), centerX, y);
+    }
+
+    private void drawLiteralLabel(Graphics2D g, String text, int centerX, int y) {
         int x = centerX - font.getTextWidth(text, 1) / 2;
         font.draw(g, text, x, y, 1);
     }

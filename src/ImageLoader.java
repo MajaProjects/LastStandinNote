@@ -15,7 +15,7 @@ public final class ImageLoader {
 
         if (resource == null) {
             throw new IllegalStateException(
-                    "No se encontró la imagen: " + path
+                    "Image not found: " + path
             );
         }
 
@@ -24,14 +24,14 @@ public final class ImageLoader {
 
             if (image == null) {
                 throw new IllegalStateException(
-                        "Formato de imagen no compatible: " + path
+                        "Unsupported image format: " + path
                 );
             }
 
             return image;
         } catch (IOException error) {
             throw new IllegalStateException(
-                    "No se pudo leer la imagen: " + path,
+                    "Could not read image: " + path,
                     error
             );
         }

@@ -35,6 +35,7 @@ public final class GameText {
         add("TIED PERFORMANCE", "EMPATE"); add("BOTH CHARACTERS LOST", "AMBOS PERSONAJES PERDIERON");
         add("RESULTS", "RESULTADOS"); add("YOUR STATS", "TUS ESTADÍSTICAS");
         add("TOTAL NOTES", "NOTAS TOTALES"); add("HIT NOTES", "NOTAS ACERTADAS");
+        add("NOTES", "NOTAS");
         add("MAX COMBO", "COMBO MÁXIMO"); add("RAW SCORE", "PUNTOS");
         add("ACCURACY", "PRECISIÓN"); add("PERFORMANCE", "PRECISIÓN");
         add("SICK", "INCREÍBLE"); add("GOOD", "BIEN"); add("BAD", "MAL");

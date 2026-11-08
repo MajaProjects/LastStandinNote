@@ -71,19 +71,19 @@ public class BitmapFont {
 
                         if (glyphs.putIfAbsent(code, glyph) != null) {
                             throw new IllegalArgumentException(
-                                    "Carácter duplicado: " + code
+                                    "Duplicate character: " + code
                             );
                         }
                     }
 
                     default -> throw new IllegalArgumentException(
-                            "Registro desconocido: " + fields[0]
+                            "Unknown font record: " + fields[0]
                     );
                 }
             } catch (IllegalArgumentException error) {
                 throw new IllegalStateException(
-                        "Error en " + configPath
-                                + ", línea " + lineNumber,
+                        "Error in " + configPath
+                                + ", line " + lineNumber,
                         error
                 );
             }
@@ -93,8 +93,12 @@ public class BitmapFont {
                 || lineHeight <= 0 || spaceWidth <= 0
                 || glyphs.isEmpty()) {
             throw new IllegalStateException(
-                    "Configuración de fuente incompleta: " + configPath
+                    "Incomplete font configuration: " + configPath
             );
+        }
+
+        if (!glyphs.containsKey((int) '?')) {
+            throw new IllegalStateException("Font requires a '?' fallback glyph: " + configPath);
         }
 
         // resolve the image relative to the configuration file
@@ -113,7 +117,7 @@ public class BitmapFont {
                     || glyph.x() > atlas.getWidth() - glyph.width()
                     || glyph.y() > atlas.getHeight() - glyph.height()) {
                 throw new IllegalStateException(
-                        "Región de carácter inválida en: " + configPath
+                        "Invalid character region in: " + configPath
                 );
             }
             // cache the last visible row rather than using differently padded rectangles
@@ -136,29 +140,27 @@ public class BitmapFont {
     private static void requireFields(String[] fields, int expected) {
         if (fields.length != expected) {
             throw new IllegalArgumentException(
-                    "Se esperaban " + expected + " campos"
+                    "Expected " + expected + " fields"
             );
         }
 
     }
 
 
+    private int resolveGlyphCode(int code) {
+        if (glyphs.containsKey(code)) return code;
+        int base = baseCode(code);
+        // unsupported text uses the same fallback for measurement and drawing
+        return glyphs.containsKey(base) ? base : '?';
+    }
+
     private Glyph getGlyph(int code) {
-        Glyph glyph = glyphs.get(code);
-        if (glyph == null) glyph = glyphs.get(baseCode(code));
-
-        if (glyph == null) {
-            throw new IllegalArgumentException(
-                    "La fuente no contiene el carácter Unicode: " + code
-            );
-        }
-
-        return glyph;
+        return glyphs.get(resolveGlyphCode(code));
     }
 
     public int getTextWidth(String text, int scale) {
         if (scale <= 0) {
-            throw new IllegalArgumentException("La escala debe ser positiva");
+            throw new IllegalArgumentException("Scale must be positive");
         }
 
         int width = 0;
@@ -192,7 +194,7 @@ public class BitmapFont {
     private void drawInternal(Graphics2D g, String text, int x, int y, int scale,
                               boolean alignNumbers) {
         if (scale <= 0) {
-            throw new IllegalArgumentException("La escala debe ser positiva");
+            throw new IllegalArgumentException("Scale must be positive");
         }
 
         int cursorX = x;
@@ -216,13 +218,14 @@ public class BitmapFont {
                 cursorX += punctuationAdvance(code) * scale;
                 continue;
             }
-            Glyph glyph = getGlyph(code);
+            int resolved = resolveGlyphCode(code);
+            Glyph glyph = glyphs.get(resolved);
             int top = cursorY;
-            if (alignNumbers && (Character.isDigit(code) || code == '%')) {
+            if (alignNumbers && (Character.isDigit(resolved) || resolved == '%')) {
                 top += (numberBaseline - inkBottoms.get(glyph)) * scale;
             }
 
-            boolean synthesized = !glyphs.containsKey(code);
+            boolean synthesized = resolved != code && resolved == baseCode(code);
             boolean inverted = synthesized && (code == '¿' || code == '¡');
             int right = cursorX + glyph.width() * scale;
             int bottom = top + glyph.height() * scale;

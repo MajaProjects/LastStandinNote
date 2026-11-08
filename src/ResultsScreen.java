@@ -115,7 +115,7 @@ public final class ResultsScreen implements Screen {
             int totalNotes = twoPlayers
                     ? statistics[0].totalNotes() + statistics[1].totalNotes()
                     : statistics[playerVoice - 1].totalNotes();
-            drawText(menu, songName + " - " + totalNotes + " NOTES", width / 2,
+            drawLiteral(menu, songName + " - " + totalNotes + " " + GameText.display("NOTES"), width / 2,
                     top + 88, 1.0, true, panelWidth - 50);
 
             // show the selected character in solo play and the winner in shared play
@@ -199,7 +199,11 @@ public final class ResultsScreen implements Screen {
 
     private void drawText(Graphics2D g, String text, int x, int y, double preferredScale,
                           boolean centered, int maxWidth) {
-        text = GameText.display(text);
+        drawLiteral(g, GameText.display(text), x, y, preferredScale, centered, maxWidth);
+    }
+
+    private void drawLiteral(Graphics2D g, String text, int x, int y, double preferredScale,
+                             boolean centered, int maxWidth) {
         // the atlas has no decimal point, so reserve a small gap and draw that mark below
         int points = (int) text.chars().filter(character -> character == '.').count();
         int textWidth = font.getTextWidth(text.replace(".", ""), 1) + points * 6;

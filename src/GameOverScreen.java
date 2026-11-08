@@ -97,7 +97,7 @@ public final class GameOverScreen implements Screen {
             menu.drawRoundRect(left, top, panelWidth, panelHeight, 18, 18);
             drawText(menu, "GAME OVER", width / 2, top + 16, 2, panelWidth - 50);
             drawText(menu, outcome, width / 2, top + 90, 1, panelWidth - 50);
-            drawText(menu, game.getSongName(), width / 2, top + 128, 0.8, panelWidth - 50);
+            drawLiteral(menu, game.getSongName(), width / 2, top + 128, 0.8, panelWidth - 50);
 
             boolean both = game.isDefeated(1) && game.isDefeated(2);
             for (int voice = 1; voice <= 2; voice++) {
@@ -126,7 +126,10 @@ public final class GameOverScreen implements Screen {
     }
 
     private void drawText(Graphics2D g, String text, int x, int y, double preferred, int maxWidth) {
-        text = GameText.display(text);
+        drawLiteral(g, GameText.display(text), x, y, preferred, maxWidth);
+    }
+
+    private void drawLiteral(Graphics2D g, String text, int x, int y, double preferred, int maxWidth) {
         int textWidth = font.getTextWidth(text, 1);
         double scale = Math.min(preferred, maxWidth / (double) Math.max(1, textWidth));
         Graphics2D copy = (Graphics2D) g.create();
