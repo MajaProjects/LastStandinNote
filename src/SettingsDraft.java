@@ -10,6 +10,8 @@ public final class SettingsDraft {
     private int[] volumes = originalVolumes.clone();
     private LanguageSettings.Language originalLanguage = LanguageSettings.get();
     private LanguageSettings.Language language = originalLanguage;
+    private int originalOffsetMs = TimingSettings.getOffsetMs();
+    private int offsetMs = originalOffsetMs;
     private final Runnable persist;
 
     public SettingsDraft() {
@@ -22,6 +24,8 @@ public final class SettingsDraft {
 
     public DisplaySettings.Snapshot display() { return display; }
     public LanguageSettings.Language language() { return language; }
+    public int offsetMs() { return offsetMs; }
+    public void setOffsetMs(int value) { offsetMs = TimingSettings.clamp(value); }
     public void cycleLanguage(int direction) {
         LanguageSettings.Language[] values = LanguageSettings.Language.values();
         language = values[Math.floorMod(language.ordinal() + Integer.signum(direction), values.length)];
@@ -33,7 +37,7 @@ public final class SettingsDraft {
 
     public boolean hasChanges() {
         return !display.equals(originalDisplay) || !Arrays.equals(volumes, originalVolumes)
-                || language != originalLanguage;
+                || language != originalLanguage || offsetMs != originalOffsetMs;
     }
 
     public void cycleResolution(int direction) {
@@ -73,16 +77,19 @@ public final class SettingsDraft {
         display = originalDisplay;
         volumes = originalVolumes.clone();
         language = originalLanguage;
+        offsetMs = originalOffsetMs;
     }
 
     public void apply() {
         DisplaySettings.Snapshot beforeDisplay = DisplaySettings.snapshot();
         int[] beforeVolumes = readVolumes();
         LanguageSettings.Language beforeLanguage = LanguageSettings.get();
+        int beforeOffsetMs = TimingSettings.getOffsetMs();
         try {
             applyVolumes(volumes);
             DisplaySettings.apply(display);
             LanguageSettings.set(language);
+            TimingSettings.setOffsetMs(offsetMs);
             persist.run();
         } catch (RuntimeException error) {
             // retain the draft and restore the applied state when saving fails
@@ -90,6 +97,7 @@ public final class SettingsDraft {
                 applyVolumes(beforeVolumes);
                 DisplaySettings.apply(beforeDisplay);
                 LanguageSettings.set(beforeLanguage);
+                TimingSettings.setOffsetMs(beforeOffsetMs);
                 persist.run();
             } catch (RuntimeException rollbackError) {
                 error.addSuppressed(rollbackError);
@@ -99,6 +107,7 @@ public final class SettingsDraft {
         originalDisplay = display;
         originalVolumes = volumes.clone();
         originalLanguage = language;
+        originalOffsetMs = offsetMs;
     }
 
     private static int[] readVolumes() {

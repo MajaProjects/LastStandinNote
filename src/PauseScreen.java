@@ -66,10 +66,7 @@ public final class PauseScreen implements Screen {
 
             for (int i = 0; i < options.length; i++) {
                 int y = top + 130 + i * 60;
-                if (i == selectedOption) {
-                    menu.setColor(new Color(65, 35, 85));
-                    menu.fillRoundRect(left + 35, y - 8, panelWidth - 70, 46, 8, 8);
-                }
+                RetroButton.draw(menu, left + 35, y - 8, panelWidth - 70, 46, i == selectedOption);
                 drawCentered(menu, options[i], width / 2, y, 1);
             }
 

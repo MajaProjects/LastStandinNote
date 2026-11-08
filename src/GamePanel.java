@@ -456,6 +456,7 @@ public class GamePanel extends JPanel {
     }
 
     private void showError(String context, Throwable error) {
+        GameLog.record(context, error);
         String title = GameText.display(context);
         String detail = GameText.display(error.getMessage());
         String message = detail.isBlank() || title.equalsIgnoreCase(detail) ? title : title + "\n" + detail;

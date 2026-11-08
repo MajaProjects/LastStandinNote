@@ -45,10 +45,7 @@ public final class ExitConfirmScreen implements Screen {
         int buttonWidth = (panelWidth - 90) / 2;
         for (int i = 0; i < options.length; i++) {
             int x = left + 30 + i * (buttonWidth + 30);
-            if (i == selectedOption) {
-                g.setColor(new Color(65, 35, 85));
-                g.fillRoundRect(x, top + 160, buttonWidth, 46, 8, 8);
-            }
+            RetroButton.draw(g, x, top + 160, buttonWidth, 46, i == selectedOption);
             GameHud.drawText(g, font, options[i], x + buttonWidth / 2,
                     top + 168, 0.9, buttonWidth - 20);
         }

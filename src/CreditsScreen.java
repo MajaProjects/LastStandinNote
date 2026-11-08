@@ -58,6 +58,7 @@ public final class CreditsScreen implements Screen {
             screen.setColor(new Color(0, 0, 0, 180));
             screen.fillRect(0, 0, width, height);
             drawText(screen, "CREDITS", width / 2, 26, 2.0, width - 120);
+            drawText(screen, "v" + AppVersion.get(), width - 90, 30, 0.45, 150);
             Page page = pages.get(selectedPage);
             drawText(screen, page.category(), width / 2, 100, 0.85, width - 140);
             int count = page.entries().size();

@@ -130,6 +130,7 @@ public final class SongPlayer implements AutoCloseable {
 
     public long getPositionMs() {
         synchronized (lock) {
+            if (failure != null) throw new IllegalStateException("Song playback failed", failure);
             return getSongFrame() * 1000 / PcmTrack.SAMPLE_RATE;
         }
     }

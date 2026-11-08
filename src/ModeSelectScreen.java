@@ -1,4 +1,5 @@
 import java.awt.Graphics2D;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 
 public class ModeSelectScreen implements Screen {
@@ -37,6 +38,8 @@ public class ModeSelectScreen implements Screen {
     @Override
     public void render(Graphics2D g, int width, int height) {
         g.drawImage(background, 0, 0, width, height, null);
+        g.setColor(new Color(0, 0, 0, 105));
+        g.fillRect(0, 0, width, height);
 
         double seconds = (System.nanoTime() - animationStart)
                 / 1_000_000_000.0;
@@ -57,6 +60,10 @@ public class ModeSelectScreen implements Screen {
             String label = GameText.display(modes[i]);
             int x = (width - font.getTextWidth(label, 1)) / 2;
             int y = 230 + i * 90;
+
+            // keep mode buttons separate, matching the main menu
+            int panelX = width / 2 - 200 - (i == selectedMode ? 12 : 0);
+            RetroButton.draw(g, panelX, y - 8, 400, 48, i == selectedMode);
 
             if (i == selectedMode) {
                 x -= 12;

@@ -134,6 +134,7 @@ Abandonar una canción en curso o cerrar el juego abre una confirmación para ev
 | Volumen de música | Música de los menús e instrumental |
 | Volumen de voces | Voces de los personajes |
 | Volumen de efectos | Sonidos de interfaz, fallos y avisos |
+| Desfase de audio | De −200 a +200 ms, en pasos de 5 ms |
 | Modo de ventana | Ventana o pantalla completa |
 | Idioma | Español o English |
 | Límite de FPS | 30, 60, 120, 244 o un valor personalizado |
@@ -144,7 +145,25 @@ La barra de FPS personalizados recorre valores de 0 a 260 y termina en **Sin lí
 
 Los cambios realizados en Opciones quedan pendientes hasta elegir **Confirmar y volver / Confirm and back**. Si intentas salir con cambios pendientes, puedes guardarlos, descartarlos o seguir editando. Lo confirmado se conserva al volver a abrir el juego.
 
+En la primera ejecución, el juego utiliza español si el idioma del sistema es español; en los demás casos utiliza inglés. Una elección guardada en Opciones tiene prioridad.
+
 El idioma modifica los menús, avisos y resultados. Los nombres de canciones, personajes, autores y calificaciones conservan su nombre original.
+
+## Ajuste del desfase de audio
+
+Si tus pulsaciones llegan tarde respecto a lo que escuchas, prueba valores negativos
+(por ejemplo, −50 ms). Si llegan demasiado pronto, prueba valores positivos.
+El ajuste mueve juntos el tiempo de las flechas, los aciertos, las sostenidas y el bot;
+no cambia la velocidad de reproducción ni modifica los archivos de audio.
+Empieza cerca de cero y confirma el cambio en Opciones antes de probar otra canción.
+Enter sobre esta opción restablece el valor pendiente a cero.
+
+## Versión y reportes de errores
+
+La versión aparece en la pantalla inicial y en Créditos. Si ocurre un error no
+controlado, el juego muestra un aviso y se cierra. Los errores se guardan en
+`~/.laststandinnote/log.txt`, dentro de tu carpeta de usuario, con un registro anterior
+limitado para evitar crecimiento indefinido. Adjunta ese archivo al reportar un problema.
 
 ## Organización del proyecto
 
@@ -164,7 +183,7 @@ El código Java original de `src/` está publicado bajo **GNU General Public Lic
 
 Puedes estudiar, modificar y redistribuir el código conforme a GPLv3. Al distribuir versiones modificadas, deben mantenerse los avisos correspondientes y ponerse a disposición el código fuente correspondiente bajo esa licencia.
 
-Los sprites de personajes, las letras bitmap y las voces de personajes creados y editados por el equipo también están bajo **GPL-3.0-only**, dentro del alcance descrito en [NOTICE.md](NOTICE.md). Al distribuir versiones exportadas de esos recursos, deben facilitarse sus fuentes editables correspondientes según GPLv3.
+Los sprites de personajes, las letras bitmap y las voces de personajes creados y editados por el equipo se ofrecen bajo **Creative Commons Atribución-CompartirIgual 4.0** (`CC-BY-SA-4.0`). Consulta el texto completo en [LICENSE-ASSETS](LICENSE-ASSETS) y el alcance en [NOTICE.md](NOTICE.md). El código conserva su licencia GPLv3.
 
 Las instrumentales, fondos, iconos y efectos de terceros conservan sus licencias originales. Los demás recursos no reciben una licencia nueva por estar en `resources/`. Consulta las atribuciones y las condiciones de cada recurso en [CREDITS.txt](resources/CREDITS.txt).
 

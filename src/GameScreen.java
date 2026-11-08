@@ -15,6 +15,8 @@ public class GameScreen implements Screen, AutoCloseable {
     private final NoteJudge noteJudge;
     private final HealthState health;
     private final SongPlayer music;
+    private final SongClock songClock = new SongClock(TimingSettings.getOffsetMs());
+    private final long finalJudgementTimeMs;
     private final boolean[] processedVocalHeads;
     private final boolean[] processedVocalMisses;
     // keep a newly loaded song frozen until its countdown finishes
@@ -126,6 +128,9 @@ public class GameScreen implements Screen, AutoCloseable {
 
         // load the chart selected for this song and difficulty
         chart = SongChart.load(chartPath);
+        finalJudgementTimeMs = chart.notes().stream()
+                .mapToLong(note -> Math.max(note.timeMs() + 160, note.timeMs() + note.durationMs()))
+                .max().orElse(chart.durationMs()) + 1;
         processedVocalHeads = new boolean[chart.notes().size()];
         processedVocalMisses = new boolean[chart.notes().size()];
         // allow a 160 ms difference on either side of the note
@@ -204,11 +209,13 @@ public class GameScreen implements Screen, AutoCloseable {
         started = true;
         paused = false;
         music.play();
+        songClock.start();
     }
 
     public boolean isFinished() {
         // only an actively playing song can open the results screen
-        return started && !paused && music.isFinished();
+        return started && !paused && music.isFinished()
+                && getSongTimeMs() >= Math.max(chart.durationMs(), finalJudgementTimeMs);
     }
 
     public boolean isGameOver() {
@@ -270,6 +277,7 @@ public class GameScreen implements Screen, AutoCloseable {
             return;
         }
 
+        songClock.pause(music.getPositionMs(), music.isFinished());
         music.pause();
         pausedSongTimeMs = music.getPositionMs();
 
@@ -304,13 +312,15 @@ public class GameScreen implements Screen, AutoCloseable {
             }
         }
 
-        syncVocalState(pausedSongTimeMs);
+        syncVocalState();
 
         // a countdown can either start a new track or resume a paused one
         if (started) {
             music.resume();
+            songClock.resume();
         } else {
             music.play();
+            songClock.start();
             started = true;
         }
         paused = false;
@@ -372,7 +382,8 @@ public class GameScreen implements Screen, AutoCloseable {
     }
 
     private long getSongTimeMs() {
-        return paused ? pausedSongTimeMs : music.getPositionMs();
+        return songClock.timeMs(paused ? pausedSongTimeMs : music.getPositionMs(),
+                !paused && music.isFinished());
     }
 
     public void update() {
@@ -413,7 +424,7 @@ public class GameScreen implements Screen, AutoCloseable {
                 heldKeys[side][lane] = botKeys[lane];
             }
         }
-        syncVocalState(songTimeMs);
+        syncVocalState();
         health.update(noteJudge, songTimeMs);
     }
 
@@ -423,7 +434,9 @@ public class GameScreen implements Screen, AutoCloseable {
         useSecondMissSound = !useSecondMissSound;
     }
 
-    private void syncVocalState(long songTimeMs) {
+    private void syncVocalState() {
+        // vocal gates use real audio frames rather than the calibrated chart clock
+        long audioTimeMs = paused ? pausedSongTimeMs : music.getPositionMs();
         boolean[] newHits = new boolean[2];
         boolean[] newMisses = new boolean[2];
         boolean[] heldSustains = new boolean[2];
@@ -451,9 +464,9 @@ public class GameScreen implements Screen, AutoCloseable {
         for (int side = 0; side < 2; side++) {
             // recorded stems share their simultaneous notes, so a valid hold keeps its voice audible
             if (heldSustains[side] || newHits[side]) {
-                music.setVoiceAudible(side + 1, true, songTimeMs);
+                music.setVoiceAudible(side + 1, true, audioTimeMs);
             } else if (newMisses[side] || releasedSustains[side]) {
-                music.setVoiceAudible(side + 1, false, songTimeMs);
+                music.setVoiceAudible(side + 1, false, audioTimeMs);
             }
         }
     }
@@ -550,7 +563,7 @@ public class GameScreen implements Screen, AutoCloseable {
 
         // record the start of a release or resume the held sustain
         updateHumanSustains(songTimeMs);
-        syncVocalState(songTimeMs);
+        syncVocalState();
         health.update(noteJudge, songTimeMs);
     }
 

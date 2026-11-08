@@ -11,16 +11,17 @@ public final class OptionsScreen implements Screen {
     );
     private final String[] labels = {
             "RESOLUTION", "MUSIC VOLUME", "VOCAL VOLUME", "EFFECTS VOLUME",
-            "WINDOW MODE", "LANGUAGE", "FPS LIMIT", "SHOW FPS", "SHOW GAME STATS"
+            "AUDIO OFFSET", "WINDOW MODE", "LANGUAGE", "FPS LIMIT", "SHOW FPS", "SHOW GAME STATS"
     };
     private static final int RESOLUTION = 0;
     private static final int FIRST_VOLUME = 1;
-    private static final int WINDOW_MODE = 4;
-    private static final int LANGUAGE = 5;
-    private static final int FPS_LIMIT = 6;
-    private static final int SHOW_FPS = 7;
-    private static final int SHOW_STATS = 8;
-    private static final int CONFIRM = 9;
+    private static final int AUDIO_OFFSET = 4;
+    private static final int WINDOW_MODE = 5;
+    private static final int LANGUAGE = 6;
+    private static final int FPS_LIMIT = 7;
+    private static final int SHOW_FPS = 8;
+    private static final int SHOW_STATS = 9;
+    private static final int CONFIRM = 10;
     private static final int VISIBLE_ROWS = 5;
     private final AudioSettings.Channel[] channels = AudioSettings.Channel.values();
     private final SettingsDraft draft = new SettingsDraft();
@@ -47,6 +48,10 @@ public final class OptionsScreen implements Screen {
             return;
         }
         if (selectedOption == CONFIRM) return;
+        if (selectedOption == AUDIO_OFFSET) {
+            draft.setOffsetMs(draft.offsetMs() + Integer.signum(direction) * 5);
+            return;
+        }
         if (selectedOption == WINDOW_MODE) {
             draft.setFullscreen(direction > 0);
             return;
@@ -80,6 +85,10 @@ public final class OptionsScreen implements Screen {
 
     public boolean toggleSelected() {
         if (selectedOption == CONFIRM) return false;
+        if (selectedOption == AUDIO_OFFSET) {
+            draft.setOffsetMs(0);
+            return true;
+        }
         if (selectedOption == WINDOW_MODE) {
             draft.setFullscreen(!draft.display().fullscreen());
             return true;
@@ -199,10 +208,7 @@ public final class OptionsScreen implements Screen {
         for (int row = firstVisible; row < Math.min(labels.length, firstVisible + VISIBLE_ROWS); row++) {
             int top = 144 + (row - firstVisible) * 46;
             boolean selected = row == selectedOption;
-            g.setColor(selected ? new Color(55, 30, 75) : new Color(18, 18, 28));
-            g.fillRoundRect(left, top, rowWidth, 40, 10, 10);
-            g.setColor(selected ? new Color(200, 115, 255) : new Color(85, 65, 105));
-            g.drawRoundRect(left, top, rowWidth, 40, 10, 10);
+            RetroButton.draw(g, left, top, rowWidth, 40, selected);
             font.draw(g, GameText.display(labels[row]), left + 24, top + 3, 1);
 
             if (row == WINDOW_MODE || row == RESOLUTION) {
@@ -213,6 +219,11 @@ public final class OptionsScreen implements Screen {
 
             if (row == LANGUAGE) {
                 GameHud.drawText(g, font, draft.language().displayName(), width - 180, top + 7, 0.85, 176);
+                continue;
+            }
+            if (row == AUDIO_OFFSET) {
+                GameHud.drawText(g, font, String.format(java.util.Locale.ROOT, "%+d MS", draft.offsetMs()),
+                        width - 180, top + 7, 0.85, 176);
                 continue;
             }
             if (row == FPS_LIMIT) {
@@ -244,16 +255,12 @@ public final class OptionsScreen implements Screen {
         g.fillRect(width - 63, 144 + firstVisible * (224 - thumbHeight) / (labels.length - VISIBLE_ROWS),
                 5, thumbHeight);
         // keep confirmation at the bottom, after all options and the optional custom slider
-        g.setColor(isConfirmSelected() ? new Color(85, 40, 115) : new Color(30, 20, 45));
-        g.fillRoundRect(left, 428, rowWidth, 40, 10, 10);
-        g.setColor(new Color(190, 110, 240));
-        g.drawRoundRect(left, 428, rowWidth, 40, 10, 10);
+        RetroButton.draw(g, left, 428, rowWidth, 40, isConfirmSelected());
         drawCentered(g, "CONFIRM AND BACK", width / 2, 433, 0.85);
         if (draft.display().fpsMode() == 4) {
             int sliderWidth = width - 550;
             int position = draft.display().customPosition();
-            g.setColor(editingCustom ? new Color(65, 35, 85) : new Color(18, 18, 28));
-            g.fillRoundRect(left, 374, rowWidth, 40, 8, 8);
+            RetroButton.draw(g, left, 374, rowWidth, 40, editingCustom);
             GameHud.drawText(g, font, "CUSTOM FPS", left + 100, 381, 0.65, 170);
             g.setColor(new Color(55, 40, 65));
             g.fillRect(300, 388, sliderWidth, 10);
@@ -266,6 +273,7 @@ public final class OptionsScreen implements Screen {
             GameHud.drawText(g, font, draft.display().customLabel(), width - 150, 381, 0.65, 170);
         }
         String hint = isConfirmSelected() ? "ENTER OR CLICK TO CONFIRM AND RETURN"
+                : selectedOption == AUDIO_OFFSET ? "AUDIO LATE? DECREASE   AUDIO EARLY? INCREASE   ENTER RESET"
                 : selectedOption == WINDOW_MODE ? "LEFT WINDOWED   RIGHT FULLSCREEN   F11 TOGGLE"
                 : selectedOption == RESOLUTION ? (draft.display().fullscreen()
                 ? "FULLSCREEN USES DESKTOP RESOLUTION   F11 WINDOWED"

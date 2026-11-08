@@ -1,4 +1,5 @@
 import java.awt.Graphics2D;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 
 public class MenuScreen implements Screen {
@@ -41,6 +42,8 @@ public class MenuScreen implements Screen {
     @Override
     public void render(Graphics2D g, int width, int height) {
         g.drawImage(background, 0, 0, width, height, null);
+        g.setColor(new Color(0, 0, 0, 105));
+        g.fillRect(0, 0, width, height);
 
         // animate the main menu title continuously
         double seconds = (System.nanoTime() - animationStart)
@@ -65,6 +68,10 @@ public class MenuScreen implements Screen {
             if (i == selectedOption) {
                 optionX -= selectionOffset;
             }
+
+            // give each option its own panel with a gap between buttons
+            int panelX = width / 2 - 200 - (i == selectedOption ? selectionOffset : 0);
+            RetroButton.draw(g, panelX, optionY - 8, 400, 48, i == selectedOption);
 
             drawOption(
                     g,

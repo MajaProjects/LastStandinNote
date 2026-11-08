@@ -29,8 +29,8 @@
 # the original audio embedded in the team's vocal studio project files.
 # Shop Theme was identified from its embedded title and author metadata.
 # original character vocals were created and edited by the project team.
-# original character sprites, bitmap lettering and character vocals use GPL-3.0-only.
-# see NOTICE.md for the scope and editable source requirements.
+# original character sprites, bitmap lettering and character vocals use CC-BY-SA-4.0.
+# see NOTICE.md and LICENSE-ASSETS for the scope and full terms.
 # third-party resources retain their listed licenses. song charts are outside this grant.
 #
 # ADDITIONAL LINKS SUPPLIED - usage in this game not confirmed, not assigned to screens
@@ -43,8 +43,8 @@
 #
 PROJECT TEAM;Jacobo Parada Urriago;Programming and music contributions;;;;;
 PROJECT TEAM;Manuela Gutierrez Diaz;Sprite artwork, lettering and programming;;;;;
-ORIGINAL ART;Manuela Gutierrez Diaz;Character sprites and bitmap lettering;Original project artwork;GPL-3.0-only;;https://www.gnu.org/licenses/gpl-3.0.html;Created for LastStandinNote
-ORIGINAL VOCALS;LastStandinNote project team;Character vocals and vocal editing;Song vocals;GPL-3.0-only;;https://www.gnu.org/licenses/gpl-3.0.html;Created and edited by the project team
+ORIGINAL ART;Manuela Gutierrez Diaz;Character sprites and bitmap lettering;Original project artwork;CC BY-SA 4.0;;https://creativecommons.org/licenses/by-sa/4.0/;Created for LastStandinNote
+ORIGINAL VOCALS;LastStandinNote project team;Character vocals and vocal editing;Song vocals;CC BY-SA 4.0;;https://creativecommons.org/licenses/by-sa/4.0/;Created and edited by the project team
 SONG INSTRUMENTALS;caret7;Puzzle Menu;Puzzle instrumental;CC BY 4.0;https://opengameart.org/content/puzzle-menu;https://creativecommons.org/licenses/by/4.0/;Converted from OGG to WAV PCM 16-bit at 44100 Hz, original vocals added as separate tracks
 SONG INSTRUMENTALS;Cleyton Kauffman;Shop Theme (Buy Something!);Buy Something instrumental;CC0 1.0;https://opengameart.org/content/shop-theme;https://creativecommons.org/publicdomain/zero/1.0/;Converted to WAV PCM 16-bit at 44100 Hz, original vocals added as separate tracks
 SONG INSTRUMENTALS;Alexandr Zhelanov;Melancholy RPG;Melancholy instrumental;CC BY 3.0;https://opengameart.org/content/melancholy-rpg;https://creativecommons.org/licenses/by/3.0/;Converted from MP3 to WAV PCM 16-bit at 44100 Hz, original vocals added as separate tracks

@@ -1,4 +1,5 @@
 import java.util.Objects;
+import java.util.Locale;
 import java.util.prefs.Preferences;
 
 public final class LanguageSettings {
@@ -28,10 +29,14 @@ public final class LanguageSettings {
     }
 
     private static Language readLanguage() {
+        String saved = preferences.get("language", null);
+        Language systemDefault = Locale.getDefault().getLanguage().equalsIgnoreCase("es")
+                ? Language.SPANISH : Language.ENGLISH;
+        if (saved == null) return systemDefault;
         try {
-            return Language.valueOf(preferences.get("language", Language.ENGLISH.name()));
+            return Language.valueOf(saved);
         } catch (IllegalArgumentException error) {
-            return Language.ENGLISH;
+            return systemDefault;
         }
     }
 }

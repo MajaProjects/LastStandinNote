@@ -56,10 +56,7 @@ public final class SaveChangesScreen implements Screen {
                     : new String[]{"SAVE AND BACK", "DISCARD CHANGES", "KEEP EDITING"};
             for (int i = 0; i < labels.length; i++) {
                 int y = top + 124 + i * 52;
-                if (i == selectedOption) {
-                    dialog.setColor(new Color(65, 35, 85));
-                    dialog.fillRoundRect(left + 30, y, panelWidth - 60, 44, 8, 8);
-                }
+                RetroButton.draw(dialog, left + 30, y, panelWidth - 60, 44, i == selectedOption);
                 GameHud.drawText(dialog, font, labels[i], width / 2, y + 7, 0.8, panelWidth - 90);
             }
             GameHud.drawText(dialog, font, "ARROWS SELECT   ENTER CONFIRM   ESC CANCEL",

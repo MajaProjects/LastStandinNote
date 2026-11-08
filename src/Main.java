@@ -5,10 +5,11 @@ import java.awt.event.WindowEvent;
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("LastStandinNote iniciado");
+        GameLog.install();
 
         SwingUtilities.invokeLater(() -> {
             JFrame ventana = new JFrame("LastStandinNote");
+            ventana.setIconImages(AppIcon.loadImages());
             ventana.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
             GamePanel panel = new GamePanel();

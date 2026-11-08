@@ -174,10 +174,7 @@ public final class ResultsScreen implements Screen {
             for (int i = 0; i < options.length; i++) {
                 int buttonLeft = left + 30 + i * (buttonWidth + 30);
                 int y = top + 441;
-                if (i == selectedOption) {
-                    menu.setColor(new Color(65, 35, 85));
-                    menu.fillRoundRect(buttonLeft, y - 8, buttonWidth, 46, 8, 8);
-                }
+                RetroButton.draw(menu, buttonLeft, y - 8, buttonWidth, 46, i == selectedOption);
                 drawText(menu, options[i], buttonLeft + buttonWidth / 2, y, 1.0,
                         true, buttonWidth - 25);
             }

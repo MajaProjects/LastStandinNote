@@ -23,19 +23,21 @@ with LastStandinNote. See [LICENSE](LICENSE), or
 ## Original project resources
 
 The original character sprites, bitmap lettering, character vocal recordings
-and vocal edits created by the LastStandinNote project team are also licensed
-under GNU General Public License, version 3 only (`GPL-3.0-only`). The GPL
-notice and warranty disclaimer above apply to those original contributions.
+and vocal edits created by the LastStandinNote project team are licensed under
+Creative Commons Attribution-ShareAlike 4.0 International (`CC-BY-SA-4.0`).
+See [LICENSE-ASSETS](LICENSE-ASSETS) for the full license, or
+<https://creativecommons.org/licenses/by-sa/4.0/>.
 
-For these resources, source means the preferred form for making modifications.
-When distributing exported images or recordings, make the corresponding
-editable source available under GPLv3 as required by that license. Examples
-include layered artwork or audio editing projects when those are the preferred
-forms actually used to edit the work. This notice does not establish that all
-such source files have already been included in this repository.
+When sharing these resources or adaptations, give appropriate credit, retain
+license notices and indicate modifications. Shared adaptations must follow
+the ShareAlike conditions of CC BY-SA 4.0. This license does not require the
+team to provide layered artwork files or audio editing project files.
 
 This grant covers the team's original contributions. It does not relicense
 third-party material incorporated in or distributed alongside those resources.
+Previously granted GPLv3 permissions for copies already distributed remain
+available under their original terms; this notice offers the current resources
+under CC BY-SA 4.0 as an additional permission from their creators.
 
 ## Artwork, music and other resources
 
@@ -81,7 +83,7 @@ The same credit entries are displayed in the game's credits screen.
 
 The presence of a file in `resources/` does not by itself determine its
 license. The original project resources explicitly identified above use
-GPL-3.0-only. Third-party resources retain their own copyrights, licenses
+CC-BY-SA-4.0. Third-party resources retain their own copyrights, licenses
 and attribution requirements. Other resource types, including song charts,
 are not assigned a new license by this notice.
 

@@ -116,10 +116,7 @@ public final class GameOverScreen implements Screen {
             int buttonWidth = (panelWidth - 90) / 2;
             for (int i = 0; i < options.length; i++) {
                 int x = left + 30 + i * (buttonWidth + 30);
-                if (i == selectedOption) {
-                    menu.setColor(new Color(65, 35, 85));
-                    menu.fillRoundRect(x, top + 402, buttonWidth, 46, 8, 8);
-                }
+                RetroButton.draw(menu, x, top + 402, buttonWidth, 46, i == selectedOption);
                 drawText(menu, options[i], x + buttonWidth / 2, top + 410, 1, buttonWidth - 20);
             }
             drawText(menu, "ARROWS ENTER", width / 2, top + 461, 0.55, panelWidth - 50);
