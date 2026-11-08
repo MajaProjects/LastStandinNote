@@ -22,8 +22,8 @@ with LastStandinNote. See [LICENSE](LICENSE), or
 
 ## Original project resources
 
-The original character sprites, bitmap lettering, character vocal recordings
-and vocal edits created by the LastStandinNote project team are licensed under
+The original character sprites, bitmap lettering, character vocal recordings,
+vocal edits and song charts created by the LastStandinNote project team are licensed under
 Creative Commons Attribution-ShareAlike 4.0 International (`CC-BY-SA-4.0`).
 See [LICENSE-ASSETS](LICENSE-ASSETS) for the full license, or
 <https://creativecommons.org/licenses/by-sa/4.0/>.
@@ -48,6 +48,7 @@ under CC BY-SA 4.0 as an additional permission from their creators.
 | Manuela Gutierrez Diaz | Character sprites and bitmap lettering |
 | Jacobo Parada Urriago | Programming and music contributions |
 | LastStandinNote project team | Original character vocals and vocal editing |
+| LastStandinNote project team | Original song charts for USER, ADMIN and ROOT |
 
 ### External authors and resource licenses
 
@@ -83,9 +84,11 @@ The same credit entries are displayed in the game's credits screen.
 
 The presence of a file in `resources/` does not by itself determine its
 license. The original project resources explicitly identified above use
-CC-BY-SA-4.0. Third-party resources retain their own copyrights, licenses
-and attribution requirements. Other resource types, including song charts,
-are not assigned a new license by this notice.
+CC-BY-SA-4.0, including the team's original note charts in
+`resources/songs/*/chart_*.txt`. This grant covers the team's chart data;
+it does not relicense the underlying instrumentals or other third-party material.
+Third-party resources retain their own copyrights, licenses and attribution
+requirements. Other resource types are not assigned a new license by this notice.
 
 See [resources/CREDITS.txt](resources/CREDITS.txt) for the recorded authors,
 source links, licenses, modifications and source review notes.

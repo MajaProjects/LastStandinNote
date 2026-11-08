@@ -14,10 +14,9 @@
 # original long title for Packsmithy's work:
 # Menu confirm, synth (Salty & Swashbuckling Pirate Game Sounds)
 # Jofae's description requests clean, appropriate media and projects.
-# Mrthenoronha's game over description requests a donation above USD 1.
-# Mrthenoronha's combo sound description requests a donation of USD 0.50 or more.
-# both Mrthenoronha pages list CC BY-NC 4.0. donation status is not recorded here.
-# the linked source pages retain the original descriptions and donation links.
+# former noncommercial game over and combo recordings were replaced with CC0 sources.
+# Kenney source file: OGG/jingles_NES/jingles_NES09.ogg from 85 Short music jingles.
+# Aszura source file: GameOver.wav from Game Over (8-bit style).
 # menu background author and license confirmed from the source page screenshot supplied by the team.
 # second miss recording matched to the creator's catalogue using its embedded title,
 # collection, catalogue number 20, 80 bpm / 1 beat tags and 0.75-second duration.
@@ -29,9 +28,9 @@
 # the original audio embedded in the team's vocal studio project files.
 # Shop Theme was identified from its embedded title and author metadata.
 # original character vocals were created and edited by the project team.
-# original character sprites, bitmap lettering and character vocals use CC-BY-SA-4.0.
+# original character sprites, bitmap lettering, character vocals and song charts use CC-BY-SA-4.0.
 # see NOTICE.md and LICENSE-ASSETS for the scope and full terms.
-# third-party resources retain their listed licenses. song charts are outside this grant.
+# third-party resources, including the instrumentals underlying the charts, retain their listed licenses.
 #
 # ADDITIONAL LINKS SUPPLIED - usage in this game not confirmed, not assigned to screens
 # 8Bit Title Screen - Joth - CC0 1.0
@@ -45,13 +44,14 @@ PROJECT TEAM;Jacobo Parada Urriago;Programming and music contributions;;;;;
 PROJECT TEAM;Manuela Gutierrez Diaz;Sprite artwork, lettering and programming;;;;;
 ORIGINAL ART;Manuela Gutierrez Diaz;Character sprites and bitmap lettering;Original project artwork;CC BY-SA 4.0;;https://creativecommons.org/licenses/by-sa/4.0/;Created for LastStandinNote
 ORIGINAL VOCALS;LastStandinNote project team;Character vocals and vocal editing;Song vocals;CC BY-SA 4.0;;https://creativecommons.org/licenses/by-sa/4.0/;Created and edited by the project team
+ORIGINAL CHARTS;LastStandinNote project team;Song note charts;USER, ADMIN and ROOT charts;CC BY-SA 4.0;;https://creativecommons.org/licenses/by-sa/4.0/;Original chart data created and edited by the project team, instrumentals retain their own licenses
 SONG INSTRUMENTALS;caret7;Puzzle Menu;Puzzle instrumental;CC BY 4.0;https://opengameart.org/content/puzzle-menu;https://creativecommons.org/licenses/by/4.0/;Converted from OGG to WAV PCM 16-bit at 44100 Hz, original vocals added as separate tracks
 SONG INSTRUMENTALS;Cleyton Kauffman;Shop Theme (Buy Something!);Buy Something instrumental;CC0 1.0;https://opengameart.org/content/shop-theme;https://creativecommons.org/publicdomain/zero/1.0/;Converted to WAV PCM 16-bit at 44100 Hz, original vocals added as separate tracks
 SONG INSTRUMENTALS;Alexandr Zhelanov;Melancholy RPG;Melancholy instrumental;CC BY 3.0;https://opengameart.org/content/melancholy-rpg;https://creativecommons.org/licenses/by/3.0/;Converted from MP3 to WAV PCM 16-bit at 44100 Hz, original vocals added as separate tracks
 MUSIC;neko_4444;Melody Start Menu 2 loop;Title screen;CC0 1.0;https://freesound.org/people/neko_4444/sounds/741603/;https://creativecommons.org/publicdomain/zero/1.0/;Converted to WAV PCM 16-bit when needed
 MUSIC;joshuaempyre;Arcade Music Loop.wav;Menu music;CC BY 4.0;https://freesound.org/people/joshuaempyre/sounds/251461/;https://creativecommons.org/licenses/by/4.0/;Converted to WAV PCM 16-bit, complete recording restored
 MUSIC;neko_4444;Selection MENU 2;Pause music;CC0 1.0;https://freesound.org/people/neko_4444/sounds/744188/;https://creativecommons.org/publicdomain/zero/1.0/;Converted to WAV PCM 16-bit when needed
-MUSIC;Mrthenoronha;8 Bit Game Over.wav;Game over music;CC BY-NC 4.0;https://freesound.org/people/Mrthenoronha/sounds/653436/;https://creativecommons.org/licenses/by-nc/4.0/;Converted to WAV PCM 16-bit when needed
+MUSIC;Aszura;Game Over (8-bit style);Game over music;CC0 1.0;https://opengameart.org/content/game-over-8-bit-style;https://creativecommons.org/publicdomain/zero/1.0/;Volume reduced to 65 percent, exported as WAV PCM 16-bit stereo at 44100 Hz
 SOUND EFFECTS;dreggsome;Guitar Hero Miss 5;Miss sound;CC0 1.0;https://freesound.org/people/dreggsome/sounds/845702/;https://creativecommons.org/publicdomain/zero/1.0/;Converted to WAV PCM 16-bit when needed
 SOUND EFFECTS;Kokoro-Beats;race_countdown1.mp3;Countdown;CC0 1.0;https://freesound.org/people/Kokoro-Beats/sounds/165991/;https://creativecommons.org/publicdomain/zero/1.0/;Tempo increased to 200 percent without changing pitch, converted to WAV PCM 16-bit
 SOUND EFFECTS;Jofae;Game Die;Death sound;CC0 1.0;https://freesound.org/people/Jofae/sounds/364929/;https://creativecommons.org/publicdomain/zero/1.0/;Converted to WAV PCM 16-bit when needed
@@ -60,7 +60,7 @@ SOUND EFFECTS;pumodi;Menu Move 1;Menu navigation;CC0 1.0;https://freesound.org/p
 SOUND EFFECTS;Packsmithy;Menu confirm, synth;Menu confirmation;CC BY 4.0;https://freesound.org/people/packsmithy/sounds/876608/;https://creativecommons.org/licenses/by/4.0/;Converted to WAV PCM 16-bit when needed
 SOUND EFFECTS;FairSonicStudio;BBRS_SFX_MenuBackPage;Menu back;CC BY 4.0;https://freesound.org/people/FairSonicStudio/sounds/744321/;https://creativecommons.org/licenses/by/4.0/;Converted to WAV PCM 16-bit when needed
 SOUND EFFECTS;jivatma07;level_complete.wav;Level complete;CC BY 3.0;https://freesound.org/people/jivatma07/sounds/122255/;https://creativecommons.org/licenses/by/3.0/;Converted to WAV PCM 16-bit when needed
-SOUND EFFECTS;Mrthenoronha;Hit 2 8 Bit.wav;Combo alert;CC BY-NC 4.0;https://freesound.org/people/Mrthenoronha/sounds/507704/;https://creativecommons.org/licenses/by-nc/4.0/;Converted to WAV PCM 16-bit when needed
+SOUND EFFECTS;Kenney;85 Short music jingles - jingles_NES09;Combo alert;CC0 1.0;https://opengameart.org/content/85-short-music-jingles;https://creativecommons.org/publicdomain/zero/1.0/;Converted from OGG to WAV PCM 16-bit stereo at 44100 Hz
 SOUND EFFECTS;Ore.e Refineries (ldezem);Torch - Ignite flame bang;Second miss sound;CC0 1.0;https://freesound.org/people/ldezem/sounds/386380/;https://creativecommons.org/publicdomain/zero/1.0/;Converted to WAV PCM 16-bit at 44100 Hz
 ART AND UI;Jeremy Gooch;Sci Fi Level;Gameplay background;CC BY 3.0;https://opengameart.org/content/sci-fi-level;https://creativecommons.org/licenses/by/3.0/;Resized for the game
 ART AND UI;northleafstudio;Free 16x16 Game UI Icons;UI icon resource;Custom permission;https://northleafstudio.itch.io/free-16x16-game-ui-icons;https://northleafstudio.itch.io/free-16x16-game-ui-icons;

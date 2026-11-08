@@ -74,7 +74,7 @@ public class TitleScreen implements Screen {
         int promptX = (width - font.getTextWidth(prompt, 1)) / 2;
 
         font.draw(g, prompt, promptX, height - 90, 1);
-        GameHud.drawText(g, font, "v" + AppVersion.get(), width - 90, height - 34, 0.45, 150);
+        GameHud.drawText(g, font, "v" + AppVersion.get(), width - 90, height - 34, 0.65, 150);
     }
 
     private void drawCharacter(Graphics2D g, BufferedImage frame, int centerX, int bottom, double scale) {

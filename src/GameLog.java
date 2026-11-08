@@ -51,14 +51,7 @@ public final class GameLog {
         Runnable report = () -> {
             try {
                 if (!GraphicsEnvironment.isHeadless()) {
-                    boolean spanish = Locale.getDefault().getLanguage().equalsIgnoreCase("es");
-                    String message = spanish
-                            ? "El juego encontro un error y se cerrara.\n"
-                            : "The game encountered an error and will close.\n";
-                    message += logPath == null
-                            ? (spanish ? "No se pudo escribir el registro." : "The log could not be written.")
-                            : (spanish ? "Adjunta este archivo al reporte:\n" : "Attach this file to your report:\n") + logPath;
-                    JOptionPane.showMessageDialog(null, message, "LastStandinNote " + AppVersion.get(),
+                    JOptionPane.showMessageDialog(null, failureMessage(logPath), "LastStandinNote " + AppVersion.get(),
                             JOptionPane.ERROR_MESSAGE);
                 }
             } finally {
@@ -68,6 +61,23 @@ public final class GameLog {
         };
         if (SwingUtilities.isEventDispatchThread() || GraphicsEnvironment.isHeadless()) report.run();
         else SwingUtilities.invokeLater(report);
+    }
+
+    static String failureMessage(Path path) {
+        boolean spanish;
+        try {
+            // respect the language saved in options, even when the system uses another
+            spanish = LanguageSettings.get() == LanguageSettings.Language.SPANISH;
+        } catch (RuntimeException | LinkageError error) {
+            // language preferences may be the cause of a startup failure
+            spanish = Locale.getDefault().getLanguage().equalsIgnoreCase("es");
+        }
+        String message = spanish
+                ? "El juego encontró un error y se cerrará.\n"
+                : "The game encountered an error and will close.\n";
+        return message + (path == null
+                ? (spanish ? "No se pudo escribir el registro." : "The log could not be written.")
+                : (spanish ? "Adjunta este archivo al reporte:\n" : "Attach this file to your report:\n") + path);
     }
 
     private static final class ErrorOutput extends OutputStream {
