@@ -1,203 +1,246 @@
-# LastStandinNote
+<div align="center">
 
-A rhythm game inspired by *Friday Night Funkin’*, featuring pixel art and a musical showdown between **Tux** and **Windows**. Follow the arrows, hit notes to the beat, and hold sustained notes while Kernel reacts to the performance on stage.
+<img src="docs/media/banner.png" alt="Last Standin Note — Windows and Tux face off on stage" width="100%">
 
-Packaged versions are distributed through [GitHub Releases](https://github.com/MajaProjects/LastStandinNote/releases).
+<p><b>A pixel-art rhythm battle inspired by <i>Friday Night Funkin'</i>.</b><br>
+Tux and Windows face off note by note while Kernel cheers from the monitor.</p>
 
-## How to play
+[![Latest release](https://img.shields.io/github/v/release/MajaProjects/LastStandinNote?style=for-the-badge&label=release&color=c341f5&labelColor=1a1026)](https://github.com/MajaProjects/LastStandinNote/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/MajaProjects/LastStandinNote/total?style=for-the-badge&color=2ea44f&labelColor=1a1026)](https://github.com/MajaProjects/LastStandinNote/releases)
+[![Platforms](https://img.shields.io/badge/Windows%20%7C%20Linux-x64-0a84ff?style=for-the-badge&labelColor=1a1026)](#-download-and-play)
+[![Made with Java](https://img.shields.io/badge/Java-Swing-ed8b00?style=for-the-badge&logo=openjdk&logoColor=white&labelColor=1a1026)](#%EF%B8%8F-build-from-source)
 
-Notes scroll down toward the receptors at the bottom of the screen. Press the key for a column when the note head reaches its receptor.
+<a href="https://github.com/MajaProjects/LastStandinNote/releases/latest">
+  <img src="https://img.shields.io/badge/%E2%AC%87%20%20DOWNLOAD%20THE%20GAME-c341f5?style=for-the-badge" alt="Download the game" height="44">
+</a>
 
-- **Tap notes:** press the key when the head reaches the receptor.
-- **Sustained notes:** press at the start and hold until the tail ends.
-- **Multiple columns:** keep holding one note while playing notes in other columns.
+<sub>Java is included in the download — nothing else to install.</sub>
 
-Each hit receives a judgement based on how close the input is to the note's time. Misses affect health, interrupt the combo, and produce visual and sound feedback. Character vocals follow successful hits and are muted on misses, while the instrumental continues playing.
+<br><br>
 
-Notes and vocals follow the audio clock. Changing the FPS limit affects drawing frequency, not song speed.
+<img src="docs/media/gameplay.gif" alt="Two-player gameplay on the ROOT difficulty" width="800">
 
-## Menu flow
+</div>
 
-1. Press **Enter** on the title screen.
-2. Choose **Play**, then select a game mode.
-3. Select a song with **up and down**.
-4. Change its difficulty with **left and right** on the song selection screen.
-5. Choose your character and confirm with **Enter**.
-6. Get ready during the countdown and play the song.
+## ✨ Features
 
-The main menu also includes **Options** and **Credits**. Pressing **Escape** on the title screen opens the quit confirmation.
+<table>
+  <tr>
+    <td width="50%">🎵 <b>3 songs</b> with recorded character vocals that cut out when you miss</td>
+    <td width="50%">💀 <b>3 difficulties</b> per song: <code>USER</code>, <code>ADMIN</code> and <code>ROOT</code></td>
+  </tr>
+  <tr>
+    <td>🤖 <b>Single player</b> against an adaptive bot that pushes back when you're on a streak</td>
+    <td>👥 <b>Two players</b> on one keyboard, with fair results for uneven charts</td>
+  </tr>
+  <tr>
+    <td>🏆 <b>Local records</b> and rank badges, from <b>D</b> up to <b>P</b>erfect</td>
+    <td>🎚️ <b>Audio offset</b> calibration, per-channel volume and FPS limit</td>
+  </tr>
+  <tr>
+    <td>🌐 <b>English and Spanish</b>, picked automatically on first launch</td>
+    <td>🎨 <b>Hand-drawn</b> sprites and bitmap lettering by the team</td>
+  </tr>
+</table>
 
-## Characters
+## 🎭 Meet the cast
 
-| Character | Stage position | Role |
+<p align="center">
+  <img src="docs/media/characters.png" alt="Windows, Kernel and Tux" width="720">
+</p>
+
+<p align="center">
+  <b>Windows</b> holds the left side · <b>Tux</b> holds the right · <b>Kernel</b> reacts to your combos from the monitor
+</p>
+
+## 📸 Screenshots
+
+<table>
+  <tr>
+    <td><img src="docs/media/song-select.png" alt="Song selection with difficulty"></td>
+    <td><img src="docs/media/character-select.png" alt="Character selection"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Pick a song and difficulty</sub></td>
+    <td align="center"><sub>Choose your side</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/media/results.png" alt="Two-player results screen"></td>
+    <td><img src="docs/media/options.png" alt="Options menu"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Compare results</sub></td>
+    <td align="center"><sub>Tune audio and display</sub></td>
+  </tr>
+</table>
+
+## 📥 Download and play
+
+| | 🪟 Windows | 🐧 Linux |
 | --- | --- | --- |
-| Windows | Left | Playable character or opponent |
-| Tux | Right | Playable character or opponent |
-| Kernel | Center, on the monitor | Reacts to combos and combo breaks |
+| **1. Download** | `LastStandinNote-…-Windows-x64.zip` | `LastStandinNote-…-Linux-x64.tar.gz` |
+| **2. Extract** | Extract the whole ZIP | `tar xzf LastStandinNote-…-Linux-x64.tar.gz` |
+| **3. Play** | Open `LastStandinNote.exe` | Run `./Start.sh` |
 
-Character selection determines who each participant controls. Tux stays on the right and Windows on the left. The center monitor shows who leads the shared health bar; when both sides are even, it shows the matchup.
+Both files are on the [**latest release**](https://github.com/MajaProjects/LastStandinNote/releases/latest) page. Keep every folder together after extracting — the game uses the Java runtime bundled beside it.
 
-## Game modes
+> [!TIP]
+> If your hits feel late or early, open **Options → Audio offset**. Use a negative value if you hear the notes after you press, a positive one if before. Wireless headphones usually need a negative value.
 
-### Single player
+## 🎮 Controls
 
-Control your chosen character while the bot plays the other side. The controls are always **D F J K**, whether you choose Tux or Windows.
+| | Left | Down | Up | Right |
+| --- | :---: | :---: | :---: | :---: |
+| **Single player** | <kbd>D</kbd> | <kbd>F</kbd> | <kbd>J</kbd> | <kbd>K</kbd> |
+| **Two players · Windows** | <kbd>A</kbd> | <kbd>S</kbd> | <kbd>D</kbd> | <kbd>F</kbd> |
+| **Two players · Tux** | <kbd>J</kbd> | <kbd>K</kbd> | <kbd>L</kbd> | <kbd>Ñ</kbd> or <kbd>;</kbd> |
 
-The bot varies its accuracy and can make mistakes. When you play well and maintain a combo, it can increase its pressure to keep the song challenging.
+<kbd>↑</kbd> <kbd>↓</kbd> navigate · <kbd>←</kbd> <kbd>→</kbd> change difficulty, character or value · <kbd>Enter</kbd> confirm · <kbd>Esc</kbd> back · <kbd>P</kbd> pause · <kbd>F11</kbd> fullscreen
 
-If your health runs out, a defeat animation plays before the Game Over screen. You can restart or return to song selection. Completing the song shows only your character and statistics, without declaring a winner or loser.
+## 🕹️ How to play
 
-### Two players on one computer
+Arrows scroll down to the receptors. **Tap** when an arrow reaches its receptor, and **hold** sustained notes until their tail ends. Hits push the shared health bar toward your side; misses push it back and mute your vocals.
 
-Both players share the keyboard. Controls are attached to each character:
+<details>
+<summary><b>📊 Judgements, accuracy and score</b></summary>
+<br>
 
-| Character | Left | Down | Up | Right |
-| --- | --- | --- | --- | --- |
-| Windows | A | S | D | F |
-| Tux | J | K | L | Ñ or ; |
+| Judgement | Timing window | Accuracy |
+| --- | --- | :---: |
+| 🟣 **SICK** | ≤ 45 ms | 100 % |
+| 🔵 **GOOD** | ≤ 90 ms | 100 % |
+| 🟡 **BAD** | ≤ 135 ms | 50 % |
+| 🟠 **SHIT** | ≤ 160 ms | 25 % |
+| 🔴 **MISS** | missed, or sustain released early | 0 % |
 
-The song continues until the end, even if one side of the health bar reaches zero. Results compare both players. Accuracy is calculated relative to each side's notes, so a larger chart does not automatically win. If accuracy is tied, points per note break the tie.
+- **Score** rewards how close you are to the exact beat; **accuracy** uses the weights above.
+- **BAD** and **MISS** break your combo. Combo milestones trigger an animation and a sound.
+- In two-player mode, accuracy is relative to each side's notes and health influence is balanced, so a bigger chart is not an advantage. Ties are broken by points per note.
 
-Use either **Ñ** or **semicolon (`;`)** for Tux's right arrow, depending on your keyboard. Both keys control the same column and work for sustained notes and resuming after a pause. Single-player controls remain **D F J K**.
+</details>
 
-## Songs and difficulties
+<details>
+<summary><b>💀 Difficulties</b></summary>
+<br>
 
-The available songs are **Puzzle**, **Buy Something**, and **Melancholy**. Each has three note charts:
-
-| Difficulty | Experience |
+| Difficulty | What changes |
 | --- | --- |
-| USER | Entry level, with slower scrolling |
-| ADMIN | Intermediate challenge, with its own chart |
-| ROOT | Faster scrolling and effects that make notes harder to read |
+| `USER` | Slower scrolling — a good place to start |
+| `ADMIN` | Its own chart, an intermediate challenge |
+| `ROOT` | Faster scrolling; notes sway and fade while the stage shakes. Notes settle near the receptor so the timing stays readable |
 
-On **ROOT**, notes can sway sideways, fade, and be accompanied by stage shakes. Their position and visibility recover near the receptor so the timing remains readable.
+Change difficulty with <kbd>←</kbd> <kbd>→</kbd> on the song selection screen.
 
-Change difficulty directly with left and right on the song selection screen. The segmented indicator shows the selected level.
+</details>
 
-### Local single-player records
+<details>
+<summary><b>🏆 Records and ranks</b></summary>
+<br>
 
-Selecting a song with a record shows its best score and best accuracy for the chosen difficulty. These two personal bests are saved independently between sessions: a better score does not overwrite a higher accuracy from another run. Only completed human single-player runs count. Bot and two-player performances are excluded. Two-player mode retains its results screen but does not show solo records in song selection.
+Completed single-player runs save your **best score** and **best accuracy** for each song and difficulty, independently of each other. Bot and two-player runs never count.
 
-A colored badge appears beside songs with recorded accuracy: **P** for exactly 100%, **S** for above 95%, **A** for 90–95%, **B** for 80–below 90%, **C** for 70–below 80%, and **D** for below 70%. USER, ADMIN, and ROOT each have separate records. Unplayed songs show no record or badge.
+| Rank | Accuracy |
+| :---: | --- |
+| **P** | exactly 100 % |
+| **S** | above 95 % |
+| **A** | 90 – 95 % |
+| **B** | 80 – below 90 % |
+| **C** | 70 – below 80 % |
+| **D** | below 70 % |
 
-## General controls
+</details>
 
-| Action | Control |
+<details>
+<summary><b>⚙️ Options</b></summary>
+<br>
+
+| Option | Settings |
 | --- | --- |
-| Move between menu options or songs | Up / down |
-| Change difficulty, character, or option value | Left / right |
-| Confirm a selection | Enter |
-| Return to the previous menu | Escape |
-| Pause or resume a song | P |
-| Toggle fullscreen | F11 |
-| Open the confirmation to leave an active song | Escape during gameplay |
-| Cancel an exit confirmation | Escape |
+| Resolution | 960 × 540 · 1280 × 720 · 1920 × 1080 |
+| Window mode | Windowed · Fullscreen |
+| Volume | Music · Vocals · Effects |
+| Audio offset | −200 to +200 ms in 5 ms steps (<kbd>Enter</kbd> resets it) |
+| FPS limit | 30 · 60 · 120 · 244 · custom · unlimited |
+| Show FPS / game stats | On · Off |
+| Language | English · Español |
 
-In single player, **D**, **F**, **J**, and **K** correspond to left, down, up, and right.
+Changes apply when you choose **Confirm and back**; leaving with unsaved changes asks whether to save or discard them. The FPS limit only changes drawing — notes and vocals always follow the audio clock.
 
-## Judgements, accuracy, and score
+</details>
 
-**Score** and **accuracy** measure different things. Score depends on how close an input is to the exact note time. Accuracy uses each note's judgement weight:
+<details>
+<summary><b>🐞 Something went wrong?</b></summary>
+<br>
 
-| Judgement | Distance from the note's time | Accuracy weight |
-| --- | --- | --- |
-| SICK | Up to 45 ms early or late | 100% |
-| GOOD | Over 45 and up to 90 ms | 100% |
-| BAD | Over 90 and up to 135 ms | 50% |
-| SHIT | Over 135 and up to 160 ms | 25% |
-| MISS | Missed note or a sustain released too early | 0% |
+If the game hits an unexpected error, it shows a message and saves a log to `~/.laststandinnote/log.txt` inside your user folder. Please [open an issue](https://github.com/MajaProjects/LastStandinNote/issues) with that file, plus the song, difficulty, mode, character, operating system and steps to reproduce. The game version is shown on the title screen.
 
-**GOOD grants full accuracy**, while awarding fewer points than a more precisely timed hit. A sustained note counts once when completed; releasing it too early can turn it into a miss.
+</details>
 
-The combo counts consecutive successful notes. **BAD** and **MISS** break it. Combo milestones depend on the number of notes on your side and trigger an animation and sound when reached by a human player.
+## 🛠️ Build from source
 
-## Health and results
+<details>
+<summary><b>Run with your own JDK (17 or newer)</b></summary>
+<br>
 
-The bottom bar is shared: Windows owns its left portion and Tux its right portion. Hits and mistakes shift the balance between them. In two-player mode, note influence is adjusted to compensate for differences in chart size.
+```bash
+git clone https://github.com/MajaProjects/LastStandinNote.git
+cd LastStandinNote
+javac --release 17 -encoding UTF-8 -d out src/*.java
 
-When a song ends, the results screen quickly counts up and displays:
+java -cp out:resources Main        # Linux / macOS
+java -cp "out;resources" Main      # Windows
+```
 
-- Total notes and hit notes.
-- Counts of SICK, GOOD, BAD, SHIT, and MISS.
-- Maximum combo, final score, and accuracy.
-- Options to restart or return to song selection.
+</details>
 
-Single-player results show the selected character's performance. Two-player results show both columns and the match outcome.
+<details>
+<summary><b>Create release packages</b></summary>
+<br>
 
-## Pause and exit
+```bash
+python tools/package_game.py
+```
 
-Press **P** to pause, resume, restart, or return to song selection. Music and notes stop together. Resuming preserves the song position and does not replay the opening countdown.
+Builds a portable package with Java bundled, a source archive and checksums. It requires the exact JDK pinned for releases; see [**docs/PACKAGING.md**](docs/PACKAGING.md) for the full process and the Windows cross-build.
 
-If you paused during a sustained note, the game may ask you to hold the corresponding keys before resuming. Switching to another window also pauses the song.
+</details>
 
-Leaving an active song or closing the game opens a confirmation to prevent accidental progress loss.
+<details>
+<summary><b>Project structure</b></summary>
+<br>
 
-## Options
+```text
+src/                 Screens, game rules, audio and settings
+resources/images/    Characters, stages, arrows, UI, bitmap font and window icons
+resources/audio/     Menu music and sound effects
+resources/songs/     Instrumentals, vocals and USER/ADMIN/ROOT charts
+packaging/           Native launcher icons
+tools/               Validation and packaging tools
+docs/                Maintainer documentation and README media
+```
 
-| Option | Available settings |
-| --- | --- |
-| Resolution | 960 × 540, 1280 × 720, or 1920 × 1080 |
-| Music volume | Menu music and instrumentals |
-| Vocal volume | Character vocals |
-| Effects volume | Interface sounds, misses, and alerts |
-| Audio offset | −200 to +200 ms, in 5 ms steps |
-| Window mode | Windowed or fullscreen |
-| Language | English or Spanish |
-| FPS limit | 30, 60, 120, 244, or a custom value |
-| Show FPS | Frames-per-second counter |
-| Show game stats | Score, accuracy, combo, and misses during gameplay |
+</details>
 
-The custom FPS slider runs from 0 to 260 and ends with **Unlimited**. Its lowest position uses an effective minimum of 1 FPS so the screen keeps updating.
+## 👥 Team
 
-Option changes remain pending until you choose **Confirm and back**. Leaving with unsaved changes lets you save them, discard them, or keep editing. Confirmed settings are retained when you reopen the game.
+<table align="center">
+  <tr>
+    <td align="center" width="260">
+      <b>Jacobo Parada Urriago</b><br>
+      <sub>💻 Code · 🎵 Music</sub>
+    </td>
+    <td align="center" width="260">
+      <b>Manuela Gutierrez Diaz</b><br>
+      <sub>🎨 Sprites · ✍️ Lettering · 💻 Code</sub>
+    </td>
+  </tr>
+</table>
 
-On first launch, the game uses Spanish if the system language is Spanish; otherwise it uses English. A language saved in Options takes priority.
+<details>
+<summary><b>🎼 Music credits</b></summary>
+<br>
 
-The language setting changes menus, prompts, judgements, and results. Song names, character names, and author names retain their original spelling.
-
-## Adjusting audio offset
-
-If your inputs arrive late relative to what you hear, try a negative value, such as −50 ms. If they arrive too early, try a positive value.
-
-The setting moves arrow timing, judgements, sustains, and bot timing together. It does not change playback speed or modify audio files. Start near zero and confirm the setting in Options before trying another song. Pressing Enter on this option resets the pending value to zero.
-
-## Version and error reports
-
-The version appears on the title screen and in Credits. If an unhandled error occurs, the game displays a message and closes. Errors are saved to `~/.laststandinnote/log.txt` inside your user folder, with a size-limited previous log to prevent indefinite growth. Attach that file when reporting a problem.
-
-## Project structure
-
-The game is written in Java with Swing and loads its images, audio, and note charts from resource files.
-
-| Folder | Contents |
-| --- | --- |
-| `src/` | Screens, game rules, audio, and settings |
-| `resources/images/` | Characters, stages, arrows, interface, bitmap font, and window icons |
-| `resources/audio/` | Menu music and sound effects |
-| `resources/songs/` | Songs, difficulty charts, and vocals |
-| `resources/CREDITS.txt` | Resource credits, sources, and attribution |
-| `packaging/` | Native launcher icons |
-| `tools/` | Validation and packaging tools |
-| `docs/` | Maintainer documentation |
-
-## License
-
-The original Java source code in `src/` is released under the **GNU General Public License, version 3 only** (`GPL-3.0-only`). The full text is in [LICENSE](LICENSE); its scope and copyright notices are recorded in [NOTICE.md](NOTICE.md).
-
-You may study, modify, and redistribute the code under GPLv3. Distributing modified versions requires retaining the applicable notices and making the corresponding source code available under that license.
-
-Character sprites, bitmap lettering, character vocals, and note charts created and edited by the team are available under **Creative Commons Attribution-ShareAlike 4.0** (`CC-BY-SA-4.0`). See [LICENSE-ASSETS](LICENSE-ASSETS) for the full text and [NOTICE.md](NOTICE.md) for its scope. The code retains its GPLv3 license, and instrumentals retain their original licenses.
-
-Third-party instrumentals, backgrounds, icons, and sound effects retain their own licenses. Being placed in `resources/` does not assign a resource a new license. See the attribution and terms for each resource in [CREDITS.txt](resources/CREDITS.txt).
-
-## Team and credits
-
-| Team member | Contributions |
-| --- | --- |
-| Jacobo Parada Urriago | Code and music |
-| Manuela Gutierrez Diaz | Sprites, lettering, and code |
-
-External authors and sources appear in the in-game credits and [CREDITS.txt](resources/CREDITS.txt). Character vocals were created and edited by the team. Instrumentals retain their original creators' authorship and licenses:
+Character vocals were created by the team. Instrumentals keep their original authors and licenses:
 
 | Song | Original instrumental | Author | License |
 | --- | --- | --- | --- |
@@ -205,12 +248,23 @@ External authors and sources appear in the in-game credits and [CREDITS.txt](res
 | Buy Something | [Shop Theme](https://opengameart.org/content/shop-theme) | Cleyton Kauffman | CC0 1.0 |
 | Melancholy | [Melancholy RPG](https://opengameart.org/content/melancholy-rpg) | Alexandr Zhelanov | CC BY 3.0 |
 
-## Downloads and bug reports
+Every other external resource is credited on the in-game credits screen and in [CREDITS.txt](resources/CREDITS.txt).
 
-Published builds are available through [GitHub Releases](https://github.com/MajaProjects/LastStandinNote/releases).
+</details>
 
-Report bugs in [Issues](https://github.com/MajaProjects/LastStandinNote/issues). Include the song, difficulty, mode, character, operating system, and steps to reproduce the problem. A screenshot or error message helps identify the cause.
+## 📜 License
 
-Main repository: [MajaProjects/LastStandinNote](https://github.com/MajaProjects/LastStandinNote).
+| What | License |
+| --- | --- |
+| Source code in `src/` | [GPL-3.0-only](LICENSE) |
+| Team sprites, lettering, vocals, charts and icons | [CC BY-SA 4.0](LICENSE-ASSETS) |
+| Third-party instrumentals, backgrounds, icons and sounds | Their own licenses — see [CREDITS.txt](resources/CREDITS.txt) |
 
-Project mirror: [Last Standin Note on GitLab](https://gitlab.com/GLUD/gnubies/proyectos-2023-iii/2026-iii/gnubies-martes-8-10am/last-standin-note).
+Scope and copyright notices are in [NOTICE.md](NOTICE.md). The images in `docs/media/` are captures of the game; they include the backgrounds [Sci Fi Level](https://opengameart.org/content/sci-fi-level) by Jeremy Gooch and [Seamless Microscheme Texture](https://opengameart.org/content/seamless-microscheme-texture) by HorrorPen, both [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). *Friday Night Funkin'* belongs to The Funkin' Crew; this is an independent fan project.
+
+<div align="center">
+<br>
+
+Mirror on [GitLab](https://gitlab.com/GLUD/gnubies/proyectos-2023-iii/2026-iii/gnubies-martes-8-10am/last-standin-note) · Made with ☕ and 🐧
+
+</div>
