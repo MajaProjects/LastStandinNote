@@ -76,10 +76,16 @@ public class SongSelectScreen implements Screen {
         // restore the difficulty selected earlier in the session
         this.difficulty = difficulty;
     }
+
+    public SongSelectScreen(Difficulty difficulty, boolean twoPlayers) {
+        this(difficulty);
+        this.twoPlayers = twoPlayers;
+    }
     private final BufferedImage songBar = ImageLoader.load("/images/ui/barra_cancion.png");
     private int selectedSong = 0;
     // keep the highlighted row and the chosen difficulty
     private Difficulty difficulty = Difficulty.ADMIN;
+    private boolean twoPlayers;
 
     public void moveSelection(int direction) {
         // move only between the available songs
@@ -107,16 +113,11 @@ public class SongSelectScreen implements Screen {
     }
 
     public void saveCompletedScore(GameScreen game) {
-        // incomplete attempts and game over never create a completion record
-        if (!game.isFinished() || game.isGameOver()) return;
+        // only completed solo games belong in the personal record table
+        if (twoPlayers || game.isTwoPlayers() || !game.isFinished() || game.isGameOver()) return;
 
         int score = game.getStatisticsForVoice(game.getPlayerVoice()).score();
         double accuracy = game.getPerformanceForVoice(game.getPlayerVoice());
-        if (game.isTwoPlayers()) {
-            score = Math.max(game.getStatisticsForVoice(1).score(),
-                    game.getStatisticsForVoice(2).score());
-            accuracy = Math.max(game.getPerformanceForVoice(1), game.getPerformanceForVoice(2));
-        }
         String folder = songFolders.get(selectedSong);
         if (HighScores.saveIfBetter(folder, difficulty, score, accuracy)) {
             HighScores.getEntry(folder, difficulty)
@@ -164,9 +165,11 @@ public class SongSelectScreen implements Screen {
 
             int centerY = height / 2 - 40 + i * 75;
             drawSongButton(g, songs.get(i), centerX, centerY, selected, seconds);
-            int recordX = width / 2 + songBar.getWidth() / 2 + 28;
-            drawRank(g, i, recordX, centerY);
-            if (selected) drawHighScore(g, i, recordX + 62, centerY);
+            if (!twoPlayers) {
+                int recordX = width / 2 + songBar.getWidth() / 2 + 28;
+                drawRank(g, i, recordX, centerY);
+                if (selected) drawHighScore(g, i, recordX + 62, centerY);
+            }
         }
         // draw the difficulty as a separate menu row
         drawDifficultySelector(g, width, height);

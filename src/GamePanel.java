@@ -864,7 +864,8 @@ public class GamePanel extends JPanel {
         if (pantallaActual instanceof ModeSelectScreen modes) {
             // preserve the chosen mode before opening the song list
             previousModeScreen = modes;
-            pantallaActual = new SongSelectScreen(selectedDifficulty);
+            pantallaActual = new SongSelectScreen(selectedDifficulty,
+                    modes.getSelectedMode().equals("DOS JUGADORES"));
 
             menuConfirm.play();
             requestFrame();

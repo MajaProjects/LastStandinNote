@@ -5,7 +5,8 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 public final class HighScores {
-    private static final String NODE = "laststandinnote/highscores/v1";
+    // retain old mixed-mode records separately; their original mode cannot be recovered
+    private static final String NODE = "laststandinnote/highscores/solo/v2";
 
     private HighScores() { }
 
