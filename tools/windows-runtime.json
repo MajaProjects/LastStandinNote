@@ -1,0 +1,9 @@
+{
+  "name": "OpenJDK21U-jre_x64_windows_hotspot_21.0.13_9.zip",
+  "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13%2B9/OpenJDK21U-jre_x64_windows_hotspot_21.0.13_9.zip",
+  "sha256": "2332c0b4cff6bed722da3567c91d5e47568bcba863fa4945d0a8d6fc76158628",
+  "size": 49106397,
+  "source_url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13%2B9/OpenJDK21U-jdk-sources_21.0.13_9.tar.gz",
+  "source_sha256": "b5232c9980d8a0f0459676c084c41c6e2c771ed9e785890b03c6a438406ad1ca",
+  "release": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.13%2B9"
+}

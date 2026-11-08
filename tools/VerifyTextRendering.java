@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Field;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -26,6 +32,32 @@ public final class VerifyTextRendering {
 
     private static void require(boolean value, String message) {
         if (!value) throw new AssertionError(message);
+    }
+
+    private static void windowIcons() throws Exception {
+        int[] sizes = {16, 24, 32, 48, 64, 128, 256};
+        List<Image> icons = AppIcon.loadImages();
+        require(icons.size() == sizes.length, "Missing window icon assets");
+        for (int i = 0; i < sizes.length; i++) {
+            require(icons.get(i).getWidth(null) == sizes[i] && icons.get(i).getHeight(null) == sizes[i],
+                    "Wrong window icon dimensions: " + sizes[i]);
+        }
+        URL[] paths = {VerifyTextRendering.class.getProtectionDomain().getCodeSource().getLocation(),
+                Path.of("resources").toUri().toURL()};
+        PrintStream original = System.err;
+        ByteArrayOutputStream log = new ByteArrayOutputStream();
+        try (PrintStream capture = new PrintStream(log, true, StandardCharsets.UTF_8);
+             URLClassLoader loader = new URLClassLoader(paths, ClassLoader.getPlatformClassLoader()) {
+                 @Override public URL getResource(String name) {
+                     return name.equals("images/icon/icon_48.png") ? null : super.getResource(name);
+                 }
+             }) {
+            System.setErr(capture);
+            List<?> partial = (List<?>) loader.loadClass("AppIcon").getMethod("loadImages").invoke(null);
+            require(partial.size() == 6, "One missing icon prevented the remaining icons from loading");
+        } finally { System.setErr(original); }
+        require(log.toString(StandardCharsets.UTF_8).contains("Could not load window icon 48"),
+                "Missing icon was not logged");
     }
 
     private static Field field(Class<?> type, String name) throws Exception {
@@ -141,6 +173,7 @@ public final class VerifyTextRendering {
     }
 
     public static void main(String[] args) throws Exception {
+        windowIcons();
         fallback();
         songNames();
         try {
@@ -151,6 +184,6 @@ public final class VerifyTextRendering {
             require(expected.getMessage().startsWith("Image not found:"), "Image log is not English");
         }
         System.out.println("Text rendering checks passed: fallback metrics/pixels, missing glyph configuration,"
-                + " unusual credits, and 90 title renders in both languages.");
+                + " window icons and missing-icon recovery, unusual credits, and 90 title renders in both languages.");
     }
 }

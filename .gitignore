@@ -7,3 +7,8 @@ out/
 
 # keep the local bare mirror outside version control
 /LastStandinNote.git/
+
+# local packaging output
+/build/
+/dist/
+__pycache__/

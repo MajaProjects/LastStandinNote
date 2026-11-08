@@ -25,6 +25,10 @@ with LastStandinNote. See [LICENSE](LICENSE), or
 The original character sprites, bitmap lettering, character vocal recordings,
 vocal edits and song charts created by the LastStandinNote project team are licensed under
 Creative Commons Attribution-ShareAlike 4.0 International (`CC-BY-SA-4.0`).
+This also covers the application icons derived from the team's Tux artwork in
+`resources/images/icon/` and the native launcher icons in `packaging/`
+(`icon.ico`, `icon.icns` and `icon.png`). These adaptations provide dedicated
+small-size window icons and platform-specific launcher formats.
 See [LICENSE-ASSETS](LICENSE-ASSETS) for the full license, or
 <https://creativecommons.org/licenses/by-sa/4.0/>.
 

@@ -27,3 +27,18 @@ jobs:
           python-version: '3.12'
       - name: Validate all song charts
         run: python3 tools/validate_charts.py
+      - name: Test chart validator
+        run: python3 tools/test_validate_charts.py
+      - name: Set up Java
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Compile game and verification tools
+        run: |
+          mkdir -p build/ci-checks
+          javac --release 17 -encoding UTF-8 -d build/ci-checks src/*.java tools/VerifyTextRendering.java tools/VerifyTranslations.java
+      - name: Verify text rendering
+        run: java -Xmx512m -Djava.awt.headless=true -Djava.util.prefs.userRoot="$RUNNER_TEMP/laststandinnote-ci-prefs" -cp build/ci-checks:resources VerifyTextRendering
+      - name: Verify translations
+        run: java -Xmx512m -Djava.awt.headless=true -Djava.util.prefs.userRoot="$RUNNER_TEMP/laststandinnote-ci-prefs" -cp build/ci-checks:resources VerifyTranslations
